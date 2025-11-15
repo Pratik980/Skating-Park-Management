@@ -10,7 +10,7 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   
-  const { login, token, loading } = useApp();
+  const { login, token, loading, error, clearError } = useApp();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -22,11 +22,15 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+    clearError(); // Clear any previous errors
 
     const result = await login(email, password);
     
     if (result.success) {
       navigate('/');
+    } else {
+      // Error is already set in context and will be shown by NotificationContainer
+      console.error('Login failed:', result.error);
     }
     
     setIsLoading(false);
