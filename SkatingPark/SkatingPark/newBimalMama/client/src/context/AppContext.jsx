@@ -142,9 +142,14 @@ export const AppProvider = ({ children }) => {
       dispatch({ type: 'SET_LOADING', payload: true });
       
       // Log the login attempt for debugging
-      console.log('🔐 Attempting login to:', `${API_BASE_URL}/auth/login`);
+      const loginUrl = `${API_BASE_URL}/auth/login`;
+      console.log('🔐 Login Debug Info:');
+      console.log('   API Base URL:', API_BASE_URL);
+      console.log('   Full Login URL:', loginUrl);
+      console.log('   Environment:', import.meta.env.MODE);
+      console.log('   VITE_API_BASE_URL from env:', import.meta.env.VITE_API_BASE_URL);
       
-      const response = await axios.post(`${API_BASE_URL}/auth/login`, { email, password });
+      const response = await axios.post(loginUrl, { email, password });
       
       dispatch({
         type: 'LOGIN_SUCCESS',
@@ -172,7 +177,10 @@ export const AppProvider = ({ children }) => {
       } else if (error.response?.status === 401) {
         message = 'Invalid email or password';
       } else if (error.response?.status === 404) {
-        message = 'API endpoint not found. Please check your backend URL.';
+        const attemptedUrl = error.config?.url || loginUrl;
+        message = `Route not found (404). Attempted URL: ${attemptedUrl}. Please verify VITE_API_BASE_URL is set to: https://skating-park-management.onrender.com/api`;
+      } else if (error.response?.status === 500) {
+        message = 'Server error. Please check backend logs.';
       }
       
       dispatch({ type: 'SET_ERROR', payload: message });
