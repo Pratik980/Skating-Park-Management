@@ -1,0 +1,30 @@
+// Nepali date utilities
+export const getCurrentNepaliDate = () => {
+  const currentDate = new Date();
+  const year = 2082; // Current Nepali year
+  const month = (currentDate.getMonth() + 1).toString().padStart(2, '0');
+  const day = currentDate.getDate().toString().padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+export const getCurrentTime = () => {
+  const now = new Date();
+  return now.toLocaleTimeString('en-US', { 
+    hour12: false,
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+};
+
+export const formatNepaliDate = (date) => {
+  if (!date) return getCurrentNepaliDate();
+  return date;
+};
+
+export const getNepaliMonthName = (month) => {
+  const months = [
+    'बैशाख', 'जेठ', 'असार', 'श्रावण', 'भाद्र', 'आश्विन',
+    'कार्तिक', 'मंसिर', 'पौष', 'माघ', 'फाल्गुन', 'चैत्र'
+  ];
+  return months[month - 1] || '';
+};
