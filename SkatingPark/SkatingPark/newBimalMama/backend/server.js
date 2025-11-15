@@ -72,6 +72,12 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// Request logging middleware (for debugging) - must be before routes
+app.use((req, res, next) => {
+  console.log(`📥 ${req.method} ${req.originalUrl || req.path}`);
+  next();
+});
+
 // Database connection
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
@@ -113,9 +119,13 @@ app.use((err, req, res, next) => {
 
 // 404 handler
 app.use('*', (req, res) => {
+  console.log('❌ 404 - Route not found:', req.method, req.originalUrl);
+  console.log('   Available routes: /api/auth/login, /api/auth/register, etc.');
   res.status(404).json({ 
     success: false, 
-    message: 'Route not found' 
+    message: 'Route not found',
+    path: req.originalUrl,
+    method: req.method
   });
 });
 
