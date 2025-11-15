@@ -469,6 +469,9 @@ const Tickets = () => {
         }
       };
 
+      console.log('🎫 Creating ticket with data:', ticketData);
+      console.log('🔗 API Base URL:', import.meta.env.VITE_API_BASE_URL);
+      
       const response = await ticketsAPI.quickCreate(ticketData);
       const newTicket = response.data.ticket;
       
@@ -504,8 +507,30 @@ const Tickets = () => {
       }
       
     } catch (error) {
-      console.error('Error creating ticket:', error);
-      alert('Error creating ticket: ' + (error.response?.data?.message || error.message));
+      console.error('❌ Error creating ticket:', error);
+      console.error('Error details:', {
+        message: error.message,
+        code: error.code,
+        response: error.response?.data,
+        status: error.response?.status,
+        url: error.config?.url,
+        apiBaseUrl: import.meta.env.VITE_API_BASE_URL
+      });
+      
+      let errorMessage = 'Error creating ticket: ';
+      if (error.message === 'Network Error' || error.code === 'ERR_NETWORK') {
+        errorMessage += 'Cannot connect to server. Please check if the backend is running and VITE_API_BASE_URL is set correctly.';
+      } else if (error.response?.data?.message) {
+        errorMessage += error.response.data.message;
+      } else if (error.response?.status === 401) {
+        errorMessage += 'Unauthorized. Please login again.';
+      } else if (error.response?.status === 404) {
+        errorMessage += `Route not found. API URL: ${error.config?.url}`;
+      } else {
+        errorMessage += error.message;
+      }
+      
+      alert(errorMessage);
     } finally {
       setLoading(false);
     }
