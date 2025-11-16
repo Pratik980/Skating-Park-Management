@@ -17,9 +17,140 @@ const __dirname = path.dirname(__filename);
 
 const router = express.Router();
 
+// Cache browser instance for faster PDF generation (reuse across requests)
+let cachedBrowser = null;
+let browserLaunchPromise = null;
+
 // Log Puppeteer info on module load (for debugging)
 console.log('📦 Puppeteer module loaded');
 console.log('Puppeteer version:', puppeteer.version || 'unknown');
+
+// Function to get or create browser instance
+const getBrowser = async () => {
+  if (cachedBrowser && cachedBrowser.isConnected()) {
+    console.log('♻️ Reusing cached browser instance');
+    return cachedBrowser;
+  }
+
+  // If browser is launching, wait for it
+  if (browserLaunchPromise) {
+    console.log('⏳ Waiting for browser launch...');
+    return await browserLaunchPromise;
+  }
+
+  // Launch new browser
+  browserLaunchPromise = (async () => {
+    console.log('🚀 Launching new browser instance...');
+    const puppeteerArgs = [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-accelerated-2d-canvas',
+      '--no-first-run',
+      '--no-zygote',
+      '--disable-gpu',
+      '--disable-software-rasterizer',
+      '--disable-extensions'
+    ];
+
+    if (process.env.NODE_ENV === 'production' || process.env.RENDER) {
+      puppeteerArgs.push('--single-process');
+    }
+
+    let executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
+    
+    // Try Puppeteer's default executable path
+    try {
+      executablePath = puppeteer.executablePath();
+      if (fs.existsSync(executablePath)) {
+        console.log('✅ Found Puppeteer executable:', executablePath);
+      } else {
+        executablePath = null;
+      }
+    } catch (execPathError) {
+      // Continue to system Chromium check
+    }
+    
+    // If Puppeteer's path doesn't work, try system Chromium
+    if (!executablePath || !fs.existsSync(executablePath)) {
+      const systemChromiumPaths = [
+        '/usr/bin/chromium',
+        '/usr/bin/chromium-browser',
+        '/usr/bin/google-chrome',
+        '/usr/bin/google-chrome-stable',
+        '/snap/bin/chromium'
+      ];
+      
+      for (const chromiumPath of systemChromiumPaths) {
+        try {
+          if (fs.existsSync(chromiumPath)) {
+            executablePath = chromiumPath;
+            console.log('✅ Found system Chromium:', executablePath);
+            break;
+          }
+        } catch (e) {
+          // Continue checking other paths
+        }
+      }
+    }
+    
+    // If still no executable found, try to install Chrome via @puppeteer/browsers
+    if (!executablePath || !fs.existsSync(executablePath)) {
+      console.log('📥 Chrome not found, attempting to install via @puppeteer/browsers...');
+      const cacheDir = process.env.PUPPETEER_CACHE_DIR || '/opt/render/.cache/puppeteer';
+      
+      try {
+        if (!fs.existsSync(cacheDir)) {
+          fs.mkdirSync(cacheDir, { recursive: true });
+        }
+        
+        let browserPath;
+        try {
+          browserPath = await install({
+            browser: 'chromium',
+            cacheDir: cacheDir,
+          });
+          executablePath = browserPath.executablePath;
+          console.log('✅ Chromium installed successfully:', executablePath);
+        } catch (chromiumError) {
+          const chromeBuildId = '131.0.6778.85';
+          browserPath = await install({
+            browser: 'chrome',
+            buildId: chromeBuildId,
+            cacheDir: cacheDir,
+          });
+          executablePath = browserPath.executablePath;
+          console.log('✅ Chrome installed successfully:', executablePath);
+        }
+      } catch (installError) {
+        throw new Error(`Could not find or install Chrome/Chromium: ${installError.message}`);
+      }
+    }
+    
+    const browser = await puppeteer.launch({
+      headless: 'new',
+      args: puppeteerArgs,
+      executablePath: executablePath || undefined,
+      timeout: 30000,
+      ignoreHTTPSErrors: true,
+      ignoreDefaultArgs: ['--disable-extensions']
+    });
+    
+    console.log('✅ Browser launched successfully');
+    cachedBrowser = browser;
+    browserLaunchPromise = null;
+    
+    // Handle browser disconnection
+    browser.on('disconnected', () => {
+      console.log('⚠️ Browser disconnected, will create new instance on next request');
+      cachedBrowser = null;
+    });
+    
+    return browser;
+  })();
+
+  return await browserLaunchPromise;
+};
 
 const DEFAULT_COMPANY = 'बेलका स्केट पार्क एण्ड गेमिङ जोन';
 const currencyFormatter = new Intl.NumberFormat('en-IN', {
@@ -329,19 +460,14 @@ const buildDashboardHtml = ({ stats, settings, branch, generatedAt, user }) => {
 };
 
 router.get('/dashboard', protect, async (req, res) => {
-  let browser;
+  let page;
   try {
     console.log('📄 PDF Export Request Started');
-    console.log('Environment:', process.env.NODE_ENV);
-    console.log('Render flag:', process.env.RENDER);
     
     const requestBranchId = req.query.branchId || req.user?.branch?._id || req.user?.branch;
     const userBranchId = req.user?.branch?._id || req.user?.branch;
 
-    console.log('Branch ID check:', { requestBranchId, userBranchId });
-
     if (!requestBranchId || String(requestBranchId) !== String(userBranchId)) {
-      console.log('❌ Authorization failed');
       return res.status(403).json({
         success: false,
         message: 'You are not authorized to export this branch report.'
@@ -356,7 +482,6 @@ router.get('/dashboard', protect, async (req, res) => {
     ]);
 
     if (!branch) {
-      console.log('❌ Branch not found');
       return res.status(404).json({
         success: false,
         message: 'Branch not found'
@@ -371,197 +496,48 @@ router.get('/dashboard', protect, async (req, res) => {
       generatedAt: new Date(),
       user: req.user
     });
-    console.log('✅ HTML built, length:', html.length);
 
-    // Puppeteer configuration for Render.com and other cloud platforms
-    const puppeteerArgs = [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
-      '--disable-accelerated-2d-canvas',
-      '--no-first-run',
-      '--no-zygote',
-      '--disable-gpu',
-      '--disable-software-rasterizer',
-      '--disable-extensions'
-    ];
-
-    // Only use --single-process in production/cloud environments
-    // It can cause issues on localhost/Windows
-    if (process.env.NODE_ENV === 'production' || process.env.RENDER) {
-      puppeteerArgs.push('--single-process');
-    }
-
-    // Launch browser with improved error handling
-    console.log('🚀 Launching Puppeteer browser...');
-    console.log('Puppeteer args:', puppeteerArgs);
-    console.log('Executable path:', process.env.PUPPETEER_EXECUTABLE_PATH || 'default');
-    console.log('Cache dir:', process.env.PUPPETEER_CACHE_DIR || 'default');
-    
-    // Try to get the executable path from Puppeteer
-    let executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
-    
-    // First, try Puppeteer's default executable path
-    try {
-      executablePath = puppeteer.executablePath();
-      if (fs.existsSync(executablePath)) {
-        console.log('✅ Found Puppeteer executable:', executablePath);
-      } else {
-        console.warn('⚠️ Puppeteer executable path does not exist:', executablePath);
-        executablePath = null;
-      }
-    } catch (execPathError) {
-      console.warn('⚠️ Could not get default executable path:', execPathError.message);
-    }
-    
-    // If Puppeteer's path doesn't work, try system Chromium
-    if (!executablePath || !fs.existsSync(executablePath)) {
-      console.log('🔍 Checking for system Chromium...');
-      const systemChromiumPaths = [
-        '/usr/bin/chromium',
-        '/usr/bin/chromium-browser',
-        '/usr/bin/google-chrome',
-        '/usr/bin/google-chrome-stable',
-        '/snap/bin/chromium'
-      ];
-      
-      for (const chromiumPath of systemChromiumPaths) {
-        try {
-          if (fs.existsSync(chromiumPath)) {
-            executablePath = chromiumPath;
-            console.log('✅ Found system Chromium:', executablePath);
-            break;
-          }
-        } catch (e) {
-          // Continue checking other paths
-        }
-      }
-    }
-    
-    // If still no executable found, try to install Chrome via @puppeteer/browsers
-    if (!executablePath || !fs.existsSync(executablePath)) {
-      console.log('📥 Chrome not found, attempting to install via @puppeteer/browsers...');
-      try {
-        const cacheDir = process.env.PUPPETEER_CACHE_DIR || '/opt/render/.cache/puppeteer';
-        console.log('Installing Chrome to:', cacheDir);
-        
-        // Ensure cache directory exists
-        try {
-          if (!fs.existsSync(cacheDir)) {
-            fs.mkdirSync(cacheDir, { recursive: true });
-            console.log('✅ Created cache directory:', cacheDir);
-          }
-        } catch (mkdirError) {
-          console.warn('⚠️ Could not create cache directory, using default:', mkdirError.message);
-        }
-        
-        // Try installing Chromium first (more reliable than Chrome)
-        let browserPath;
-        try {
-          console.log('Attempting to install Chromium...');
-          browserPath = await install({
-            browser: 'chromium',
-            cacheDir: cacheDir,
-          });
-          executablePath = browserPath.executablePath;
-          console.log('✅ Chromium installed successfully:', executablePath);
-        } catch (chromiumError) {
-          console.warn('⚠️ Chromium installation failed, trying Chrome:', chromiumError.message);
-          // Fallback to Chrome with a specific version
-          try {
-            // Use a known working Chrome version for Puppeteer 22.x
-            const chromeBuildId = '131.0.6778.85';
-            console.log('Attempting to install Chrome with buildId:', chromeBuildId);
-            browserPath = await install({
-              browser: 'chrome',
-              buildId: chromeBuildId,
-              cacheDir: cacheDir,
-            });
-            executablePath = browserPath.executablePath;
-            console.log('✅ Chrome installed successfully:', executablePath);
-          } catch (chromeError) {
-            console.error('❌ Both Chromium and Chrome installation failed');
-            throw new Error(`Could not install Chromium or Chrome. Chromium error: ${chromiumError.message}. Chrome error: ${chromeError.message}`);
-          }
-        }
-      } catch (installError) {
-        console.error('❌ Failed to install Chrome:', installError);
-        throw new Error(`Could not find or install Chrome/Chromium. Please ensure Chromium is installed on the system or check build configuration. Error: ${installError.message}`);
-      }
-    }
-    
-    try {
-      browser = await puppeteer.launch({
-        headless: 'new',
-        args: puppeteerArgs,
-        executablePath: executablePath || undefined,
-        timeout: 60000,
-        // Additional options for stability
-        ignoreHTTPSErrors: true,
-        ignoreDefaultArgs: ['--disable-extensions']
-      });
-      console.log('✅ Browser launched successfully');
-    } catch (launchError) {
-      console.error('❌ Failed to launch browser:', launchError);
-      console.error('Launch error name:', launchError.name);
-      console.error('Launch error message:', launchError.message);
-      
-      // Provide helpful error message
-      if (launchError.message.includes('Could not find Chrome')) {
-        throw new Error('Chrome/Chromium not installed. Please ensure the build process installs Chrome using: npx puppeteer browsers install chrome');
-      }
-      throw new Error(`Failed to launch browser: ${launchError.message}`);
-    }
+    // Get or reuse browser instance (cached for performance)
+    const browser = await getBrowser();
 
     console.log('📄 Creating new page...');
-    const page = await browser.newPage();
-    console.log('✅ Page created');
+    page = await browser.newPage();
     
-    // Set a longer timeout for page operations
-    page.setDefaultTimeout(60000);
-    page.setDefaultNavigationTimeout(60000);
+    // Set shorter timeouts for faster generation
+    page.setDefaultTimeout(30000);
+    page.setDefaultNavigationTimeout(30000);
     
-    // Disable images and media, but allow fonts for Nepali text support
+    // Optimize request interception - block images/media, allow fonts
     console.log('🔧 Setting up request interception...');
     try {
       await page.setRequestInterception(true);
       page.on('request', (req) => {
         const resourceType = req.resourceType();
         const url = req.url();
-        // Block images and media that might cause timeouts
-        // Allow fonts (including Google Fonts for Nepali support) and stylesheets
+        // Block images and media for speed
         if (['image', 'media'].includes(resourceType)) {
           req.abort();
-        } else if (resourceType === 'font' || url.includes('fonts.googleapis.com') || url.includes('fonts.gstatic.com')) {
-          // Allow font requests for Nepali text support
-          req.continue();
         } else {
           req.continue();
         }
       });
-      console.log('✅ Request interception set up');
     } catch (interceptError) {
-      console.warn('⚠️ Request interception failed, continuing without it:', interceptError);
-      // Continue without request interception - it's not critical
+      console.warn('⚠️ Request interception failed, continuing without it');
     }
     
-    // Set content with a more lenient wait strategy
-    // Use 'networkidle0' to ensure fonts are loaded for Nepali text
+    // Use faster wait strategy - domcontentloaded is much faster than networkidle0
     console.log('📝 Setting page content...');
-    try {
-      await page.setContent(html, { 
-        waitUntil: 'networkidle0',
-        timeout: 60000
-      });
-      console.log('✅ Content set');
-    } catch (contentError) {
-      console.error('❌ Failed to set content:', contentError);
-      throw new Error(`Failed to set page content: ${contentError.message}`);
-    }
+    await page.setContent(html, { 
+      waitUntil: 'domcontentloaded',
+      timeout: 30000
+    });
     
-    // Wait a bit to ensure fonts are fully loaded and rendered
-    console.log('⏳ Waiting for fonts to load and render...');
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    // Wait for fonts to load (shorter wait for speed)
+    console.log('⏳ Waiting for fonts...');
+    await Promise.race([
+      page.evaluate(() => document.fonts.ready),
+      new Promise(resolve => setTimeout(resolve, 1500)) // Max 1.5s wait
+    ]);
     
     await page.emulateMediaType('screen');
     console.log('✅ Page ready for PDF generation');
@@ -588,21 +564,15 @@ router.get('/dashboard', protect, async (req, res) => {
       throw pdfError;
     }
 
-    // Close page and browser after successful PDF generation
-    console.log('🧹 Cleaning up browser resources...');
+    // Close page (but keep browser cached for next request)
+    console.log('🧹 Cleaning up page...');
     try {
       await page.close();
       console.log('✅ Page closed');
     } catch (e) {
       console.warn('⚠️ Error closing page:', e);
     }
-    
-    try {
-      await browser.close();
-      console.log('✅ Browser closed');
-    } catch (e) {
-      console.warn('⚠️ Error closing browser:', e);
-    }
+    // Note: Browser is kept alive (cached) for faster subsequent requests
 
     console.log('📤 Sending PDF response...');
     res.setHeader('Content-Type', 'application/pdf');
@@ -616,17 +586,15 @@ router.get('/dashboard', protect, async (req, res) => {
     console.error('❌ Dashboard PDF export error:', error);
     console.error('Error name:', error.name);
     console.error('Error message:', error.message);
-    console.error('Error stack:', error.stack);
     
-    // Ensure browser is closed
-    if (browser) {
+    // Close page if it exists
+    if (page) {
       try {
-        await browser.close();
-        console.log('✅ Browser closed after error');
-      } catch (closeError) {
-        console.error('❌ Error closing browser:', closeError);
-      }
+        await page.close().catch(() => {});
+      } catch (e) {}
     }
+    
+    // Note: We don't close the browser here to keep it cached for next request
     
     // Provide more helpful error messages
     let errorMessage = 'Failed to generate dashboard PDF';
