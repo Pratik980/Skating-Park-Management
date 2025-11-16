@@ -887,6 +887,84 @@ const openTicketPrintWindow = (ticket) => {
   printWindow.document.close();
 };
 
+// 🖨️ Print all tickets in one view
+const printAllTicketsOneByOne = (ticketsToPrint) => {
+  if (!ticketsToPrint?.length) return;
+  
+  // Collect all ticket HTML from hidden divs
+  const ticketsHtml = ticketsToPrint.map((ticket, index) => {
+    const ticketElement = document.getElementById(`ticket-print-${ticket._id}`);
+    if (!ticketElement) return '';
+    
+    const ticketContent = ticketElement.innerHTML;
+    // Add page break after each ticket except the last one
+    const pageBreak = index < ticketsToPrint.length - 1 
+      ? '<div style="page-break-after: always;"></div>' 
+      : '';
+    return ticketContent + pageBreak;
+  }).filter(html => html.trim() !== '').join('');
+  
+  if (!ticketsHtml) {
+    alert('No tickets found to print.');
+    return;
+  }
+  
+  const printHtml = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>Print All Tickets (${ticketsToPrint.length} tickets)</title>
+        <style>
+          @page {
+            size: 80mm auto;
+            margin: 0;
+          }
+          body {
+            margin: 0;
+            padding: 0;
+            font-family: "Courier New", monospace;
+            background: white;
+            width: 80mm;
+            font-size: 10px;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+          .ticket-print {
+            width: 76mm;
+            padding: 2mm;
+            box-sizing: border-box;
+            margin: 0 auto;
+          }
+          @media print {
+            .ticket-print {
+              page-break-after: always;
+            }
+            .ticket-print:last-of-type {
+              page-break-after: auto;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        ${ticketsHtml}
+        <script>
+          window.onload = function() {
+            // Show all tickets, then auto-open print dialog after a short delay
+            setTimeout(() => {
+              window.print();
+            }, 1000);
+          };
+        </script>
+      </body>
+    </html>
+  `;
+
+  const printWindow = window.open('', '_blank', 'width=400,height=800');
+  printWindow.document.open();
+  printWindow.document.write(printHtml);
+  printWindow.document.close();
+};
+
 
   return (
     <div>
@@ -1902,7 +1980,7 @@ const openTicketPrintWindow = (ticket) => {
               )}
             </h3>
             {tickets.length > 0 && (
-              <button className="btn btn-info btn-sm" onClick={() => printTicketsTableReport(tickets, 'Recent Tickets Report')} title="Print All Tickets">🖨️ Print All</button>
+              <button className="btn btn-info btn-sm" onClick={() => printAllTicketsOneByOne(tickets)} title="Print All Tickets One by One">🖨️ Print All</button>
             )}
           </div>
 

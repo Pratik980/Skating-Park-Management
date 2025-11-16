@@ -37,8 +37,9 @@ const Sidebar = ({ collapsed = false }) => {
     { path: '/tickets', label: 'Tickets', icon: '🎫', roles: ['admin', 'staff'] },
     { path: '/sales', label: 'Sales', icon: '💰', roles: ['admin', 'staff'] },
     { path: '/expenses', label: 'Expenses', icon: '📋', roles: ['admin', 'staff'] },
+    { path: '/ticket-history', label: 'Ticket History', icon: '📜', roles: ['staff'] },
     { path: '/summary', label: 'Reports', icon: '📈', roles: ['admin'] },
-    { path: '/customers', label: 'Customer Details', icon: '👤', roles: ['admin', 'staff'] },
+    { path: '/customers', label: 'Customer Details', icon: '👤', roles: ['admin'] },
     { path: '/users', label: 'Staff', icon: '👥', roles: ['admin'] },
     { path: '/branches', label: 'Branches', icon: '🏢', roles: ['admin'] },
     { path: '/settings', label: 'Settings', icon: '⚙️', roles: ['admin'] },
@@ -48,6 +49,14 @@ const Sidebar = ({ collapsed = false }) => {
   const filteredMenuItems = menuItems.filter(item => 
     item.roles.includes(user?.role)
   );
+
+  // Debug: Log filtered items for staff
+  useEffect(() => {
+    if (user?.role === 'staff') {
+      console.log('Staff user menu items:', filteredMenuItems);
+      console.log('User role:', user?.role);
+    }
+  }, [user, filteredMenuItems]);
 
   const displayName = settings?.companyName || 'Skating Park';
   const logoUrl = settings?.logo;

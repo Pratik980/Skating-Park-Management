@@ -68,6 +68,7 @@ const Summary = lazy(() => import('./pages/Summary'));
 const Settings = lazy(() => import('./pages/Settings'));
 const BackupRestore = lazy(() => import('./pages/BackupRestore'));
 const CustomerDetails = lazy(() => import('./pages/CustomerDetails'));
+const TicketHistory = lazy(() => import('./pages/TicketHistory'));
 
 function App() {
   return (
@@ -87,6 +88,7 @@ function App() {
                 <Route path="expenses" element={<Expenses />} />
                 <Route path="summary" element={<Summary />} />
                 <Route path="customers" element={<CustomerDetails />} />
+                <Route path="ticket-history" element={<TicketHistory />} />
                 <Route path="settings" element={<AdminOnly><Settings /></AdminOnly>} />
                 <Route path="backup" element={<AdminOnly><BackupRestore /></AdminOnly>} />
               </Route>
