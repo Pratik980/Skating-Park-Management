@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import { summaryAPI, settingsAPI, usersAPI, pdfAPI, downloadFile } from '../api/api';
 import Loader from '../components/Loader';
@@ -11,44 +11,38 @@ const Dashboard = () => {
   const [users, setUsers] = useState([]);
   const { currentBranch, user } = useApp();
 
-  useEffect(() => {
-    fetchDashboardData();
-    fetchSettings();
-    fetchAllUsers();
-  }, [currentBranch]);
-
-  const fetchDashboardData = async () => {
+  // Fetch all data in parallel for faster loading
+  const fetchAllData = useCallback(async () => {
     if (!currentBranch) return;
     
     try {
       setLoading(true);
-      const response = await summaryAPI.getDashboard(currentBranch._id);
-      setStats(response.data.dashboard);
+      // Fetch all data in parallel
+      const [dashboardRes, settingsRes, usersRes] = await Promise.allSettled([
+        summaryAPI.getDashboard(currentBranch._id),
+        settingsAPI.getByBranch(currentBranch._id),
+        usersAPI.getAll()
+      ]);
+
+      if (dashboardRes.status === 'fulfilled') {
+        setStats(dashboardRes.value.data.dashboard);
+      }
+      if (settingsRes.status === 'fulfilled') {
+        setSettings(settingsRes.value.data.settings);
+      }
+      if (usersRes.status === 'fulfilled') {
+        setUsers(usersRes.value.data.users || []);
+      }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentBranch]);
 
-  const fetchSettings = async () => {
-    if (!currentBranch) return;
-    try {
-      const response = await settingsAPI.getByBranch(currentBranch._id);
-      setSettings(response.data.settings);
-    } catch (error) {
-      console.error('Error fetching settings:', error);
-    }
-  };
-
-  const fetchAllUsers = async () => {
-    try {
-      const response = await usersAPI.getAll();
-      setUsers(response.data.users || []);
-    } catch (error) {
-      setUsers([]);
-    }
-  };
+  useEffect(() => {
+    fetchAllData();
+  }, [fetchAllData]);
 
   if (loading) {
     return <Loader text="Loading dashboard..." />;
@@ -66,7 +60,8 @@ const Dashboard = () => {
     );
   }
 
-  const quickActionItems = [
+  // Memoize quick actions to prevent recalculation
+  const quickActionItems = useMemo(() => [
     {
       key: 'sell',
       label: 'Sell Ticket',
@@ -102,13 +97,16 @@ const Dashboard = () => {
       icon: '📊',
       accent: '#17a2b8'
     }
-  ];
+  ], []);
 
-  const visibleQuickActions = quickActionItems.filter(
-    (item) => !item.roles || item.roles.includes(user?.role)
+  const visibleQuickActions = useMemo(() => 
+    quickActionItems.filter(
+      (item) => !item.roles || item.roles.includes(user?.role)
+    ),
+    [quickActionItems, user?.role]
   );
 
-  const exportDashboardToPDF = async () => {
+  const exportDashboardToPDF = useCallback(async () => {
     try {
       if (!currentBranch?._id) {
         alert('No branch selected to export');
@@ -129,7 +127,7 @@ const Dashboard = () => {
       const errorMessage = error.message || 'Failed to export dashboard PDF. Please try again.';
       alert(errorMessage);
     }
-  };
+  }, [currentBranch]);
 
   return (
     <div>

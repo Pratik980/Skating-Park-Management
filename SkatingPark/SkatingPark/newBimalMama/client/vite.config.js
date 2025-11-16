@@ -13,5 +13,28 @@ export default defineConfig({
         secure: false
       }
     }
-  }
+  },
+  build: {
+    // Optimize build for production
+    minify: 'esbuild', // Faster than terser, still removes console.logs
+    target: 'es2015', // Better browser compatibility
+    rollupOptions: {
+      output: {
+        // Code splitting - separate vendor chunks
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'chart-vendor': ['recharts'],
+          'pdf-vendor': ['jspdf', 'jspdf-autotable'],
+        },
+      },
+    },
+    // Increase chunk size warning limit
+    chunkSizeWarningLimit: 1000,
+    // Enable source maps only in development
+    sourcemap: false,
+  },
+  // Optimize dependencies
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'react-router-dom', 'axios'],
+  },
 })
