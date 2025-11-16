@@ -133,12 +133,15 @@ const buildDashboardHtml = ({ stats, settings, branch, generatedAt, user }) => {
       <meta http-equiv="X-UA-Compatible" content="IE=edge" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <title>Dashboard Report</title>
+      <link rel="preconnect" href="https://fonts.googleapis.com">
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+      <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600&display=swap" rel="stylesheet">
       <style>
         * { box-sizing: border-box; }
         body {
           margin: 0;
           padding: 24px;
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+          font-family: 'Noto Sans Devanagari', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
           background: #f5f7fb;
           color: #1d1f2c;
         }
@@ -156,7 +159,7 @@ const buildDashboardHtml = ({ stats, settings, branch, generatedAt, user }) => {
           font-size: 24px;
           font-weight: 600;
           color: #101936;
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+          font-family: 'Noto Sans Devanagari', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
         }
         .header .branch {
           margin-top: 6px;
@@ -518,16 +521,20 @@ router.get('/dashboard', protect, async (req, res) => {
     page.setDefaultTimeout(60000);
     page.setDefaultNavigationTimeout(60000);
     
-    // Disable images and media to speed up rendering (fonts are system fonts, so we allow them)
+    // Disable images and media, but allow fonts for Nepali text support
     console.log('🔧 Setting up request interception...');
     try {
       await page.setRequestInterception(true);
       page.on('request', (req) => {
         const resourceType = req.resourceType();
+        const url = req.url();
         // Block images and media that might cause timeouts
-        // Allow fonts since we're using system fonts
+        // Allow fonts (including Google Fonts for Nepali support) and stylesheets
         if (['image', 'media'].includes(resourceType)) {
           req.abort();
+        } else if (resourceType === 'font' || url.includes('fonts.googleapis.com') || url.includes('fonts.gstatic.com')) {
+          // Allow font requests for Nepali text support
+          req.continue();
         } else {
           req.continue();
         }
@@ -539,11 +546,11 @@ router.get('/dashboard', protect, async (req, res) => {
     }
     
     // Set content with a more lenient wait strategy
-    // Use 'domcontentloaded' instead of 'networkidle0' for faster, more reliable rendering
+    // Use 'networkidle0' to ensure fonts are loaded for Nepali text
     console.log('📝 Setting page content...');
     try {
       await page.setContent(html, { 
-        waitUntil: 'domcontentloaded',
+        waitUntil: 'networkidle0',
         timeout: 60000
       });
       console.log('✅ Content set');
@@ -552,9 +559,9 @@ router.get('/dashboard', protect, async (req, res) => {
       throw new Error(`Failed to set page content: ${contentError.message}`);
     }
     
-    // Wait a bit to ensure all content is rendered
-    console.log('⏳ Waiting for content to render...');
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // Wait a bit to ensure fonts are fully loaded and rendered
+    console.log('⏳ Waiting for fonts to load and render...');
+    await new Promise(resolve => setTimeout(resolve, 3000));
     
     await page.emulateMediaType('screen');
     console.log('✅ Page ready for PDF generation');
