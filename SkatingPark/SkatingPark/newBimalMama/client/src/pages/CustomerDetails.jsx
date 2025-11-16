@@ -1,235 +1,199 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import { ticketsAPI } from '../api/api';
 import Loader from '../components/Loader';
 import NotificationContainer from '../components/NotificationContainer';
 
 const CustomerDetails = () => {
-  const [customers, setCustomers] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [tickets, setTickets] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const { currentBranch } = useApp();
 
   useEffect(() => {
-    fetchCustomerDetails();
+    if (currentBranch) {
+      fetchTickets();
+    }
   }, [currentBranch]);
 
-  const fetchCustomerDetails = async () => {
-    if (!currentBranch) return;
-    
+  const fetchTickets = async () => {
     try {
       setLoading(true);
-      const response = await ticketsAPI.getAll({ 
-        limit: 10000, // Get all tickets
-        range: 'history' // Get all tickets, not just today's
-      });
-      
-      // Process tickets to extract customer details
-      const customerMap = new Map();
-      
-      response.data.tickets.forEach(ticket => {
-        const key = `${ticket.name}-${ticket.contactNumber || 'no-contact'}`;
-        
-        if (!customerMap.has(key)) {
-          customerMap.set(key, {
-            name: ticket.name,
-            contactNumber: ticket.contactNumber || 'N/A',
-            ticketNumbers: [],
-            dates: [],
-            playerNames: new Set(),
-            totalTickets: 0
-          });
-        }
-        
-        const customer = customerMap.get(key);
-        customer.ticketNumbers.push(ticket.ticketNo);
-        customer.dates.push({
-          date: ticket.date?.englishDate ? new Date(ticket.date.englishDate).toLocaleDateString() : 'N/A',
-          nepaliDate: ticket.date?.nepaliDate || 'N/A',
-          ticketNo: ticket.ticketNo
-        });
-        
-        // Collect player names
-        if (ticket.playerNames && Array.isArray(ticket.playerNames) && ticket.playerNames.length > 0) {
-          ticket.playerNames.forEach(playerName => {
-            if (playerName && playerName.trim()) {
-              customer.playerNames.add(playerName.trim());
-            }
-          });
-        }
-        
-        customer.totalTickets += 1;
-      });
-      
-      // Convert Set to Array for each customer
-      customerMap.forEach(customer => {
-        customer.playerNames = Array.from(customer.playerNames);
-      });
-      
-      // Convert map to array and sort by name
-      const customerArray = Array.from(customerMap.values()).sort((a, b) => 
-        a.name.localeCompare(b.name)
-      );
-      
-      setCustomers(customerArray);
+      const response = await ticketsAPI.getAll({ limit: 1000 });
+      setTickets(response.data.tickets || []);
     } catch (error) {
-      console.error('Error fetching customer details:', error);
+      console.error('Error fetching tickets:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredCustomers = customers.filter(customer => {
-    if (!searchTerm.trim()) return true;
-    const searchTermLower = searchTerm.toLowerCase();
-    const searchTermNum = searchTerm.trim();
+  // Group tickets by customer (name + contact number)
+  const customerGroups = useMemo(() => {
+    const groups = {};
     
-    // Search in name
-    const nameMatch = customer.name.toLowerCase().includes(searchTermLower);
-    
-    // Search in contact number (handle various formats)
-    const contactMatch = customer.contactNumber && 
-      customer.contactNumber !== 'N/A' && 
-      (String(customer.contactNumber).includes(searchTermNum) || 
-       String(customer.contactNumber).toLowerCase().includes(searchTermLower));
-    
-    // Search in ticket numbers
-    const ticketMatch = customer.ticketNumbers && customer.ticketNumbers.some(ticketNo => {
-      if (!ticketNo) return false;
-      const ticketStr = String(ticketNo);
-      return ticketStr.includes(searchTermNum) || ticketStr.toLowerCase().includes(searchTermLower);
+    tickets.forEach(ticket => {
+      // Normalize contactNumber to always be an array
+      let contactArray = [];
+      if (Array.isArray(ticket.contactNumber)) {
+        contactArray = ticket.contactNumber;
+      } else if (ticket.contactNumber) {
+        // If it's a string or other type, convert to array
+        contactArray = [String(ticket.contactNumber)];
+      }
+      
+      const customerKey = ticket.name || 'Unknown';
+      const contactKey = contactArray.length > 0 ? contactArray.join(', ') : 'No Contact';
+      const key = `${customerKey}_${contactKey}`;
+      
+      if (!groups[key]) {
+        groups[key] = {
+          name: ticket.name || 'Unknown',
+          contactNumber: contactArray,
+          tickets: [],
+          totalSpent: 0,
+          totalTickets: 0,
+          lastVisit: null
+        };
+      }
+      
+      groups[key].tickets.push(ticket);
+      groups[key].totalSpent += ticket.fee || 0;
+      groups[key].totalTickets += 1;
+      
+      const ticketDate = ticket.date?.englishDate 
+        ? new Date(ticket.date.englishDate) 
+        : new Date(ticket.createdAt);
+      
+      if (!groups[key].lastVisit || ticketDate > groups[key].lastVisit) {
+        groups[key].lastVisit = ticketDate;
+      }
     });
     
-    // Search in player names
-    const playerMatch = customer.playerNames && customer.playerNames.some(playerName => 
-      playerName && playerName.toLowerCase().includes(searchTermLower)
-    );
+    return Object.values(groups);
+  }, [tickets]);
+
+  // Filter customers by search term
+  const filteredCustomers = useMemo(() => {
+    if (!searchTerm.trim()) return customerGroups;
     
-    return nameMatch || contactMatch || ticketMatch || playerMatch;
-  });
+    const term = searchTerm.toLowerCase();
+    return customerGroups.filter(customer => 
+      customer.name.toLowerCase().includes(term) ||
+      (Array.isArray(customer.contactNumber) && customer.contactNumber.some(num => String(num).toLowerCase().includes(term))) ||
+      customer.tickets.some(t => t.ticketNo?.toString().includes(term))
+    );
+  }, [customerGroups, searchTerm]);
 
-  const exportToCSV = () => {
-    const headers = ['Name', 'Contact Number', 'Player Names', 'Ticket Numbers', 'Total Tickets', 'Dates'];
-    const rows = filteredCustomers.map(customer => [
-      customer.name,
-      customer.contactNumber,
-      customer.playerNames.join('; ') || 'N/A',
-      customer.ticketNumbers.join('; '),
-      customer.totalTickets.toString(),
-      customer.dates.map(d => `${d.date} (${d.ticketNo})`).join('; ')
-    ]);
-
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `Customer_Details_${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  if (loading) {
+  if (loading && tickets.length === 0) {
     return <Loader text="Loading customer details..." />;
   }
 
   return (
-    <div style={{ padding: '2rem' }}>
+    <div>
       <NotificationContainer />
       
-      <div style={{ marginBottom: '2rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
-          <h1 style={{ margin: 0, fontSize: '2rem', fontWeight: 700 }}>Customer Details</h1>
-          <button 
-            className="btn btn-primary"
-            onClick={exportToCSV}
-            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="7 10 12 15 17 10"/>
-              <line x1="12" y1="15" x2="12" y2="3"/>
-            </svg>
-            Export CSV
-          </button>
+      <div className="d-flex justify-between align-center mb-3">
+        <div>
+          <h1>Customer Details</h1>
+          <p className="text-muted mb-0">View customer information and ticket history</p>
         </div>
-        
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
-          <input
-            type="text"
-            className="form-control"
-            placeholder="Search by name, contact number, player name, or ticket number..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            style={{ maxWidth: '400px', flex: '1', minWidth: '200px' }}
-          />
-          <div style={{ color: '#666', fontSize: '0.9rem' }}>
-            Total Customers: <strong>{filteredCustomers.length}</strong>
+        <button 
+          className="btn btn-sm btn-secondary"
+          onClick={fetchTickets}
+          disabled={loading}
+        >
+          {loading ? 'Refreshing...' : '🔄 Refresh'}
+        </button>
+      </div>
+
+      {/* Search */}
+      <div className="card mb-4">
+        <div className="card-body">
+          <div className="form-group">
+            <label className="form-label">Search Customers</label>
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Search by name, contact number, or ticket number..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
         </div>
       </div>
 
-      {filteredCustomers.length === 0 ? (
-        <div className="empty-state" style={{ textAlign: 'center', padding: '3rem' }}>
-          <p style={{ fontSize: '1.2rem', color: '#666' }}>
-            {searchTerm ? 'No customers found matching your search.' : 'No customer details available.'}
-          </p>
+      {/* Customer List */}
+      <div className="card">
+        <div className="card-header">
+          <h3 className="card-title">
+            Customers ({filteredCustomers.length})
+          </h3>
         </div>
-      ) : (
-        <div className="table-container">
-          <table className="table" style={{ width: '100%' }}>
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Contact Number</th>
-                <th>Player Names</th>
-                <th>Ticket Numbers</th>
-                <th>Total Tickets</th>
-                <th>Dates</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredCustomers.map((customer, index) => (
-                <tr key={index}>
-                  <td style={{ fontWeight: 600 }}>{customer.name}</td>
-                  <td>{customer.contactNumber}</td>
-                  <td>
-                    <div style={{ maxWidth: '300px', wordBreak: 'break-word', fontSize: '0.9rem' }}>
-                      {customer.playerNames && customer.playerNames.length > 0 
-                        ? customer.playerNames.join(', ')
-                        : <span style={{ color: '#999' }}>—</span>
-                      }
-                    </div>
-                  </td>
-                  <td>
-                    <div style={{ maxWidth: '300px', wordBreak: 'break-word' }}>
-                      {customer.ticketNumbers.join(', ')}
-                    </div>
-                  </td>
-                  <td style={{ textAlign: 'center', fontWeight: 600 }}>
-                    {customer.totalTickets}
-                  </td>
-                  <td>
-                    <div style={{ maxWidth: '400px', fontSize: '0.9rem' }}>
-                      {customer.dates.map((dateInfo, idx) => (
-                        <div key={idx} style={{ marginBottom: '0.25rem' }}>
-                          {dateInfo.date} ({dateInfo.nepaliDate})
-                        </div>
-                      ))}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="card-body">
+          {filteredCustomers.length === 0 ? (
+            <div className="empty-state">
+              <p>No customers found</p>
+            </div>
+          ) : (
+            <div className="table-container">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Customer Name</th>
+                    <th>Contact Number</th>
+                    <th>Total Tickets</th>
+                    <th>Total Spent</th>
+                    <th>Last Visit</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredCustomers.map((customer, index) => (
+                    <tr key={index}>
+                      <td>
+                        <strong>{customer.name}</strong>
+                      </td>
+                      <td>
+                        {Array.isArray(customer.contactNumber) && customer.contactNumber.length > 0 ? (
+                          customer.contactNumber.join(', ')
+                        ) : (
+                          <span className="text-muted">—</span>
+                        )}
+                      </td>
+                      <td>
+                        <span className="badge bg-primary">{customer.totalTickets}</span>
+                      </td>
+                      <td>
+                        <strong>रु {customer.totalSpent.toLocaleString()}</strong>
+                      </td>
+                      <td>
+                        <small>
+                          {customer.lastVisit 
+                            ? customer.lastVisit.toLocaleDateString()
+                            : '—'}
+                        </small>
+                      </td>
+                      <td>
+                        <button
+                          className="btn btn-sm btn-info"
+                          onClick={() => {
+                            // Show ticket details in a modal or expand row
+                            const customerTickets = customer.tickets;
+                            alert(`Customer has ${customerTickets.length} ticket(s).\n\nTicket Numbers: ${customerTickets.map(t => t.ticketNo).join(', ')}`);
+                          }}
+                        >
+                          View Tickets
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 };
