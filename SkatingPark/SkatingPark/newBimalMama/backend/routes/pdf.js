@@ -1,6 +1,7 @@
 import express from 'express';
 import puppeteer from 'puppeteer';
 import mongoose from 'mongoose';
+import fs from 'fs';
 import Ticket from '../models/Ticket.js';
 import Sales from '../models/Sales.js';
 import Expense from '../models/Expense.js';
@@ -386,12 +387,44 @@ router.get('/dashboard', protect, async (req, res) => {
     console.log('🚀 Launching Puppeteer browser...');
     console.log('Puppeteer args:', puppeteerArgs);
     console.log('Executable path:', process.env.PUPPETEER_EXECUTABLE_PATH || 'default');
+    console.log('Cache dir:', process.env.PUPPETEER_CACHE_DIR || 'default');
+    
+    // Try to get the executable path from Puppeteer
+    let executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
+    if (!executablePath) {
+      try {
+        // Try to get the default executable path
+        executablePath = puppeteer.executablePath();
+        console.log('✅ Found Puppeteer executable:', executablePath);
+      } catch (execPathError) {
+        console.warn('⚠️ Could not get default executable path:', execPathError.message);
+        // Try system Chromium as fallback (common on Render)
+        const systemChromiumPaths = [
+          '/usr/bin/chromium',
+          '/usr/bin/chromium-browser',
+          '/usr/bin/google-chrome',
+          '/usr/bin/google-chrome-stable'
+        ];
+        
+        for (const path of systemChromiumPaths) {
+          try {
+            if (fs.existsSync(path)) {
+              executablePath = path;
+              console.log('✅ Found system Chromium:', executablePath);
+              break;
+            }
+          } catch (e) {
+            // Continue checking other paths
+          }
+        }
+      }
+    }
     
     try {
       browser = await puppeteer.launch({
         headless: 'new',
         args: puppeteerArgs,
-        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
+        executablePath: executablePath || undefined,
         timeout: 60000,
         // Additional options for stability
         ignoreHTTPSErrors: true,
@@ -402,6 +435,11 @@ router.get('/dashboard', protect, async (req, res) => {
       console.error('❌ Failed to launch browser:', launchError);
       console.error('Launch error name:', launchError.name);
       console.error('Launch error message:', launchError.message);
+      
+      // Provide helpful error message
+      if (launchError.message.includes('Could not find Chrome')) {
+        throw new Error('Chrome/Chromium not installed. Please ensure the build process installs Chrome using: npx puppeteer browsers install chrome');
+      }
       throw new Error(`Failed to launch browser: ${launchError.message}`);
     }
 
