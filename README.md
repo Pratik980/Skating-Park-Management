@@ -1,4 +1,4 @@
-# Bimal Skating Park Management System
+# Skating Park Management System
 
 A comprehensive management system for skating parks with ticket management, sales tracking, expense management, staff management, and multi-branch support.
 
@@ -195,4 +195,5 @@ For issues and questions, please contact the development team.
 ---
 
 **Note**: Make sure to configure your MongoDB connection string and JWT secret in the `.env` file before running the application.
+
 
