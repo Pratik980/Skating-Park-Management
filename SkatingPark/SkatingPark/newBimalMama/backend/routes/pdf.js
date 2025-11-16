@@ -452,14 +452,35 @@ router.get('/dashboard', protect, async (req, res) => {
           console.warn('⚠️ Could not create cache directory, using default:', mkdirError.message);
         }
         
-        // Install Chrome
-        const browserPath = await install({
-          browser: 'chrome',
-          cacheDir: cacheDir,
-        });
-        
-        executablePath = browserPath.executablePath;
-        console.log('✅ Chrome installed successfully:', executablePath);
+        // Try installing Chromium first (more reliable than Chrome)
+        let browserPath;
+        try {
+          console.log('Attempting to install Chromium...');
+          browserPath = await install({
+            browser: 'chromium',
+            cacheDir: cacheDir,
+          });
+          executablePath = browserPath.executablePath;
+          console.log('✅ Chromium installed successfully:', executablePath);
+        } catch (chromiumError) {
+          console.warn('⚠️ Chromium installation failed, trying Chrome:', chromiumError.message);
+          // Fallback to Chrome with a specific version
+          try {
+            // Use a known working Chrome version for Puppeteer 22.x
+            const chromeBuildId = '131.0.6778.85';
+            console.log('Attempting to install Chrome with buildId:', chromeBuildId);
+            browserPath = await install({
+              browser: 'chrome',
+              buildId: chromeBuildId,
+              cacheDir: cacheDir,
+            });
+            executablePath = browserPath.executablePath;
+            console.log('✅ Chrome installed successfully:', executablePath);
+          } catch (chromeError) {
+            console.error('❌ Both Chromium and Chrome installation failed');
+            throw new Error(`Could not install Chromium or Chrome. Chromium error: ${chromiumError.message}. Chrome error: ${chromeError.message}`);
+          }
+        }
       } catch (installError) {
         console.error('❌ Failed to install Chrome:', installError);
         throw new Error(`Could not find or install Chrome/Chromium. Please ensure Chromium is installed on the system or check build configuration. Error: ${installError.message}`);
