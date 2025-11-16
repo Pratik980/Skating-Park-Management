@@ -442,6 +442,16 @@ router.get('/dashboard', protect, async (req, res) => {
         const cacheDir = process.env.PUPPETEER_CACHE_DIR || '/opt/render/.cache/puppeteer';
         console.log('Installing Chrome to:', cacheDir);
         
+        // Ensure cache directory exists
+        try {
+          if (!fs.existsSync(cacheDir)) {
+            fs.mkdirSync(cacheDir, { recursive: true });
+            console.log('✅ Created cache directory:', cacheDir);
+          }
+        } catch (mkdirError) {
+          console.warn('⚠️ Could not create cache directory, using default:', mkdirError.message);
+        }
+        
         // Install Chrome
         const browserPath = await install({
           browser: 'chrome',
