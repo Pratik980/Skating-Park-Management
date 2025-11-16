@@ -192,73 +192,14 @@ const ticketSchema = new mongoose.Schema({
 // Generate simple ticket number starting from 01
 ticketSchema.pre('validate', async function(next) {
   if (this.isNew && !this.ticketNo) {
-    let attempts = 0;
-    const maxAttempts = 15;
-    
-    while (attempts < maxAttempts) {
-      try {
-        const now = new Date();
-        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const endOfDay = new Date(startOfDay);
-        endOfDay.setDate(endOfDay.getDate() + 1);
-
-        const query = {
-          branch: this.branch,
-          'date.englishDate': {
-            $gte: startOfDay,
-            $lt: endOfDay
-          }
-        };
-
-        // Get the highest sequence number for today to avoid gaps
-        const lastTicket = await mongoose.model('Ticket').findOne(query)
-          .sort({ ticketNo: -1 })
-          .select('ticketNo');
-        
-        let sequence = 1;
-        if (lastTicket && lastTicket.ticketNo) {
-          const parts = lastTicket.ticketNo.split('-');
-          if (parts.length > 1) {
-            const lastSeq = parseInt(parts[parts.length - 1], 10);
-            if (!isNaN(lastSeq)) {
-              sequence = lastSeq + 1;
-            }
-          }
-        }
-        
-        const dateStr = startOfDay.toISOString().slice(0, 10).replace(/-/g, '');
-        let proposedTicketNo = `${dateStr}-${sequence.toString().padStart(3, '0')}`;
-        
-        // Check if this ticket number already exists (race condition check)
-        const existingTicket = await mongoose.model('Ticket').findOne({ 
-          ticketNo: proposedTicketNo,
-          branch: this.branch
-        });
-        
-        if (!existingTicket) {
-          this.ticketNo = proposedTicketNo;
-          break;
-        } else {
-          // If duplicate found, try with incremented sequence
-          attempts++;
-          sequence++;
-          
-          if (attempts >= maxAttempts) {
-            // Fallback: use timestamp to ensure absolute uniqueness
-            const timestamp = Date.now().toString().slice(-8);
-            this.ticketNo = `${dateStr}-${timestamp}`;
-            break;
-          }
-          // Wait before retrying to avoid immediate collision
-          await new Promise(resolve => setTimeout(resolve, 20 + (attempts * 10)));
-        }
-      } catch (error) {
-        // Fallback ticket number with timestamp
-        const timestamp = Date.now().toString().slice(-8);
-        const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-        this.ticketNo = `${dateStr}-${timestamp}`;
-        break;
-      }
+    try {
+      const TicketModel = mongoose.model('Ticket');
+      const totalCount = await TicketModel.countDocuments(); // all tickets ever
+      const sequence = (totalCount + 1).toString().padStart(3, '0');
+      this.ticketNo = sequence;
+    } catch (err) {
+      // fallback unique
+      this.ticketNo = (Date.now() + '').slice(-6);
     }
   }
   next();

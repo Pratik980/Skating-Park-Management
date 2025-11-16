@@ -107,7 +107,22 @@ const TicketPrint = ({ ticket }) => {
         </div>
         <div style={{ display: "flex", justifyContent: "space-between" }}>
           <span>Time:</span>
-          <span>{ticket.time}</span>
+          <span>
+            {(() => {
+              if (!ticket.time) return '';
+              const dateObj = ticket.date?.englishDate ? new Date(ticket.date.englishDate) : null;
+              if (!dateObj) return ticket.time;
+              const [hh, mm, ss] = ticket.time.split(':');
+              const start = new Date(dateObj);
+              start.setHours(+hh, +mm, +((ss || 0)), 0);
+              const extraMinutes = ticket.totalExtraMinutes || 0;
+              const isRefunded = ticket.isRefunded || false;
+              const minsToAdd = isRefunded ? extraMinutes : 60 + extraMinutes;
+              const end = new Date(start.getTime() + minsToAdd * 60000);
+              const endTimeStr = end.toTimeString().substring(0, 5);
+              return `${ticket.time} - ${endTimeStr}`;
+            })()}
+          </span>
         </div>
         <div
           style={{

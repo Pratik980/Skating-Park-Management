@@ -162,29 +162,11 @@ salesSchema.pre('validate', async function(next) {
   if (this.isNew && this.isSale) {
     try {
       const SalesModel = mongoose.model('Sales');
-      const branchId = this.branch;
-
-      const now = new Date();
-      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const endOfDay = new Date(startOfDay);
-      endOfDay.setDate(endOfDay.getDate() + 1);
-
-      const existingCount = await SalesModel.countDocuments({
-        isSale: true,
-        branch: branchId,
-        createdAt: {
-          $gte: startOfDay,
-          $lt: endOfDay
-        }
-      });
-
-      const sequence = (existingCount + 1).toString().padStart(3, '0');
-      const dateStr = startOfDay.toISOString().slice(0, 10).replace(/-/g, '');
-
-      this.saleNo = `SALE-${dateStr}-${sequence}`;
-    } catch (error) {
-      const fallback = Date.now().toString(36).toUpperCase();
-      this.saleNo = `SALE-${fallback}`;
+      const count = await SalesModel.countDocuments({ isSale: true });
+      const sequence = (count + 1).toString().padStart(3, '0');
+      this.saleNo = sequence;
+    } catch (err) {
+      this.saleNo = (Date.now() + '').slice(-6);
     }
   }
   next();

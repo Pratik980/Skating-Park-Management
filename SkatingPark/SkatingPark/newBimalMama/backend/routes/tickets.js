@@ -49,7 +49,7 @@ router.post('/deactivate-expired', protect, authorize('admin'), async (req, res)
 // @access  Private
 router.get('/', protect, async (req, res) => {
   try {
-    const { date, staff, page = 1, limit = 100, range, startDate, endDate } = req.query;
+    const { date, staff, page = 1, limit = 100, range, startDate, endDate, isRefunded } = req.query;
 
     let branchId = req.user.branch;
     let query = { branch: branchId };
@@ -78,6 +78,9 @@ router.get('/', protect, async (req, res) => {
         $gte: targetStart,
         $lt: targetEnd
       };
+    } else if (isRefunded === 'true' || isRefunded === true) {
+      // For refunds, don't filter by date - show all refunded tickets
+      // no additional date filter
     } else {
       query['date.englishDate'] = {
         $gte: startOfToday,
@@ -88,6 +91,13 @@ router.get('/', protect, async (req, res) => {
     // Filter by staff
     if (staff && staff !== 'all') {
       query.staff = staff;
+    }
+
+    // Filter by refund status
+    if (isRefunded === 'true' || isRefunded === true) {
+      query.isRefunded = true;
+    } else if (isRefunded === 'false' || isRefunded === false) {
+      query.isRefunded = false;
     }
 
     const pageNum = Math.max(parseInt(page, 10) || 1, 1);
@@ -164,8 +174,11 @@ router.get('/extra-time/report', protect, async (req, res) => {
         notes: '$extraTimeEntries.notes',
         addedAt: '$extraTimeEntries.addedAt',
         addedBy: '$extraTimeEntries.addedBy',
-        totalExtraMinutes: '$totalExtraMinutes'
-      }
+        totalExtraMinutes: '$totalExtraMinutes',
+        time: '$time',
+        date: '$date',
+        isRefunded: '$isRefunded'
+      } 
     });
 
     pipeline.push({ $sort: { addedAt: -1 } });

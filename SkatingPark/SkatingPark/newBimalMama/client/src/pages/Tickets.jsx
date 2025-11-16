@@ -8,6 +8,20 @@ import TicketPrint from '../components/TicketPrint';
 const EXTRA_TIME_DURATION_MINUTES = 60;
 const EXTRA_TIME_RATE_PER_HOUR = 100;
 
+// Utility to get end time as HH:mm
+function getEndTime(startTimeStr, dateObj, extraMinutes=0, isRefunded=false) {
+  // startTimeStr = 'HH:mm:ss' or 'HH:mm', dateObj is new Date(ticket.date.englishDate)
+  // extraMinutes = numeric, totalExtraMinutes field
+  if (!startTimeStr || !dateObj) return '';
+  const [hh, mm, ss] = startTimeStr.split(':');
+  const start = new Date(dateObj);
+  start.setHours(+hh, +mm, +((ss || 0)), 0);
+
+  let minsToAdd = isRefunded ? extraMinutes : 60 + (extraMinutes || 0);
+  const end = new Date(start.getTime() + minsToAdd*60000);
+  return end.toTimeString().substring(0,5);
+}
+
 const Tickets = () => {
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -71,10 +85,13 @@ const Tickets = () => {
   const [extraTimeEntries, setExtraTimeEntries] = useState([]);
   const [extraTimeReport, setExtraTimeReport] = useState([]);
   const [extraTimeReportLoading, setExtraTimeReportLoading] = useState(false);
+  const [recentRefunds, setRecentRefunds] = useState([]);
+  const [recentRefundsLoading, setRecentRefundsLoading] = useState(false);
   const printContentRef = useRef(null);
   const nameInputRef = useRef(null);
   const { currentBranch, user } = useApp();
   const todayDate = useMemo(() => new Date().toISOString().split('T')[0], []);
+  const [historySearch, setHistorySearch] = useState('');
 
   useEffect(() => {
     fetchTickets();
@@ -265,6 +282,8 @@ const Tickets = () => {
       setTickets(tickets.map(t => 
         t._id === refundTicket._id ? { ...t, isRefunded: true, refundReason: refundForm.refundReason } : t
       ));
+      // Refresh recent refunds list
+      await fetchRecentRefunds();
       alert('Ticket refunded successfully');
       setShowRefundModal(false);
       resetRefundState();
@@ -368,7 +387,11 @@ const Tickets = () => {
         totalCharge: totalCharge,
         notes: extraTimeForm.notes,
         date: new Date().toLocaleDateString(),
-        time: new Date().toLocaleTimeString()
+        time: new Date().toLocaleTimeString(),
+        ticketTime: extraTimeTicket.time,
+        ticketDate: extraTimeTicket.date,
+        totalExtraMinutes: entriesResponse.data.totalExtraMinutes || extraTimeTicket.totalExtraMinutes || 0,
+        isRefunded: extraTimeTicket.isRefunded || false
       };
       setExtraTimePrintData(printData);
       setShowExtraTimePrint(true);
@@ -412,6 +435,23 @@ const Tickets = () => {
     }
   }, []);
 
+  const fetchRecentRefunds = useCallback(async () => {
+    if (!currentBranch) return;
+    try {
+      setRecentRefundsLoading(true);
+      const response = await ticketsAPI.getAll({
+        limit: 100,
+        isRefunded: true
+      });
+      setRecentRefunds(response.data.tickets || []);
+    } catch (error) {
+      console.error('Error fetching recent refunds:', error);
+      alert(error.response?.data?.message || 'Error fetching recent refunds');
+    } finally {
+      setRecentRefundsLoading(false);
+    }
+  }, [currentBranch]);
+
   useEffect(() => {
     if (showExtraTimeModal) {
       fetchExtraTimeReport();
@@ -419,6 +459,14 @@ const Tickets = () => {
       resetExtraTimeState();
     }
   }, [showExtraTimeModal, fetchExtraTimeReport, resetExtraTimeState]);
+
+  useEffect(() => {
+    if (showRefundModal) {
+      fetchRecentRefunds();
+    } else {
+      resetRefundState();
+    }
+  }, [showRefundModal, fetchRecentRefunds]);
 
   const closeHistoryModal = () => {
     setShowHistory(false);
@@ -696,6 +744,92 @@ const Tickets = () => {
       return finalFee / people;
     }
     return finalFee;
+  };
+
+  // 1. Bulk Print function (helper for both lists)
+  const printMultipleTickets = (ticketsToPrint) => {
+    if (!ticketsToPrint?.length) return;
+    // Collect all the HTML blocks
+    const allHtml = ticketsToPrint.map(ticket => {
+      const el = document.getElementById(`ticket-print-${ticket._id}`);
+      return el ? el.innerHTML : '';
+    }).filter(Boolean).join('<div style="page-break-after:always;"></div>');
+    const printWindow = window.open('', '_blank', 'width=400,height=600');
+    printWindow.document.write(`<!DOCTYPE html><html><head><title>Print Tickets</title><style>@media print {@page {size:80mm auto;margin:0;}body{font-family:'Courier New',monospace;background:white;width:80mm;margin:0;padding:0;font-size:10px;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;} .ticket-print{width:76mm;padding:2mm;box-sizing:border-box;}}</style></head><body>${allHtml}<script>window.onload=function(){window.print();setTimeout(()=>window.close(),1000);}</script></body></html>`);
+    printWindow.document.close();
+  };
+
+  // Print all as a tabular report (PDF/table-like)
+  const printTicketsTableReport = (ticketsToPrint, title = 'Ticket List Report') => {
+    if (!ticketsToPrint?.length) return;
+    const htmlRows = ticketsToPrint.map(t => {
+      const orig = (t.fee || 0) + (t.discount || 0);
+      const final = t.isRefunded ? 0 : (t.fee || 0);
+      const showDiscount = (t.discount && t.discount > 0 && !t.isRefunded);
+      const people = t.numberOfPeople || t.playerStatus?.totalPlayers || 1;
+      return `<tr${t.isRefunded ? ' style="background:#ffd6d6"' : ''}>
+      <td>${t.ticketNo}</td>
+      <td>${t.name || ''}</td>
+      <td>${t.ticketType}</td>
+      <td style="white-space:nowrap;text-align:right;">
+        <div><b>रु ${final.toLocaleString()}</b></div>
+        ${showDiscount ? `<div><span style='text-decoration:line-through;color:#888;'>रु ${orig.toLocaleString()}</span> -<span style='color:#1a7e1a;'>रु ${t.discount.toLocaleString()}</span></div><div>= <b>रु ${final.toLocaleString()}</b></div>` : ''}
+        ${t.isRefunded ? '<div style="color:#d00;font-weight:bold;">Refunded</div>' : ''}
+      </td>
+      <td>${people}</td>
+      <td>${t.totalExtraMinutes || 0} min</td>
+      <td>${t.date?.nepaliDate || ''}<br>${t.date?.englishDate ? new Date(t.date.englishDate).toLocaleDateString() : ''}</td>
+      <td>${(() => {
+        if (!t.time) return '—';
+        const dateObj = t.date?.englishDate ? new Date(t.date.englishDate) : null;
+        if (!dateObj) return t.time;
+        const [hh, mm, ss] = t.time.split(':');
+        const start = new Date(dateObj);
+        start.setHours(+hh, +mm, +((ss || 0)), 0);
+        const extraMinutes = t.totalExtraMinutes || 0;
+        const isRefunded = t.isRefunded || false;
+        const minsToAdd = isRefunded ? extraMinutes : 60 + extraMinutes;
+        const end = new Date(start.getTime() + minsToAdd * 60000);
+        const endTimeStr = end.toTimeString().substring(0, 5);
+        return t.time + ' - ' + endTimeStr;
+      })()}</td>
+      <td>${t.isRefunded ? 'Yes' : ''}</td>
+      <td>${t.remarks || ''}</td>
+    </tr>`;
+    }).join('');
+    const win = window.open('', '_blank', 'width=1000,height=700');
+    win.document.write(`<!DOCTYPE html><html><head><title>${title}</title>
+<style>
+  body{font-family:'Segoe UI',Arial,sans-serif;color:#222;}
+  h1{text-align:center;margin:4px;}
+  table{width:100%;border-collapse:collapse;margin-top:10px;}
+  th,td{border:1px solid #999;padding:3px 6px;font-size:12px;}
+  th{background:#e5e5e5;}
+  tr:nth-child(even){background:#f9f9f9;}
+  @media print{body{margin:0;} table{page-break-inside:auto;} tr{page-break-inside:avoid;page-break-after:auto;}}
+</style>
+</head><body>
+  <h1>${title}</h1>
+  <table>
+    <thead>
+      <tr>
+        <th>Ticket No</th>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Fee</th>
+        <th>People</th>
+        <th>Extra Time</th>
+        <th>Date (BS & AD)</th>
+        <th>Time</th>
+        <th>Refund</th>
+        <th>Remarks</th>
+      </tr>
+    </thead>
+    <tbody>${htmlRows}</tbody>
+  </table>
+  <script>window.onload=function(){window.print();setTimeout(()=>window.close(),1000);}</script>
+</body></html>`);
+    win.document.close();
   };
 
   if (loading && tickets.length === 0) {
@@ -1087,7 +1221,13 @@ const openTicketPrintWindow = (ticket) => {
                     <div>
                       <p><strong>Ticket Type:</strong> {refundTicket.ticketType}</p>
                       <p><strong>Date:</strong> {refundTicket.date?.nepaliDate} ({new Date(refundTicket.date?.englishDate).toLocaleDateString()})</p>
-                      <p><strong>Time:</strong> {refundTicket.time}</p>
+                      <p><strong>Time:</strong> {(() => {
+                        if (!refundTicket.time) return '—';
+                        const dateObj = refundTicket.date?.englishDate ? new Date(refundTicket.date.englishDate) : null;
+                        if (!dateObj) return refundTicket.time;
+                        const endTime = getEndTime(refundTicket.time, dateObj, refundTicket.totalExtraMinutes || 0, refundTicket.isRefunded);
+                        return endTime ? `${refundTicket.time} - ${endTime}` : refundTicket.time;
+                      })()}</p>
                       <p><strong>Extra Time:</strong> {refundTicket.totalExtraMinutes || 0} min</p>
                     </div>
                   </div>
@@ -1185,6 +1325,65 @@ const openTicketPrintWindow = (ticket) => {
                   />
                 </div>
               </div>
+
+              <div className="mt-4">
+                <div className="d-flex justify-between align-center mb-2">
+                  <h4>Recent Refunds</h4>
+                  <button 
+                    className="btn btn-sm btn-secondary"
+                    onClick={fetchRecentRefunds}
+                  >
+                    {recentRefundsLoading ? 'Loading...' : 'Refresh'}
+                  </button>
+                </div>
+                {recentRefunds.length === 0 ? (
+                  <p className="text-muted">No refund records yet.</p>
+                ) : (
+                  <div className="table-container" style={{ maxHeight: '300px', overflow: 'auto' }}>
+                    <table className="table">
+                      <thead>
+                        <tr>
+                          <th>Ticket No</th>
+                          <th>Name</th>
+                          <th>Time</th>
+                          <th>Refund Amount</th>
+                          <th>Method</th>
+                          <th>Reason</th>
+                          <th>Date</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {recentRefunds.map((ticket) => {
+                          const dateObj = ticket.date?.englishDate ? new Date(ticket.date.englishDate) : null;
+                          const endTime = ticket.time && dateObj ? getEndTime(ticket.time, dateObj, ticket.totalExtraMinutes || 0, ticket.isRefunded || false) : null;
+                          return (
+                            <tr key={ticket._id}>
+                              <td>{ticket.ticketNo}</td>
+                              <td>{ticket.name}</td>
+                              <td>
+                                {(() => {
+                                  if (!ticket.time) return '—';
+                                  if (!dateObj) return ticket.time;
+                                  return endTime ? `${ticket.time} - ${endTime}` : ticket.time;
+                                })()}
+                              </td>
+                              <td>रु {(ticket.refundAmount || ticket.fee || 0).toLocaleString()}</td>
+                              <td>{ticket.refundDetails?.refundMethod || 'cash'}</td>
+                              <td><small>{ticket.refundReason || '—'}</small></td>
+                              <td>
+                                <small>
+                                  {ticket.date?.nepaliDate || '—'}<br/>
+                                  {ticket.date?.englishDate ? new Date(ticket.date.englishDate).toLocaleDateString() : '—'}
+                                </small>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
             </div>
             <div className="modal-footer">
               <button 
@@ -1253,6 +1452,13 @@ const openTicketPrintWindow = (ticket) => {
                       <p><strong>Name:</strong> {extraTimeTicket.name}</p>
                       <p><strong>Ticket No:</strong> {extraTimeTicket.ticketNo}</p>
                       <p><strong>People:</strong> {extraTimeTicket.numberOfPeople || extraTimeTicket.playerStatus?.totalPlayers || 1}</p>
+                      <p><strong>Time:</strong> {(() => {
+                        if (!extraTimeTicket.time) return '—';
+                        const dateObj = extraTimeTicket.date?.englishDate ? new Date(extraTimeTicket.date.englishDate) : null;
+                        if (!dateObj) return extraTimeTicket.time;
+                        const endTime = getEndTime(extraTimeTicket.time, dateObj, extraTimeTicket.totalExtraMinutes || 0, extraTimeTicket.isRefunded);
+                        return endTime ? `${extraTimeTicket.time} - ${endTime}` : extraTimeTicket.time;
+                      })()}</p>
                     </div>
                     <div>
                       <p><strong>Ticket Type:</strong> {extraTimeTicket.ticketType}</p>
@@ -1368,6 +1574,17 @@ const openTicketPrintWindow = (ticket) => {
               {extraTimeEntries.length > 0 && (
                 <div className="mt-4">
                   <h4>Extra Time History</h4>
+                  {extraTimeTicket && (
+                    <div className="mb-2">
+                      <strong>Ticket Time:</strong> {(() => {
+                        if (!extraTimeTicket.time) return '—';
+                        const dateObj = extraTimeTicket.date?.englishDate ? new Date(extraTimeTicket.date.englishDate) : null;
+                        if (!dateObj) return extraTimeTicket.time;
+                        const endTime = getEndTime(extraTimeTicket.time, dateObj, extraTimeTicket.totalExtraMinutes || 0, extraTimeTicket.isRefunded);
+                        return endTime ? `${extraTimeTicket.time} - ${endTime}` : extraTimeTicket.time;
+                      })()}
+                    </div>
+                  )}
                   <table className="table">
                     <thead>
                       <tr>
@@ -1410,6 +1627,7 @@ const openTicketPrintWindow = (ticket) => {
                         <tr>
                           <th>Ticket No</th>
                           <th>Name</th>
+                          <th>Time</th>
                           <th>Minutes</th>
                           <th>Label</th>
                           <th>Notes</th>
@@ -1417,16 +1635,34 @@ const openTicketPrintWindow = (ticket) => {
                         </tr>
                       </thead>
                       <tbody>
-                        {extraTimeReport.map((entry, idx) => (
-                          <tr key={`${entry.ticketNo}-${idx}`}>
-                            <td>{entry.ticketNo}</td>
-                            <td>{entry.name}</td>
-                            <td>{entry.minutes}</td>
-                            <td>{entry.label}</td>
-                            <td>{entry.notes || '—'}</td>
-                            <td>{new Date(entry.addedAt).toLocaleString()}</td>
-                          </tr>
-                        ))}
+                        {extraTimeReport.map((entry, idx) => {
+                          const dateObj = entry.date?.englishDate ? new Date(entry.date.englishDate) : null;
+                          const endTime = entry.time && dateObj ? getEndTime(entry.time, dateObj, entry.totalExtraMinutes || 0, entry.isRefunded || false) : null;
+                          return (
+                            <tr key={`${entry.ticketNo}-${idx}`}>
+                              <td>{entry.ticketNo}</td>
+                              <td>{entry.name}</td>
+                              <td>
+                                {(() => {
+                                  if (!entry.time) return '—';
+                                  if (!dateObj) return entry.time;
+                                  return endTime ? `${entry.time} - ${endTime}` : entry.time;
+                                })()}
+                              </td>
+                              <td>{entry.minutes}</td>
+                              <td>{entry.label}</td>
+                              <td>{entry.notes || '—'}</td>
+                              <td>
+                                <div>{new Date(entry.addedAt).toLocaleString()}</div>
+                                {endTime && (
+                                  <div style={{ fontSize: '0.85em', color: '#666', marginTop: '2px' }}>
+                                    <strong>End Time:</strong> {endTime}
+                                  </div>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
@@ -1486,6 +1722,16 @@ const openTicketPrintWindow = (ticket) => {
                   )}
                   <p style={{ margin: '10px 0', fontSize: '12px' }}><strong>Date:</strong> {extraTimePrintData.date}</p>
                   <p style={{ margin: '5px 0', fontSize: '12px' }}><strong>Time:</strong> {extraTimePrintData.time}</p>
+                  {extraTimePrintData.ticketTime && extraTimePrintData.ticketDate && (
+                    <p style={{ margin: '5px 0', fontSize: '12px' }}>
+                      <strong>Ticket Time:</strong> {(() => {
+                        const dateObj = extraTimePrintData.ticketDate?.englishDate ? new Date(extraTimePrintData.ticketDate.englishDate) : null;
+                        if (!dateObj) return extraTimePrintData.ticketTime;
+                        const endTime = getEndTime(extraTimePrintData.ticketTime, dateObj, extraTimePrintData.totalExtraMinutes || 0, extraTimePrintData.isRefunded || false);
+                        return endTime ? `${extraTimePrintData.ticketTime} - ${endTime}` : extraTimePrintData.ticketTime;
+                      })()}
+                    </p>
+                  )}
                 </div>
                 <div style={{ borderTop: '2px dashed #000', marginTop: '10px', paddingTop: '10px' }}>
                   <p style={{ margin: '5px 0', fontSize: '12px' }}>Thank you!</p>
@@ -1549,15 +1795,16 @@ const openTicketPrintWindow = (ticket) => {
       {/* Tickets List */}
       {user?.role === 'admin' && (
         <div className="table-container" style={{ minHeight: '200px' }}>
-          <div className="table-header">
+          <div className="table-header d-flex justify-between align-center">
             <h3 className="table-title">
               Recent Tickets ({tickets.length})
               {tickets.length > 0 && (
-                <small className="text-muted ml-2">
-                  Last updated: {new Date().toLocaleTimeString()}
-                </small>
+                <small className="text-muted ml-2">Last updated: {new Date().toLocaleTimeString()}</small>
               )}
             </h3>
+            {tickets.length > 0 && (
+              <button className="btn btn-info btn-sm" onClick={() => printTicketsTableReport(tickets, 'Recent Tickets Report')} title="Print All Tickets">🖨️ Print All</button>
+            )}
           </div>
 
           {tickets.length === 0 ? (
@@ -1575,282 +1822,176 @@ const openTicketPrintWindow = (ticket) => {
                   <th>Customer/Players</th>
                   <th>Type</th>
                   <th>Fee</th>
-                  <th>Discount</th>
                   <th>Date/Time</th>
                   <th>Remarks</th>
                   <th>Status</th>
+                  <th>Refund</th>
                   <th>Actions</th>
                 </tr>
               </thead>
-
               <tbody>
-  {tickets.map(ticket => (
-    <React.Fragment key={ticket._id}>
-      <tr className={ticket.isRefunded ? 'table-danger' : ''}>
-        <td>
-          <strong>{ticket.ticketNo}</strong>
-          {!ticket.printed && <span className="text-warning"> *</span>}
-        </td>
-        <td>
-          <div>
-            <strong>{ticket.name}</strong>
-            {ticket.playerNames && ticket.playerNames.length > 0 && (
-              <div>
-                <small className="text-muted">
-                  Players: {ticket.playerNames.join(', ')}
-                </small>
-              </div>
-            )}
-            <div>
-              <small className="text-muted">
-                People: {ticket.numberOfPeople || ticket.playerStatus.totalPlayers || 1}
-              </small>
-            </div>
-            {ticket.groupInfo?.groupName && (
-              <div>
-                <small className="text-muted">
-                  Group: {ticket.groupInfo.groupName} {ticket.groupInfo.groupNumber ? `(${ticket.groupInfo.groupNumber})` : ''}
-                </small>
-              </div>
-            )}
-          </div>
-        </td>
-        <td>{ticket.ticketType}</td>
-        <td>
-          <div>
-            <strong>रु {ticket.fee?.toLocaleString()}</strong>
-            {ticket.discount > 0 && (
-              <div>
-                <small className="text-muted" style={{ textDecoration: 'line-through' }}>
-                  रु {((ticket.fee || 0) + (ticket.discount || 0)).toLocaleString()}
-                </small>
-                <small className="text-success" style={{ marginLeft: '5px' }}>
-                  -रु {ticket.discount.toLocaleString()}
-                </small>
-              </div>
-            )}
-          </div>
-          <div>
-            <small className="text-muted">
-              Per Person: रु {getPerPersonAmount(ticket).toLocaleString(undefined, { maximumFractionDigits: 2 })}
-            </small>
-          </div>
-        </td>
-        <td>
-          {ticket.discount > 0 ? (
-            <span className="text-success">रु {ticket.discount.toLocaleString()}</span>
-          ) : (
-            <span className="text-muted">—</span>
-          )}
-        </td>
-        <td>
-          <small>
-            {new Date(ticket.date.englishDate).toLocaleDateString()}
-            <br />
-            {ticket.date.nepaliDate}
-            <br />
-            {ticket.time}
-          </small>
-        </td>
-        <td>
-          <small>{ticket.remarks}</small>
-        </td>
-        <td>
-          {(() => {
-  const created = ticket.date?.englishDate ? new Date(ticket.date.englishDate) : new Date(ticket.createdAt);
-  const now = new Date();
-  const oneHourPassed = ((now - created) / 36e5) > 1;
-  if (oneHourPassed && !ticket.isRefunded) {
-    return <span className="badge badge-secondary">Deactivated</span>;
-  }
-  if (ticket.isRefunded) {
-    return <span className="badge badge-danger">Refunded</span>;
-  }
-  return <span className="badge badge-warning">Playing</span>;
-})()}
-        </td>
-        <td>
-          <div className="d-flex gap-1">
-            {/* 👁️ Ticket preview button */}
-            <button 
-              className="btn btn-sm btn-outline-primary"
-              style={{ minWidth: 30 }}
-              onClick={() => { setSelectedTicket(ticket); setShowPrint(true); setAutoPrint(false); }}
-              title="Preview Ticket"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" stroke="#1976d2" strokeWidth="1.5"/><circle cx="10" cy="10" r="3" stroke="#1976d2" strokeWidth="1.4"/></svg>
-            </button>
-            {/* 🖨️ Print button (manual window/print) */}
-            <button 
-              className="btn btn-sm btn-info"
-              onClick={() => openTicketPrintWindow(ticket)}
-              title="Print Ticket"
-            >
-              🖨️
-            </button>
-            
-            {!ticket.isRefunded && (user?.role === 'admin' || user?.role === 'staff') && (
-              <>
-                <button 
-                  className="btn btn-sm btn-warning"
-                  onClick={() => handlePartialRefund(ticket)}
-                  title="Partial Refund"
-                  disabled={ticket.playerStatus.playedPlayers >= ticket.playerStatus.totalPlayers}
-                >
-                  💰
-                </button>
-                
-                <button 
-                  className="btn btn-sm btn-danger"
-                  onClick={() => {
-                    const reason = prompt('Enter full refund reason:');
-                    if (reason) handleRefund(ticket._id, reason);
-                  }}
-                  title="Full Refund"
-                >
-                  🔄
-                </button>
-              </>
-            )}
-            
-            {user?.role === 'admin' && (
-              <button 
-                className="btn btn-sm btn-danger"
-                onClick={() => handleDelete(ticket._id)}
-                title="Delete Ticket"
-              >
-                🗑️
-              </button>
-            )}
-          </div>
-        </td>
-      </tr>
-
-      {/* 🧾 Hidden printable HTML for popup */}
-      <div id={`ticket-print-${ticket._id}`} style={{ display: 'none' }}>
-        <TicketPrint ticket={ticket} />
-      </div>
-    </React.Fragment>
-  ))}
-</tbody>
-
-            {/* <tbody>
-              {tickets.map(ticket => (
-                <tr key={ticket._id} className={ticket.isRefunded ? 'table-danger' : ''}>
-                  <td>
-                    <strong>{ticket.ticketNo}</strong>
-                    {!ticket.printed && <span className="text-warning"> *</span>}
-                  </td>
-                  <td>
-                    <div>
-                      <strong>{ticket.name}</strong>
-                      {ticket.playerNames && ticket.playerNames.length > 0 && (
-                        <div>
-                          <small className="text-muted">
-                            Players: {ticket.playerNames.join(', ')}
+                {tickets.map(ticket => {
+                  // Compute fee breakdown
+                  const people = ticket.numberOfPeople || ticket.playerStatus?.totalPlayers || 1;
+                  const discountAmount = ticket.discount || 0;
+                  const priceAfterDiscount = ticket.fee || 0; // Final fee after discount
+                  
+                  // Calculate actual price (original price before discount)
+                  // Priority: perPersonFee * people > fee + discount > fee (if no discount info)
+                  let actualPrice;
+                  if (ticket.perPersonFee && ticket.perPersonFee > 0) {
+                    // Use per person fee to calculate original price
+                    actualPrice = ticket.perPersonFee * people;
+                  } else if (discountAmount > 0) {
+                    // If discount exists, original price = final price + discount
+                    actualPrice = priceAfterDiscount + discountAmount;
+                  } else {
+                    // No discount, so actual price = final price
+                    actualPrice = priceAfterDiscount;
+                  }
+                  
+                  const refundAmount = ticket.refundAmount || (ticket.isRefunded ? priceAfterDiscount : 0);
+                  
+                  return (
+                    <React.Fragment key={ticket._id}>
+                      <tr className={ticket.isRefunded ? 'table-danger' : ''}>
+                        <td><strong>{ticket.ticketNo}</strong>{!ticket.printed && <span className="text-warning"> *</span>}</td>
+                        <td>
+                          <div>
+                            <strong>{ticket.name}</strong>
+                            {ticket.playerNames && ticket.playerNames.length > 0 && (
+                              <div><small className="text-muted">Players: {ticket.playerNames.join(', ')}</small></div>)
+                            }
+                            <div><small className="text-muted">People: {ticket.numberOfPeople || ticket.playerStatus?.totalPlayers || 1}</small></div>
+                            {ticket.groupInfo?.groupName && (<div><small className="text-muted">Group: {ticket.groupInfo.groupName} {ticket.groupInfo.groupNumber ? `(${ticket.groupInfo.groupNumber})` : ''}</small></div>)}
+                          </div>
+                        </td>
+                        <td>{ticket.ticketType}</td>
+                        <td>
+                          <div style={{ fontSize: '0.9em' }}>
+                            <div><strong>Actual Price:</strong> रु {actualPrice.toLocaleString()}</div>
+                            {discountAmount > 0 ? (
+                              <div>
+                                <strong>Discount:</strong> -रु {discountAmount.toLocaleString()}
+                              </div>
+                            ) : (
+                              <div><strong>Discount:</strong> रु 0</div>
+                            )}
+                            <div><strong>Price After Discount:</strong> रु {priceAfterDiscount.toLocaleString()}</div>
+                            <div className={refundAmount > 0 ? 'text-danger' : ''}>
+                              <strong>Refund:</strong> रु {refundAmount.toLocaleString()}
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <small>
+                            {ticket.date?.englishDate ? new Date(ticket.date.englishDate).toLocaleDateString() : ''}<br/>
+                            {ticket.date?.nepaliDate}<br/>
+                            {/* Show start to end time if possible */}
+                            {ticket.time || ''} {/* add end time support here if available */}
+                            {(() => {
+                              const dateObj = ticket.date?.englishDate ? new Date(ticket.date.englishDate) : null;
+                              const endTime = getEndTime(ticket.time, dateObj, ticket.totalExtraMinutes || 0, ticket.isRefunded);
+                              if (!ticket.time || !endTime) return '';
+                              return ` - ${endTime}`;
+                            })()}
                           </small>
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                  <td>{ticket.ticketType}</td>
-                  <td>रु {ticket.fee}</td>
-                  <td>
-                    <div className="player-status">
-                      <div><small>Total: {ticket.playerStatus.totalPlayers}</small></div>
-                      <div className="text-success"><small>Played: {ticket.playerStatus.playedPlayers}</small></div>
-                      <div className="text-warning"><small>Waiting: {ticket.playerStatus.waitingPlayers}</small></div>
-                      {ticket.playerStatus.refundedPlayersCount > 0 && (
-                        <div className="text-danger"><small>Refunded: {ticket.playerStatus.refundedPlayersCount}</small></div>
-                      )}
-                      
-                      {(user?.role === 'admin' || user?.role === 'staff') && !ticket.isRefunded && (
-                        <div className="mt-1">
-                          <select
-                            className="form-control form-control-sm"
-                            value={ticket.playerStatus.playedPlayers}
-                            onChange={(e) => updatePlayerStatus(ticket, parseInt(e.target.value))}
-                          >
-                            {Array.from({ length: ticket.playerStatus.totalPlayers + 1 }, (_, i) => (
-                              <option key={i} value={i}>
-                                {i} played
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                  <td>
-                    <small>
-                      {new Date(ticket.date.englishDate).toLocaleDateString()}
-                      <br />
-                      {ticket.date.nepaliDate}
-                      <br />
-                      {ticket.time}
-                    </small>
-                  </td>
-                  <td>
-                    <small>{ticket.remarks}</small>
-                  </td>
-                  <td>
-                    {ticket.isRefunded ? (
-                      <span className="badge badge-danger">Refunded</span>
-                    ) : (
-                      <span className="badge badge-warning">Playing</span>
-                    )}
-                  </td>
-                  <td>
-                    <div className="d-flex gap-1">
-                      <button 
-                        className="btn btn-sm btn-info"
-                        onClick={() => handlePrint(ticket)}
-                        title="Print Ticket"
-                      >
-                        🖨️
-                      </button>
-                      
-                      {!ticket.isRefunded && (user?.role === 'admin' || user?.role === 'staff') && (
-                        <>
-                          <button 
-                            className="btn btn-sm btn-warning"
-                            onClick={() => handlePartialRefund(ticket)}
-                            title="Partial Refund"
-                            disabled={ticket.playerStatus.playedPlayers >= ticket.playerStatus.totalPlayers}
-                          >
-                            💰
-                          </button>
-                          
-                          <button 
-                            className="btn btn-sm btn-danger"
-                            onClick={() => {
-                              const reason = prompt('Enter full refund reason:');
-                              if (reason) handleRefund(ticket._id, reason);
-                            }}
-                            title="Full Refund"
-                          >
-                            🔄
-                          </button>
-                        </>
-                      )}
-                      
-                      {user?.role === 'admin' && (
-                        <button 
-                          className="btn btn-sm btn-danger"
-                          onClick={() => handleDelete(ticket._id)}
-                          title="Delete Ticket"
-                        >
-                          🗑️
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody> */}
-          </table>
-        )}
-      </div>
+                        </td>
+                        <td><small>{ticket.remarks}</small></td>
+                        <td>{(() => {
+                          const created = ticket.date?.englishDate ? new Date(ticket.date.englishDate) : new Date(ticket.createdAt);
+                          const now = new Date();
+                          const oneHourPassed = ((now - created) / 36e5) > 1;
+                          if (oneHourPassed && !ticket.isRefunded) return <span className="badge badge-secondary">Deactivated</span>;
+                          if (ticket.isRefunded) return <span className="badge badge-danger">Refunded</span>;
+                          return <span className="badge badge-warning">Playing</span>;
+                        })()}</td>
+                        <td>
+                          {(() => {
+                            const refundAmt = ticket.refundAmount || (ticket.isRefunded ? priceAfterDiscount : 0);
+                            if (refundAmt > 0) {
+                              return (
+                                <div style={{ fontSize: '0.85em' }}>
+                                  <div className="text-danger"><strong>रु {refundAmt.toLocaleString()}</strong></div>
+                                  {ticket.refundReason && (
+                                    <div className="text-muted" style={{ fontSize: '0.75em' }}>{ticket.refundReason}</div>
+                                  )}
+                                  {ticket.refundDetails?.refundMethod && (
+                                    <div className="text-muted" style={{ fontSize: '0.75em' }}>({ticket.refundDetails.refundMethod})</div>
+                                  )}
+                                </div>
+                              );
+                            }
+                            return <span>रु 0</span>;
+                          })()}
+                        </td>
+                        <td>
+                          <div className="d-flex gap-1">
+                            {/* 👁️ Ticket preview button */}
+                            <button 
+                              className="btn btn-sm btn-outline-primary"
+                              style={{ minWidth: 30 }}
+                              onClick={() => { setSelectedTicket(ticket); setShowPrint(true); setAutoPrint(false); }}
+                              title="Preview Ticket"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" stroke="#1976d2" strokeWidth="1.5"/><circle cx="10" cy="10" r="3" stroke="#1976d2" strokeWidth="1.4"/></svg>
+                            </button>
+                            {/* 🖨️ Print button (manual window/print) */}
+                            <button 
+                              className="btn btn-sm btn-info"
+                              onClick={() => openTicketPrintWindow(ticket)}
+                              title="Print Ticket"
+                            >
+                              🖨️
+                            </button>
+                            
+                            {!ticket.isRefunded && (user?.role === 'admin' || user?.role === 'staff') && (
+                              <>
+                                <button 
+                                  className="btn btn-sm btn-warning"
+                                  onClick={() => handlePartialRefund(ticket)}
+                                  title="Partial Refund"
+                                  disabled={ticket.playerStatus.playedPlayers >= ticket.playerStatus.totalPlayers}
+                                >
+                                  💰
+                                </button>
+                                
+                                <button 
+                                  className="btn btn-sm btn-danger"
+                                  onClick={() => {
+                                    const reason = prompt('Enter full refund reason:');
+                                    if (reason) handleRefund(ticket._id, reason);
+                                  }}
+                                  title="Full Refund"
+                                >
+                                  🔄
+                                </button>
+                              </>
+                            )}
+                            
+                            {user?.role === 'admin' && (
+                              <button 
+                                className="btn btn-sm btn-danger"
+                                onClick={() => handleDelete(ticket._id)}
+                                title="Delete Ticket"
+                              >
+                                🗑️
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                      {/* hidden print block */}
+                      <div id={`ticket-print-${ticket._id}`} style={{ display: 'none' }}>
+                        <TicketPrint ticket={ticket} />
+                      </div>
+                    </React.Fragment>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
       )}
 
       {/* Summary Stats */}
@@ -1917,127 +2058,228 @@ const openTicketPrintWindow = (ticket) => {
                         </small>
                       )}
                     </div>
-                    <button 
-                      className="btn btn-sm btn-secondary"
-                      onClick={() => fetchTicketHistory(1, false)}
-                      disabled={historyLoading}
-                    >
-                      {historyLoading ? 'Refreshing...' : '🔄 Refresh'}
-                    </button>
+                    <div>
+                      <button className="btn btn-sm btn-info mr-2" onClick={() => {
+                        const searchTerm = (historySearch || '').toLowerCase().trim();
+                        const ticketsToPrint = searchTerm
+                          ? historyTickets.filter(ticket => {
+                              const ticketNo = (ticket.ticketNo || '').toLowerCase();
+                              const name = (ticket.name || '').toLowerCase();
+                              const contactNumber = (ticket.contactNumber || '').toLowerCase();
+                              const playerNames = (ticket.playerNames || []).join(' ').toLowerCase();
+                              const remarks = (ticket.remarks || '').toLowerCase();
+                              const refundReason = (ticket.refundReason || '').toLowerCase();
+                              const ticketType = (ticket.ticketType || '').toLowerCase();
+                              const nepaliDate = (ticket.date?.nepaliDate || '').toLowerCase();
+                              
+                              return ticketNo.includes(searchTerm) ||
+                                     name.includes(searchTerm) ||
+                                     contactNumber.includes(searchTerm) ||
+                                     playerNames.includes(searchTerm) ||
+                                     remarks.includes(searchTerm) ||
+                                     refundReason.includes(searchTerm) ||
+                                     ticketType.includes(searchTerm) ||
+                                     nepaliDate.includes(searchTerm);
+                            })
+                          : historyTickets;
+                        printTicketsTableReport(ticketsToPrint, searchTerm ? `Ticket History Report - Search: ${historySearch}` : 'Ticket History Report');
+                      }} disabled={!historyTickets.length}>🖨️ Print All</button>
+                      <input type="text" placeholder="Search history..." className="form-control form-control-sm d-inline-block" style={{width:200}} value={historySearch??''} onChange={e => setHistorySearch(e.target.value)} />
+                      <button className="btn btn-sm btn-secondary ml-2" onClick={() => fetchTicketHistory(1, false)} disabled={historyLoading}>{historyLoading ? 'Refreshing...' : '🔄 Refresh'}</button>
+                    </div>
                   </div>
 
-                  {historyTickets.length === 0 ? (
-                    <div className="empty-state">
-                      <p>No ticket history found</p>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="table-container" style={{ maxHeight: '60vh', overflow: 'auto' }}>
-                        <table className="table">
-                          <thead style={{ position: 'sticky', top: 0, backgroundColor: '#fff', zIndex: 10 }}>
-                            <tr>
-                              <th>Ticket No</th>
-                              <th>Customer/Players</th>
-                              <th>Type</th>
-                              <th>Fee</th>
-                              <th>Discount</th>
-                              <th>People</th>
-                              <th>Extra Time</th>
-                              <th>Date</th>
-                              <th>Time</th>
-                              <th>Status</th>
-                              <th>Remarks</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {historyTickets.map(ticket => (
-                              <tr key={ticket._id} className={ticket.isRefunded ? 'table-danger' : ''}>
-                                <td><strong>{ticket.ticketNo}</strong></td>
-                                <td>
-                                  <div>
-                                    <strong>{ticket.name}</strong>
-                                    {ticket.playerNames && ticket.playerNames.length > 0 && (
-                                      <div>
-                                        <small className="text-muted">
-                                          {ticket.playerNames.join(', ')}
-                                        </small>
-                                      </div>
-                                    )}
-                                    <div>
-                                      <small className="text-muted">
-                                        People: {ticket.numberOfPeople || ticket.playerStatus?.totalPlayers || 1}
-                                      </small>
-                                    </div>
-                                    {ticket.groupInfo?.groupName && (
-                                      <div>
-                                        <small className="text-muted">
-                                          Group: {ticket.groupInfo.groupName} {ticket.groupInfo.groupNumber ? `(${ticket.groupInfo.groupNumber})` : ''}
-                                        </small>
-                                      </div>
-                                    )}
-                                  </div>
-                                </td>
-                                <td>{ticket.ticketType}</td>
-                                <td>
-                                  <div>
-                                    <strong>रु {ticket.fee?.toLocaleString()}</strong>
-                                    {ticket.discount > 0 && (
-                                      <div>
-                                        <small className="text-muted" style={{ textDecoration: 'line-through' }}>
-                                          रु {((ticket.fee || 0) + (ticket.discount || 0)).toLocaleString()}
-                                        </small>
-                                        <small className="text-success" style={{ marginLeft: '5px' }}>
-                                          -रु {ticket.discount.toLocaleString()}
-                                        </small>
-                                      </div>
-                                    )}
-                                  </div>
-                                  <div>
-                                    <small className="text-muted">
-                                      Per Person: रु {getPerPersonAmount(ticket).toLocaleString(undefined, { maximumFractionDigits: 2 })}
-                                    </small>
-                                  </div>
-                                </td>
-                                <td>
-                                  {ticket.discount > 0 ? (
-                                    <span className="text-success">रु {ticket.discount.toLocaleString()}</span>
-                                  ) : (
-                                    <span className="text-muted">—</span>
-                                  )}
-                                </td>
-                                <td>{ticket.numberOfPeople || ticket.playerStatus?.totalPlayers || 1}</td>
-                                <td>{ticket.totalExtraMinutes || 0} min</td>
-                                <td>
-                                  <small>
-                                    {ticket.date?.englishDate 
-                                      ? new Date(ticket.date.englishDate).toLocaleDateString()
-                                      : new Date(ticket.createdAt).toLocaleDateString()}
-                                    <br />
-                                    {ticket.date?.nepaliDate || '—'}
-                                  </small>
-                                </td>
-                                <td>
-                                  <small>{ticket.time || '—'}</small>
-                                </td>
-                                <td>
-                                  {(() => {
-                                    const created = ticket.date?.englishDate ? new Date(ticket.date.englishDate) : new Date(ticket.createdAt);
-                                    const now = new Date();
-                                    const oneHourPassed = ((now - created) / 36e5) > 1;
-                                    if (oneHourPassed && !ticket.isRefunded) {
-                                      return <span className="badge badge-secondary">Deactivated</span>;
-                                    }
-                                    if (ticket.isRefunded) {
-                                      return <span className="badge badge-danger">Refunded</span>;
-                                    }
-                                    return <span className="badge badge-warning">Playing</span>;
-                                  })()}
-                                </td>
-                                <td>
-                                  <small>{ticket.remarks || '—'}</small>
-                                </td>
+                  {(() => {
+                    // Filter tickets based on search term
+                    const searchTerm = (historySearch || '').toLowerCase().trim();
+                    const filteredTickets = searchTerm
+                      ? historyTickets.filter(ticket => {
+                          const ticketNo = (ticket.ticketNo || '').toLowerCase();
+                          const name = (ticket.name || '').toLowerCase();
+                          const contactNumber = (ticket.contactNumber || '').toLowerCase();
+                          const playerNames = (ticket.playerNames || []).join(' ').toLowerCase();
+                          const remarks = (ticket.remarks || '').toLowerCase();
+                          const refundReason = (ticket.refundReason || '').toLowerCase();
+                          const ticketType = (ticket.ticketType || '').toLowerCase();
+                          const nepaliDate = (ticket.date?.nepaliDate || '').toLowerCase();
+                          
+                          return ticketNo.includes(searchTerm) ||
+                                 name.includes(searchTerm) ||
+                                 contactNumber.includes(searchTerm) ||
+                                 playerNames.includes(searchTerm) ||
+                                 remarks.includes(searchTerm) ||
+                                 refundReason.includes(searchTerm) ||
+                                 ticketType.includes(searchTerm) ||
+                                 nepaliDate.includes(searchTerm);
+                        })
+                      : historyTickets;
+
+                    return filteredTickets.length === 0 ? (
+                      <div className="empty-state">
+                        <p>{searchTerm ? `No tickets found matching "${historySearch}"` : 'No ticket history found'}</p>
+                      </div>
+                    ) : (
+                      <>
+                        {searchTerm && (
+                          <div className="alert alert-info mb-2">
+                            Showing {filteredTickets.length} of {historyTickets.length} tickets matching "{historySearch}"
+                          </div>
+                        )}
+                        <div className="table-container" style={{ maxHeight: '60vh', overflow: 'auto' }}>
+                          <table className="table">
+                            <thead>
+                              <tr>
+                                <th>Ticket No</th>
+                                <th>Customer/Players</th>
+                                <th>Type</th>
+                                <th>Fee</th>
+                                <th>People</th>
+                                <th>Extra Time</th>
+                                <th>Date</th>
+                                <th>Time</th>
+                                <th>Status</th>
+                                <th>Refund</th>
+                                <th>Remarks</th>
                               </tr>
-                            ))}
+                            </thead>
+                            <tbody>
+                              {filteredTickets.map(ticket => {
+                              // Compute fee breakdown
+                              const people = ticket.numberOfPeople || ticket.playerStatus?.totalPlayers || 1;
+                              const discountAmount = ticket.discount || 0;
+                              const priceAfterDiscount = ticket.fee || 0; // Final fee after discount
+                              
+                              // Calculate actual price (original price before discount)
+                              // Priority: perPersonFee * people > fee + discount > fee (if no discount info)
+                              let actualPrice;
+                              if (ticket.perPersonFee && ticket.perPersonFee > 0) {
+                                // Use per person fee to calculate original price
+                                actualPrice = ticket.perPersonFee * people;
+                              } else if (discountAmount > 0) {
+                                // If discount exists, original price = final price + discount
+                                actualPrice = priceAfterDiscount + discountAmount;
+                              } else {
+                                // No discount, so actual price = final price
+                                actualPrice = priceAfterDiscount;
+                              }
+                              
+                              const refundAmount = ticket.refundAmount || (ticket.isRefunded ? priceAfterDiscount : 0);
+                              
+                              return (
+                                <React.Fragment key={ticket._id}>
+                                  <tr className={ticket.isRefunded ? 'table-danger' : ''}>
+                                    <td><strong>{ticket.ticketNo}</strong></td>
+                                    <td>
+                                      <div>
+                                        <strong>{ticket.name}</strong>
+                                        {ticket.playerNames && ticket.playerNames.length > 0 && (
+                                          <div>
+                                            <small className="text-muted">
+                                              {ticket.playerNames.join(', ')}
+                                            </small>
+                                          </div>
+                                        )}
+                                        <div>
+                                          <small className="text-muted">
+                                            People: {ticket.numberOfPeople || ticket.playerStatus?.totalPlayers || 1}
+                                          </small>
+                                        </div>
+                                        {ticket.groupInfo?.groupName && (
+                                          <div>
+                                            <small className="text-muted">
+                                              Group: {ticket.groupInfo.groupName} {ticket.groupInfo.groupNumber ? `(${ticket.groupInfo.groupNumber})` : ''}
+                                            </small>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </td>
+                                    <td>{ticket.ticketType}</td>
+                                    <td>
+                                      <div style={{ fontSize: '0.9em' }}>
+                                        <div><strong>Actual Price:</strong> रु {actualPrice.toLocaleString()}</div>
+                                        {discountAmount > 0 ? (
+                                          <div>
+                                            <strong>Discount:</strong> -रु {discountAmount.toLocaleString()}
+                                          </div>
+                                        ) : (
+                                          <div><strong>Discount:</strong> रु 0</div>
+                                        )}
+                                        <div><strong>Price After Discount:</strong> रु {priceAfterDiscount.toLocaleString()}</div>
+                                        <div className={refundAmount > 0 ? 'text-danger' : ''}>
+                                          <strong>Refund:</strong> रु {refundAmount.toLocaleString()}
+                                        </div>
+                                      </div>
+                                    </td>
+                                    <td>{ticket.numberOfPeople || ticket.playerStatus?.totalPlayers || 1}</td>
+                                    <td>{ticket.totalExtraMinutes || 0} min</td>
+                                    <td>
+                                      <small>
+                                        {ticket.date?.englishDate 
+                                          ? new Date(ticket.date.englishDate).toLocaleDateString()
+                                          : new Date(ticket.createdAt).toLocaleDateString()}
+                                        <br />
+                                        {ticket.date?.nepaliDate || '—'}
+                                      </small>
+                                    </td>
+                                    <td>
+                                      <small>
+                                        {ticket.time || '—'}
+                                        {(() => {
+                                          if (!ticket.time) return '';
+                                          const dateObj = ticket.date?.englishDate ? new Date(ticket.date.englishDate) : null;
+                                          if (!dateObj) return '';
+                                          const endTime = getEndTime(ticket.time, dateObj, ticket.totalExtraMinutes || 0, ticket.isRefunded);
+                                          return endTime ? ` - ${endTime}` : '';
+                                        })()}
+                                      </small>
+                                    </td>
+                                    <td>
+                                      {(() => {
+                                        const created = ticket.date?.englishDate ? new Date(ticket.date.englishDate) : new Date(ticket.createdAt);
+                                        const now = new Date();
+                                        const oneHourPassed = ((now - created) / 36e5) > 1;
+                                        if (oneHourPassed && !ticket.isRefunded) {
+                                          return <span className="badge badge-secondary">Deactivated</span>;
+                                        }
+                                        if (ticket.isRefunded) {
+                                          return <span className="badge badge-danger">Refunded</span>;
+                                        }
+                                        return <span className="badge badge-warning">Playing</span>;
+                                      })()}
+                                    </td>
+                                    <td>
+                                      {(() => {
+                                        const people = ticket.numberOfPeople || ticket.playerStatus?.totalPlayers || 1;
+                                        const discountAmount = ticket.discount || 0;
+                                        const priceAfterDiscount = ticket.fee || 0;
+                                        const refundAmt = ticket.refundAmount || (ticket.isRefunded ? priceAfterDiscount : 0);
+                                        if (refundAmt > 0) {
+                                          return (
+                                            <div style={{ fontSize: '0.85em' }}>
+                                              <div className="text-danger"><strong>रु {refundAmt.toLocaleString()}</strong></div>
+                                              {ticket.refundReason && (
+                                                <div className="text-muted" style={{ fontSize: '0.75em' }}>{ticket.refundReason}</div>
+                                              )}
+                                              {ticket.refundDetails?.refundMethod && (
+                                                <div className="text-muted" style={{ fontSize: '0.75em' }}>({ticket.refundDetails.refundMethod})</div>
+                                              )}
+                                            </div>
+                                          );
+                                        }
+                                        return <span>रु 0</span>;
+                                      })()}
+                                    </td>
+                                    <td>
+                                      <small>{ticket.remarks || '—'}</small>
+                                    </td>
+                                  </tr>
+                                  {/* hidden print block */}
+                                  <div id={`ticket-print-${ticket._id}`} style={{ display: 'none' }}>
+                                    <TicketPrint ticket={ticket} />
+                                  </div>
+                                </React.Fragment>
+                              );
+                            })}
                           </tbody>
                         </table>
                       </div>
@@ -2054,7 +2296,8 @@ const openTicketPrintWindow = (ticket) => {
                         </div>
                       )}
                     </>
-                  )}
+                    );
+                  })()}
                 </>
               )}
             </div>

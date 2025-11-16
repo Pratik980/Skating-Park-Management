@@ -5,6 +5,7 @@ import Loader from '../components/Loader';
 import NotificationContainer from '../components/NotificationContainer';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import Modal from 'react-modal';
 
 const createEmptyItem = () => ({
   itemName: '',
@@ -26,6 +27,7 @@ const Sales = () => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState(initialFormState);
   const [settings, setSettings] = useState(null);
+  const [previewSale, setPreviewSale] = useState(null); // add at top of Sales component
   const { currentBranch, user } = useApp();
 
   useEffect(() => {
@@ -220,6 +222,59 @@ const Sales = () => {
       console.error('Error generating PDF:', error);
       alert(`Error generating PDF report: ${error.message}. Please check the console for details.`);
     }
+  };
+
+  const renderSaleBillHtml = (sale, title = 'Sale Bill') => {
+    if (!sale) return '';
+    const items = sale.items?.length ? sale.items : [];
+    const discount = sale.discount ? parseFloat(sale.discount) : 0;
+    const subtotal = items.reduce((sum, i) => sum + ((i.quantity||0)*(i.price||0)), 0);
+    const total = sale.totalAmount || Math.max(0, subtotal - discount);
+    const companyName = 'बेलका स्केट पार्क एण्ड गेमिङ जोन';
+    const branchName = (sale.branch?.branchName) || (window.currentBranch && window.currentBranch.branchName) || '';
+    const customerName = sale.customerName || '—';
+    const engDate = sale.date?.englishDate ? new Date(sale.date.englishDate).toLocaleDateString() : new Date().toLocaleDateString();
+    const nepDate = sale.date?.nepaliDate || '';
+    const staffName = sale.staff?.name || '—';
+    const itemsHtml = items.map((i, idx) => `<tr style='background:${idx%2?'#f6f9ff':'#fff'};'><td style='border:1.3px solid #7a8ca0;text-align:left;padding:7px 7px;'>${i.itemName || ''}</td><td style='border:1.3px solid #7a8ca0;text-align:right;padding:7px 7px;'>${i.quantity || 0}</td><td style='border:1.3px solid #7a8ca0;text-align:right;padding:7px 7px;'>रु ${i.price || 0}</td><td style='border:1.3px solid #7a8ca0;text-align:right;padding:7px 7px;'>रु ${((i.quantity||0)*(i.price||0)).toLocaleString()}</td></tr>`).join('');
+    return `<div style='max-width:430px;margin:0 auto;background:#fff;border-radius:14px;box-shadow:0 2px 17px #0002;padding:6px 0 18px 0;font-family:\'Segoe UI\',sans-serif;color:#222;'>
+      <div style='text-align:center;border-bottom:2px solid #18458a;padding-bottom:8px;margin-bottom:10px;background:#f6f9ff;'>
+        <div style='font-size:24px;font-weight:900;letter-spacing:1px;color:#18458a;'>${companyName}</div>
+        ${branchName?`<div style='font-size:15px;color:#2955b6;font-weight:600;margin:2px 0 4px 0;'>${branchName}</div>`:''}
+        <div style='margin-top:8px;display:flex;justify-content:space-between;font-size:13.5px;text-align:left;padding:0 10px;'>
+          <div>Bill To:<br><b>${customerName}</b></div>
+          <div>Date(AD):<br><b>${engDate}</b>${nepDate?`<br><span style='font-size:12px;color:#277;'>BS: ${nepDate}</span>`:''}</div>
+        </div>
+      </div>
+      <div style='padding:7px 15px 5px 15px;'>
+        <h2 style='margin:0 0 7px 0;font-size:19px;text-align:center;border-bottom:1.5px dashed #18458a;padding-bottom:6px;letter-spacing:1px;'>${title}</h2>
+        <table style='width:100%;border-collapse:collapse;'>
+          <thead>
+            <tr style='background:#e3eef8;'>
+              <th style='border:1.3px solid #7a8ca0;padding:7px 7px;text-align:left;'>Item</th>
+              <th style='border:1.3px solid #7a8ca0;padding:7px 7px;text-align:right;'>Qty</th>
+              <th style='border:1.3px solid #7a8ca0;padding:7px 7px;text-align:right;'>Rate</th>
+              <th style='border:1.3px solid #7a8ca0;padding:7px 7px;text-align:right;'>Total</th>
+            </tr>
+          </thead>
+          <tbody>${itemsHtml}</tbody>
+          <tfoot>
+           <tr><td colspan=3 style='border:1.3px solid #7a8ca0;text-align:right;padding:7px 7px;background:#f6fafe'><b>Subtotal</b></td><td style='border:1.3px solid #7a8ca0;text-align:right;padding:7px 7px;background:#f6fafe'>रु ${subtotal.toLocaleString()}</td></tr>
+           ${discount>0?`<tr><td colspan=3 style='border:1.3px solid #7a8ca0;text-align:right;padding:7px 7px'>Discount</td><td style='border:1.3px solid #7a8ca0;text-align:right;padding:7px 7px;color:#219415'>- रु ${discount.toLocaleString()}</td></tr>`:''}
+           <tr><td colspan=3 style='border:1.3px solid #7a8ca0;text-align:right;font-size:18px;border-top:2px solid #18458a;padding:9px 7px 2px 7px'><b>Total Due</b></td><td style='border:1.3px solid #7a8ca0;text-align:right;font-size:18px;border-top:2px solid #18458a;padding:9px 7px 2px 7px'><b>रु ${total.toLocaleString()}</b></td></tr>
+          </tfoot>
+        </table>
+        <div style='margin-top:12px;display:flex;justify-content:space-between;font-size:13px;'><div>Payment: <b>${sale.paymentMethod||'—'}</b></div><div>Staff: <b>${staffName}</b></div></div>
+        <div style='text-align:center;color:#125a15;font-weight:700;font-size:15px;margin-top:14px;'>धन्यवाद!</div>
+      </div>
+    </div>`;
+  };
+  const printSaleReceipt = (sale, title = 'Sale Bill') => {
+    if (!sale) return;
+    const html = renderSaleBillHtml(sale, title);
+    const win = window.open('', '_blank', 'width=480,height=870');
+    win.document.write(`<!DOCTYPE html><html><head><title>${title}</title></head><body style='margin:0;background:#e8edfa'>${html}<script>window.onload=()=>{window.print();setTimeout(()=>window.close(),700);}</script></body></html>`);
+    win.document.close();
   };
 
   return (
@@ -454,6 +509,7 @@ const Sales = () => {
                     >
                       {loading ? 'Saving...' : 'Record Sale'}
                     </button>
+                    <button type="button" className="btn btn-info" style={{marginLeft:8}} disabled={!isFormValid} onClick={() => printSaleReceipt({...formData, date:{}, totalAmount:finalAmount, discount:discountAmount, staff:user, items:formData.items})}>Print</button>
                   </div>
                 </div>
               </div>
@@ -546,13 +602,17 @@ const Sales = () => {
                     <td>{sale?.staff?.name || '—'}</td>
                     <td>
                       {user?.role === 'admin' && (
-                        <button 
-                          className="btn btn-sm btn-danger"
-                          onClick={() => handleDelete(sale._id)}
-                          title="Delete Sale"
-                        >
-                          🗑️
-                        </button>
+                        <>
+                          <button 
+                            className="btn btn-sm btn-danger"
+                            onClick={() => handleDelete(sale._id)}
+                            title="Delete Sale"
+                          >
+                            🗑️
+                          </button>
+                          <button className="btn btn-sm btn-info ml-1" title="Print" onClick={() => printSaleReceipt(sale)}>🖨️</button>
+                          <button className="btn btn-sm btn-outline-primary ml-1" title="Preview" onClick={() => setPreviewSale(sale)}>👁️ Preview</button>
+                        </>
                       )}
                     </td>
                   </tr>
@@ -587,6 +647,7 @@ const Sales = () => {
           </div>
         </div>
       )}
+      <Modal isOpen={!!previewSale} onRequestClose={() => setPreviewSale(null)} ariaHideApp={false} style={{ content: { maxWidth: 470, margin: '25px auto', borderRadius: 13, padding: '0 0 13px 0', minHeight: 330, boxShadow: '0 2px 20px #0003', border:'none' }, overlay: { background: 'rgba(70,90,120,0.17)' } }}> <div dangerouslySetInnerHTML={{__html: renderSaleBillHtml(previewSale)}} /> <div style={{ textAlign: 'center', marginTop: 15 }}><button className="btn btn-secondary" onClick={()=>setPreviewSale(null)}>Close</button></div> </Modal>
     </div>
   );
 };
