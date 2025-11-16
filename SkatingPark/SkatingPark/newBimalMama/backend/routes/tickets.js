@@ -164,6 +164,7 @@ router.get('/extra-time/report', protect, async (req, res) => {
 
     pipeline.push({
       $project: {
+        _id: '$_id',
         ticketNo: 1,
         name: 1,
         ticketType: 1,
@@ -178,7 +179,7 @@ router.get('/extra-time/report', protect, async (req, res) => {
         time: '$time',
         date: '$date',
         isRefunded: '$isRefunded'
-      } 
+      }
     });
 
     pipeline.push({ $sort: { addedAt: -1 } });
@@ -771,7 +772,17 @@ router.put('/:id', protect, authorize('admin', 'staff'), async (req, res) => {
 // @access  Private/Admin
 router.delete('/:id', protect, authorize('admin'), async (req, res) => {
   try {
-    const ticket = await Ticket.findById(req.params.id);
+    const ticketId = req.params.id;
+    
+    // Validate ObjectId format
+    if (!ticketId || ticketId === 'undefined' || !mongoose.Types.ObjectId.isValid(ticketId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid ticket ID'
+      });
+    }
+
+    const ticket = await Ticket.findById(ticketId);
 
     if (!ticket) {
       return res.status(404).json({
@@ -780,7 +791,7 @@ router.delete('/:id', protect, authorize('admin'), async (req, res) => {
       });
     }
 
-    await Ticket.findByIdAndDelete(req.params.id);
+    await Ticket.findByIdAndDelete(ticketId);
 
     res.json({
       success: true,

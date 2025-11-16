@@ -1621,44 +1621,143 @@ const openTicketPrintWindow = (ticket) => {
                 {extraTimeReport.length === 0 ? (
                   <p className="text-muted">No extra time records yet.</p>
                 ) : (
-                  <div className="table-container" style={{ maxHeight: '300px', overflow: 'auto' }}>
-                    <table className="table">
+                  <div className="table-container" style={{ maxHeight: '400px', overflow: 'auto', width: '100%' }}>
+                    <table className="table" style={{ width: '100%', tableLayout: 'fixed', fontSize: '0.8em', margin: 0 }}>
                       <thead>
                         <tr>
-                          <th>Ticket No</th>
-                          <th>Name</th>
-                          <th>Time</th>
-                          <th>Minutes</th>
-                          <th>Label</th>
-                          <th>Notes</th>
-                          <th>Added At</th>
+                          <th style={{ width: '7%', padding: '4px 2px', fontSize: '0.75em' }}>Ticket</th>
+                          <th style={{ width: '10%', padding: '4px 2px', fontSize: '0.75em' }}>Name</th>
+                          <th style={{ width: '11%', padding: '4px 2px', fontSize: '0.75em' }}>Time</th>
+                          <th style={{ width: '5%', padding: '4px 2px', fontSize: '0.75em', textAlign: 'center' }}>Min</th>
+                          <th style={{ width: '8%', padding: '4px 2px', fontSize: '0.75em' }}>Label</th>
+                          <th style={{ width: '12%', padding: '4px 2px', fontSize: '0.75em' }}>Notes</th>
+                          <th style={{ width: '12%', padding: '4px 2px', fontSize: '0.75em' }}>Added At</th>
+                          <th style={{ width: '35%', padding: '4px 2px', fontSize: '0.75em', textAlign: 'center' }}>Actions</th>
                         </tr>
                       </thead>
                       <tbody>
                         {extraTimeReport.map((entry, idx) => {
                           const dateObj = entry.date?.englishDate ? new Date(entry.date.englishDate) : null;
                           const endTime = entry.time && dateObj ? getEndTime(entry.time, dateObj, entry.totalExtraMinutes || 0, entry.isRefunded || false) : null;
+                          
+                          // Function to handle actions
+                          const handleExtraTimeAction = async (action) => {
+                            try {
+                              let fullTicket = null;
+                              
+                              // Always fetch full ticket data using ticketNo (most reliable)
+                              try {
+                                const response = await ticketsAPI.lookup(entry.ticketNo);
+                                fullTicket = response.data.ticket;
+                              } catch (err) {
+                                // If lookup fails, try using _id if available
+                                if (entry._id && entry._id !== 'undefined' && entry._id.toString().length === 24) {
+                                  try {
+                                    const response = await ticketsAPI.getById(entry._id);
+                                    fullTicket = response.data;
+                                  } catch (err2) {
+                                    console.error('Error fetching ticket:', err2);
+                                    alert('Ticket not found');
+                                    return;
+                                  }
+                                } else {
+                                  alert('Ticket not found');
+                                  return;
+                                }
+                              }
+                              
+                              if (!fullTicket || !fullTicket._id) {
+                                alert('Ticket not found or invalid');
+                                return;
+                              }
+                              
+                              const ticketId = fullTicket._id;
+                              
+                              if (action === 'preview') {
+                                setSelectedTicket(fullTicket);
+                                setShowPrint(true);
+                                setAutoPrint(false);
+                              } else if (action === 'print') {
+                                openTicketPrintWindow(fullTicket);
+                              } else if (action === 'delete') {
+                                if (window.confirm(`Are you sure you want to delete ticket ${fullTicket.ticketNo}?`)) {
+                                  await handleDelete(ticketId);
+                                  fetchExtraTimeReport(); // Refresh the report
+                                }
+                              } else if (action === 'refund') {
+                                const reason = prompt('Enter refund reason:');
+                                if (reason) {
+                                  await handleRefund(ticketId, reason);
+                                  fetchExtraTimeReport(); // Refresh the report
+                                }
+                              }
+                            } catch (error) {
+                              console.error('Error handling action:', error);
+                              alert('Error: ' + (error.response?.data?.message || error.message || 'Unknown error'));
+                            }
+                          };
+                          
                           return (
-                            <tr key={`${entry.ticketNo}-${idx}`}>
-                              <td>{entry.ticketNo}</td>
-                              <td>{entry.name}</td>
-                              <td>
+                            <tr key={`${entry.ticketNo}-${idx}`} style={{ lineHeight: '1.2' }}>
+                              <td style={{ fontSize: '0.75em', padding: '3px 2px' }}><strong>{entry.ticketNo}</strong></td>
+                              <td style={{ fontSize: '0.75em', padding: '3px 2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={entry.name}>{entry.name}</td>
+                              <td style={{ fontSize: '0.7em', padding: '3px 2px', whiteSpace: 'nowrap' }}>
                                 {(() => {
                                   if (!entry.time) return '—';
                                   if (!dateObj) return entry.time;
-                                  return endTime ? `${entry.time} - ${endTime}` : entry.time;
+                                  return endTime ? `${entry.time}-${endTime}` : entry.time;
                                 })()}
                               </td>
-                              <td>{entry.minutes}</td>
-                              <td>{entry.label}</td>
-                              <td>{entry.notes || '—'}</td>
-                              <td>
-                                <div>{new Date(entry.addedAt).toLocaleString()}</div>
-                                {endTime && (
-                                  <div style={{ fontSize: '0.85em', color: '#666', marginTop: '2px' }}>
-                                    <strong>End Time:</strong> {endTime}
-                                  </div>
-                                )}
+                              <td style={{ fontSize: '0.75em', padding: '3px 2px', textAlign: 'center' }}>{entry.minutes}</td>
+                              <td style={{ fontSize: '0.7em', padding: '3px 2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={entry.label}>{entry.label}</td>
+                              <td style={{ fontSize: '0.7em', padding: '3px 2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={entry.notes || ''}>{entry.notes || '—'}</td>
+                              <td style={{ fontSize: '0.7em', padding: '3px 2px' }}>
+                                <div>{new Date(entry.addedAt).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' })}</div>
+                                <div style={{ color: '#666', fontSize: '0.65em' }}>{new Date(entry.addedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</div>
+                              </td>
+                              <td style={{ textAlign: 'center', padding: '2px' }}>
+                                <div className="d-flex gap-1" style={{ justifyContent: 'center', flexWrap: 'nowrap' }}>
+                                  {/* Preview button */}
+                                  <button 
+                                    className="btn btn-sm btn-outline-primary"
+                                    style={{ minWidth: '24px', width: '24px', height: '24px', padding: '1px', fontSize: '10px', lineHeight: '1' }}
+                                    onClick={() => handleExtraTimeAction('preview')}
+                                    title="Preview"
+                                  >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 20 20" fill="none"><path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" stroke="#1976d2" strokeWidth="1.5"/><circle cx="10" cy="10" r="3" stroke="#1976d2" strokeWidth="1.4"/></svg>
+                                  </button>
+                                  {/* Print button */}
+                                  <button 
+                                    className="btn btn-sm btn-info"
+                                    style={{ minWidth: '24px', width: '24px', height: '24px', padding: '1px', fontSize: '10px', lineHeight: '1' }}
+                                    onClick={() => handleExtraTimeAction('print')}
+                                    title="Print"
+                                  >
+                                    🖨️
+                                  </button>
+                                  {/* Refund button */}
+                                  {!entry.isRefunded && (user?.role === 'admin' || user?.role === 'staff') && (
+                                    <button 
+                                      className="btn btn-sm btn-danger"
+                                      style={{ minWidth: '24px', width: '24px', height: '24px', padding: '1px', fontSize: '10px', lineHeight: '1' }}
+                                      onClick={() => handleExtraTimeAction('refund')}
+                                      title="Refund"
+                                    >
+                                      🔄
+                                    </button>
+                                  )}
+                                  {/* Delete button */}
+                                  {user?.role === 'admin' && (
+                                    <button 
+                                      className="btn btn-sm btn-danger"
+                                      style={{ minWidth: '24px', width: '24px', height: '24px', padding: '1px', fontSize: '10px', lineHeight: '1' }}
+                                      onClick={() => handleExtraTimeAction('delete')}
+                                      title="Delete"
+                                    >
+                                      🗑️
+                                    </button>
+                                  )}
+                                </div>
                               </td>
                             </tr>
                           );
