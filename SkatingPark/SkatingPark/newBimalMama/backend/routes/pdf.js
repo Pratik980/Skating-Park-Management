@@ -10,6 +10,10 @@ import { protect } from '../middleware/auth.js';
 
 const router = express.Router();
 
+// Log Puppeteer info on module load (for debugging)
+console.log('📦 Puppeteer module loaded');
+console.log('Puppeteer version:', puppeteer.version || 'unknown');
+
 const DEFAULT_COMPANY = 'बेलका स्केट पार्क एण्ड गेमिङ जोन';
 const currencyFormatter = new Intl.NumberFormat('en-IN', {
   minimumFractionDigits: 0,
@@ -317,16 +321,24 @@ const buildDashboardHtml = ({ stats, settings, branch, generatedAt, user }) => {
 router.get('/dashboard', protect, async (req, res) => {
   let browser;
   try {
+    console.log('📄 PDF Export Request Started');
+    console.log('Environment:', process.env.NODE_ENV);
+    console.log('Render flag:', process.env.RENDER);
+    
     const requestBranchId = req.query.branchId || req.user?.branch?._id || req.user?.branch;
     const userBranchId = req.user?.branch?._id || req.user?.branch;
 
+    console.log('Branch ID check:', { requestBranchId, userBranchId });
+
     if (!requestBranchId || String(requestBranchId) !== String(userBranchId)) {
+      console.log('❌ Authorization failed');
       return res.status(403).json({
         success: false,
         message: 'You are not authorized to export this branch report.'
       });
     }
 
+    console.log('✅ Fetching branch, settings, and stats...');
     const [branch, settings, stats] = await Promise.all([
       Branch.findById(requestBranchId).lean(),
       Settings.findOne({ branch: requestBranchId }).lean(),
@@ -334,12 +346,14 @@ router.get('/dashboard', protect, async (req, res) => {
     ]);
 
     if (!branch) {
+      console.log('❌ Branch not found');
       return res.status(404).json({
         success: false,
         message: 'Branch not found'
       });
     }
 
+    console.log('✅ Building HTML...');
     const html = buildDashboardHtml({
       stats,
       settings,
@@ -347,6 +361,7 @@ router.get('/dashboard', protect, async (req, res) => {
       generatedAt: new Date(),
       user: req.user
     });
+    console.log('✅ HTML built, length:', html.length);
 
     // Puppeteer configuration for Render.com and other cloud platforms
     const puppeteerArgs = [
@@ -368,6 +383,10 @@ router.get('/dashboard', protect, async (req, res) => {
     }
 
     // Launch browser with improved error handling
+    console.log('🚀 Launching Puppeteer browser...');
+    console.log('Puppeteer args:', puppeteerArgs);
+    console.log('Executable path:', process.env.PUPPETEER_EXECUTABLE_PATH || 'default');
+    
     try {
       browser = await puppeteer.launch({
         headless: 'new',
@@ -378,43 +397,65 @@ router.get('/dashboard', protect, async (req, res) => {
         ignoreHTTPSErrors: true,
         ignoreDefaultArgs: ['--disable-extensions']
       });
+      console.log('✅ Browser launched successfully');
     } catch (launchError) {
-      console.error('Failed to launch browser:', launchError);
+      console.error('❌ Failed to launch browser:', launchError);
+      console.error('Launch error name:', launchError.name);
+      console.error('Launch error message:', launchError.message);
       throw new Error(`Failed to launch browser: ${launchError.message}`);
     }
 
+    console.log('📄 Creating new page...');
     const page = await browser.newPage();
+    console.log('✅ Page created');
     
     // Set a longer timeout for page operations
     page.setDefaultTimeout(60000);
     page.setDefaultNavigationTimeout(60000);
     
     // Disable images and media to speed up rendering (fonts are system fonts, so we allow them)
-    await page.setRequestInterception(true);
-    page.on('request', (req) => {
-      const resourceType = req.resourceType();
-      // Block images and media that might cause timeouts
-      // Allow fonts since we're using system fonts
-      if (['image', 'media'].includes(resourceType)) {
-        req.abort();
-      } else {
-        req.continue();
-      }
-    });
+    console.log('🔧 Setting up request interception...');
+    try {
+      await page.setRequestInterception(true);
+      page.on('request', (req) => {
+        const resourceType = req.resourceType();
+        // Block images and media that might cause timeouts
+        // Allow fonts since we're using system fonts
+        if (['image', 'media'].includes(resourceType)) {
+          req.abort();
+        } else {
+          req.continue();
+        }
+      });
+      console.log('✅ Request interception set up');
+    } catch (interceptError) {
+      console.warn('⚠️ Request interception failed, continuing without it:', interceptError);
+      // Continue without request interception - it's not critical
+    }
     
     // Set content with a more lenient wait strategy
     // Use 'domcontentloaded' instead of 'networkidle0' for faster, more reliable rendering
-    await page.setContent(html, { 
-      waitUntil: 'domcontentloaded',
-      timeout: 60000
-    });
+    console.log('📝 Setting page content...');
+    try {
+      await page.setContent(html, { 
+        waitUntil: 'domcontentloaded',
+        timeout: 60000
+      });
+      console.log('✅ Content set');
+    } catch (contentError) {
+      console.error('❌ Failed to set content:', contentError);
+      throw new Error(`Failed to set page content: ${contentError.message}`);
+    }
     
     // Wait a bit to ensure all content is rendered
+    console.log('⏳ Waiting for content to render...');
     await new Promise(resolve => setTimeout(resolve, 2000));
     
     await page.emulateMediaType('screen');
+    console.log('✅ Page ready for PDF generation');
 
     // Generate PDF with error handling
+    console.log('📄 Generating PDF...');
     let pdfBuffer;
     try {
       pdfBuffer = await page.pdf({
@@ -425,7 +466,9 @@ router.get('/dashboard', protect, async (req, res) => {
         preferCSSPageSize: true,
         timeout: 60000
       });
+      console.log('✅ PDF generated, size:', pdfBuffer.length, 'bytes');
     } catch (pdfError) {
+      console.error('❌ PDF generation failed:', pdfError);
       // If PDF generation fails, try to close resources before throwing
       try {
         await page.close().catch(() => {});
@@ -434,26 +477,31 @@ router.get('/dashboard', protect, async (req, res) => {
     }
 
     // Close page and browser after successful PDF generation
+    console.log('🧹 Cleaning up browser resources...');
     try {
       await page.close();
+      console.log('✅ Page closed');
     } catch (e) {
-      console.warn('Error closing page:', e);
+      console.warn('⚠️ Error closing page:', e);
     }
     
     try {
       await browser.close();
+      console.log('✅ Browser closed');
     } catch (e) {
-      console.warn('Error closing browser:', e);
+      console.warn('⚠️ Error closing browser:', e);
     }
 
+    console.log('📤 Sending PDF response...');
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader(
       'Content-Disposition',
       `attachment; filename=Dashboard_${branch.branchName?.replace(/\s+/g, '_') || 'Report'}.pdf`
     );
     res.send(pdfBuffer);
+    console.log('✅ PDF sent successfully');
   } catch (error) {
-    console.error('Dashboard PDF export error:', error);
+    console.error('❌ Dashboard PDF export error:', error);
     console.error('Error name:', error.name);
     console.error('Error message:', error.message);
     console.error('Error stack:', error.stack);
@@ -462,18 +510,21 @@ router.get('/dashboard', protect, async (req, res) => {
     if (browser) {
       try {
         await browser.close();
+        console.log('✅ Browser closed after error');
       } catch (closeError) {
-        console.error('Error closing browser:', closeError);
+        console.error('❌ Error closing browser:', closeError);
       }
     }
     
     // Provide more helpful error messages
     let errorMessage = 'Failed to generate dashboard PDF';
     const errorMsgLower = (error.message || '').toLowerCase();
+    const errorNameLower = (error.name || '').toLowerCase();
     
     if (errorMsgLower.includes('could not find chrome') || 
         errorMsgLower.includes('executable doesn\'t exist') ||
-        errorMsgLower.includes('no usable sandbox')) {
+        errorMsgLower.includes('no usable sandbox') ||
+        errorMsgLower.includes('chrome') && errorMsgLower.includes('not found')) {
       errorMessage = 'Chrome/Chromium not found. Please ensure Puppeteer dependencies are installed on the server.';
     } else if (errorMsgLower.includes('navigation timeout') || 
                errorMsgLower.includes('timeout') ||
@@ -481,24 +532,39 @@ router.get('/dashboard', protect, async (req, res) => {
       errorMessage = 'PDF generation timed out. The server may be under heavy load. Please try again.';
     } else if (errorMsgLower.includes('target closed') || 
                errorMsgLower.includes('targetcloseerror') ||
-               errorMsgLower.includes('browsing context')) {
+               errorMsgLower.includes('browsing context') ||
+               errorNameLower.includes('targetclose')) {
       errorMessage = 'Browser closed unexpectedly during PDF generation. This may be due to memory constraints. Please try again or contact support.';
     } else if (errorMsgLower.includes('protocol error')) {
       errorMessage = 'Browser communication error. Please try again.';
+    } else if (errorMsgLower.includes('cannot find module') || errorMsgLower.includes('puppeteer')) {
+      errorMessage = 'Puppeteer is not properly installed. Please check server configuration.';
     } else {
       errorMessage = error.message || errorMessage;
     }
     
-    // Always return JSON (not blob) for errors
-    res.status(500).json({
-      success: false,
-      message: errorMessage,
-      error: process.env.NODE_ENV === 'development' ? {
-        name: error.name,
-        message: error.message,
-        stack: error.stack
-      } : undefined
+    // Log the full error for debugging (this will appear in Render logs)
+    console.error('📋 Full error details for debugging:', {
+      name: error.name,
+      message: error.message,
+      stack: error.stack?.split('\n').slice(0, 5).join('\n') // First 5 lines of stack
     });
+    
+    // Always return JSON (not blob) for errors
+    // Make sure we haven't already sent a response
+    if (!res.headersSent) {
+      res.status(500).json({
+        success: false,
+        message: errorMessage,
+        error: process.env.NODE_ENV === 'development' ? {
+          name: error.name,
+          message: error.message,
+          stack: error.stack
+        } : undefined
+      });
+    } else {
+      console.error('⚠️ Response already sent, cannot send error response');
+    }
   }
 });
 
