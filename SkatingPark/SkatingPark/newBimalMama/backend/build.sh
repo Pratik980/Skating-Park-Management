@@ -1,11 +1,10 @@
 #!/bin/bash
 # Build script for Render.com to install Puppeteer dependencies
 
-echo "Installing Puppeteer dependencies..."
+echo "Installing Puppeteer dependencies and Chromium..."
 
 # Install system dependencies required for Puppeteer
-apt-get update
-apt-get install -y \
+apt-get update && apt-get install -y \
   wget \
   gnupg \
   ca-certificates \
@@ -42,7 +41,13 @@ apt-get install -y \
   libxss1 \
   libxtst6 \
   lsb-release \
-  xdg-utils
+  xdg-utils \
+  chromium \
+  chromium-browser
 
-echo "Puppeteer dependencies installed successfully!"
+echo "Puppeteer dependencies and Chromium installed successfully!"
+
+# Try to install Chrome via Puppeteer as well (fallback)
+echo "Attempting to install Chrome via Puppeteer..."
+npx puppeteer browsers install chrome || echo "Puppeteer Chrome install skipped, using system Chromium"
 

@@ -30,6 +30,7 @@
     "nepali-date-converter": "^3.4.0",
     "nodemon": "^3.1.10",
     "puppeteer": "^22.13.1",
+    "@puppeteer/browsers": "^1.8.0",
     "qr-image": "^3.2.0",
     "qrcode": "^1.5.4",
     "socket.io": "^4.8.1",

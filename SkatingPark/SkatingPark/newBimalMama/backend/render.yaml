@@ -2,7 +2,7 @@ services:
   - type: web
     name: skating-park-backend
     env: node
-    buildCommand: npm install && (npx puppeteer browsers install chrome || echo "Chrome installation failed, will try system Chromium")
+    buildCommand: npm install
     startCommand: npm start
     envVars:
       - key: NODE_ENV

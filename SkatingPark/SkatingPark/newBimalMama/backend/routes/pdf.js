@@ -1,13 +1,19 @@
 import express from 'express';
 import puppeteer from 'puppeteer';
+import { install } from '@puppeteer/browsers';
 import mongoose from 'mongoose';
 import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import Ticket from '../models/Ticket.js';
 import Sales from '../models/Sales.js';
 import Expense from '../models/Expense.js';
 import Settings from '../models/Settings.js';
 import Branch from '../models/Branch.js';
 import { protect } from '../middleware/auth.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const router = express.Router();
 
@@ -391,32 +397,62 @@ router.get('/dashboard', protect, async (req, res) => {
     
     // Try to get the executable path from Puppeteer
     let executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
-    if (!executablePath) {
-      try {
-        // Try to get the default executable path
-        executablePath = puppeteer.executablePath();
+    
+    // First, try Puppeteer's default executable path
+    try {
+      executablePath = puppeteer.executablePath();
+      if (fs.existsSync(executablePath)) {
         console.log('✅ Found Puppeteer executable:', executablePath);
-      } catch (execPathError) {
-        console.warn('⚠️ Could not get default executable path:', execPathError.message);
-        // Try system Chromium as fallback (common on Render)
-        const systemChromiumPaths = [
-          '/usr/bin/chromium',
-          '/usr/bin/chromium-browser',
-          '/usr/bin/google-chrome',
-          '/usr/bin/google-chrome-stable'
-        ];
-        
-        for (const path of systemChromiumPaths) {
-          try {
-            if (fs.existsSync(path)) {
-              executablePath = path;
-              console.log('✅ Found system Chromium:', executablePath);
-              break;
-            }
-          } catch (e) {
-            // Continue checking other paths
+      } else {
+        console.warn('⚠️ Puppeteer executable path does not exist:', executablePath);
+        executablePath = null;
+      }
+    } catch (execPathError) {
+      console.warn('⚠️ Could not get default executable path:', execPathError.message);
+    }
+    
+    // If Puppeteer's path doesn't work, try system Chromium
+    if (!executablePath || !fs.existsSync(executablePath)) {
+      console.log('🔍 Checking for system Chromium...');
+      const systemChromiumPaths = [
+        '/usr/bin/chromium',
+        '/usr/bin/chromium-browser',
+        '/usr/bin/google-chrome',
+        '/usr/bin/google-chrome-stable',
+        '/snap/bin/chromium'
+      ];
+      
+      for (const chromiumPath of systemChromiumPaths) {
+        try {
+          if (fs.existsSync(chromiumPath)) {
+            executablePath = chromiumPath;
+            console.log('✅ Found system Chromium:', executablePath);
+            break;
           }
+        } catch (e) {
+          // Continue checking other paths
         }
+      }
+    }
+    
+    // If still no executable found, try to install Chrome via @puppeteer/browsers
+    if (!executablePath || !fs.existsSync(executablePath)) {
+      console.log('📥 Chrome not found, attempting to install via @puppeteer/browsers...');
+      try {
+        const cacheDir = process.env.PUPPETEER_CACHE_DIR || '/opt/render/.cache/puppeteer';
+        console.log('Installing Chrome to:', cacheDir);
+        
+        // Install Chrome
+        const browserPath = await install({
+          browser: 'chrome',
+          cacheDir: cacheDir,
+        });
+        
+        executablePath = browserPath.executablePath;
+        console.log('✅ Chrome installed successfully:', executablePath);
+      } catch (installError) {
+        console.error('❌ Failed to install Chrome:', installError);
+        throw new Error(`Could not find or install Chrome/Chromium. Please ensure Chromium is installed on the system or check build configuration. Error: ${installError.message}`);
       }
     }
     
