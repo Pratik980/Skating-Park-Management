@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: skating-park-backend
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PUPPETEER_SKIP_CHROMIUM_DOWNLOAD
+        value: false
+      # Add your other environment variables here:
+      # - key: MONGO_URI
+      #   value: your_mongo_uri
+      # - key: JWT_SECRET
+      #   value: your_jwt_secret
+

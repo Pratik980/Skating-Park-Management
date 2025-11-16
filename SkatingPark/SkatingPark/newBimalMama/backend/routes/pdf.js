@@ -349,24 +349,80 @@ router.get('/dashboard', protect, async (req, res) => {
       user: req.user
     });
 
+    // Puppeteer configuration for Render.com and other cloud platforms
+    const puppeteerArgs = [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-accelerated-2d-canvas',
+      '--no-first-run',
+      '--no-zygote',
+      '--disable-gpu',
+      '--disable-software-rasterizer',
+      '--disable-extensions'
+    ];
+
+    // Only use --single-process in production/cloud environments
+    // It can cause issues on localhost/Windows
+    if (process.env.NODE_ENV === 'production' || process.env.RENDER) {
+      puppeteerArgs.push('--single-process');
+    }
+
     browser = await puppeteer.launch({
       headless: 'new',
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
+      args: puppeteerArgs,
+      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
+      timeout: 30000
     });
 
     const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: 'networkidle0' });
+    
+    // Set a longer timeout for page operations
+    page.setDefaultTimeout(30000);
+    page.setDefaultNavigationTimeout(30000);
+    
+    // Set content and wait for it to be fully loaded
+    await page.setContent(html, { 
+      waitUntil: 'networkidle0',
+      timeout: 30000
+    });
+    
+    // Wait a bit to ensure all content is rendered (using Promise instead of deprecated waitForTimeout)
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
     await page.emulateMediaType('screen');
 
-    const pdfBuffer = await page.pdf({
-      format: 'A4',
-      printBackground: true,
-      margin: { top: '8mm', right: '8mm', bottom: '10mm', left: '8mm' },
-      scale: 0.82, // Scale down to fit content
-      preferCSSPageSize: true
-    });
+    // Generate PDF with error handling
+    let pdfBuffer;
+    try {
+      pdfBuffer = await page.pdf({
+        format: 'A4',
+        printBackground: true,
+        margin: { top: '8mm', right: '8mm', bottom: '10mm', left: '8mm' },
+        scale: 0.82,
+        preferCSSPageSize: true,
+        timeout: 30000
+      });
+    } catch (pdfError) {
+      // If PDF generation fails, try to close resources before throwing
+      try {
+        await page.close().catch(() => {});
+      } catch (e) {}
+      throw pdfError;
+    }
 
-    await browser.close();
+    // Close page and browser after successful PDF generation
+    try {
+      await page.close();
+    } catch (e) {
+      console.warn('Error closing page:', e);
+    }
+    
+    try {
+      await browser.close();
+    } catch (e) {
+      console.warn('Error closing browser:', e);
+    }
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader(
@@ -376,13 +432,28 @@ router.get('/dashboard', protect, async (req, res) => {
     res.send(pdfBuffer);
   } catch (error) {
     console.error('Dashboard PDF export error:', error);
+    console.error('Error stack:', error.stack);
+    
     if (browser) {
       await browser.close().catch(() => {});
     }
+    
+    // Provide more helpful error messages
+    let errorMessage = 'Failed to generate dashboard PDF';
+    if (error.message.includes('Could not find Chrome') || error.message.includes('Executable doesn\'t exist')) {
+      errorMessage = 'Chrome/Chromium not found. Please ensure Puppeteer dependencies are installed.';
+    } else if (error.message.includes('Navigation timeout') || error.message.includes('timeout')) {
+      errorMessage = 'PDF generation timed out. Please try again.';
+    } else if (error.message.includes('Target closed') || error.message.includes('TargetCloseError')) {
+      errorMessage = 'Browser closed unexpectedly during PDF generation. This may be due to memory issues or browser crash. Try again or check server resources.';
+    } else {
+      errorMessage = error.message || errorMessage;
+    }
+    
     res.status(500).json({
       success: false,
-      message: 'Failed to generate dashboard PDF',
-      error: error.message
+      message: errorMessage,
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 });

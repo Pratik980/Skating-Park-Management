@@ -121,6 +121,24 @@ export const backupAPI = {
   download: (id) => axios.get(`${API_BASE_URL}/backup/download/${id}`, { responseType: 'blob' }),
 };
 
+// PDF API
+export const pdfAPI = {
+  getDashboard: (branchId) => {
+    const token = localStorage.getItem('token');
+    return axios.get(`${API_BASE_URL}/pdf/dashboard`, {
+      params: { branchId },
+      responseType: 'blob',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
+      validateStatus: (status) => {
+        // Don't throw error for non-2xx status, we'll handle it manually
+        return status >= 200 && status < 500;
+      }
+    });
+  },
+};
+
 // Export utility functions
 export const handleApiError = (error) => {
   if (error.response?.data?.message) {

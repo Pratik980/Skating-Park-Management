@@ -392,7 +392,16 @@ const Summary = () => {
 
       // No footer
 
-      doc.save(`Summary_Report_${activeTab === 'daily' ? selectedDate : `${dateRange.startDate}_to_${dateRange.endDate}`}.pdf`);
+      // Use blob-based download for better compatibility in production
+      const pdfBlob = doc.output('blob');
+      const url = URL.createObjectURL(pdfBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Summary_Report_${activeTab === 'daily' ? selectedDate : `${dateRange.startDate}_to_${dateRange.endDate}`}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Error generating PDF:', error);
       alert(`Error generating PDF report: ${error.message}. Please check the console for details.`);

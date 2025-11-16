@@ -217,7 +217,16 @@ const Sales = () => {
 
       // No footer
 
-      doc.save(`TransactionDetails_${new Date().toISOString().split('T')[0]}.pdf`);
+      // Use blob-based download for better compatibility in production
+      const pdfBlob = doc.output('blob');
+      const url = URL.createObjectURL(pdfBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `TransactionDetails_${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Error generating PDF:', error);
       alert(`Error generating PDF report: ${error.message}. Please check the console for details.`);

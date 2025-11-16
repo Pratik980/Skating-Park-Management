@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { useApp } from '../context/AppContext';
-import { summaryAPI, settingsAPI, usersAPI } from '../api/api';
+import { summaryAPI, settingsAPI, usersAPI, pdfAPI, downloadFile } from '../api/api';
 import Loader from '../components/Loader';
 import NotificationContainer from '../components/NotificationContainer';
 
@@ -116,24 +115,86 @@ const Dashboard = () => {
         return;
       }
 
-      const response = await axios.get('/api/pdf/dashboard', {
-        params: { branchId: currentBranch._id },
-        responseType: 'blob'
+      console.log('Starting PDF export for branch:', currentBranch._id);
+      const response = await pdfAPI.getDashboard(currentBranch._id);
+      
+      console.log('PDF response received:', {
+        status: response.status,
+        contentType: response.headers['content-type'],
+        dataType: typeof response.data,
+        isBlob: response.data instanceof Blob
       });
-
-      const blob = new Blob([response.data], { type: 'application/pdf' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `Dashboard_${currentBranch.branchName || 'Report'}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
+      
+      // Check if response status indicates an error
+      if (response.status !== 200) {
+        console.error('PDF generation failed with status:', response.status);
+        // Try to parse error message from blob
+        if (response.data instanceof Blob) {
+          try {
+            const text = await response.data.text();
+            const json = JSON.parse(text);
+            throw new Error(json.message || `Server error: ${response.status}`);
+          } catch (parseError) {
+            throw new Error(`Failed to generate PDF. Server returned status ${response.status}`);
+          }
+        } else {
+          throw new Error(`Failed to generate PDF. Server returned status ${response.status}`);
+        }
+      }
+      
+      // Check if response.data is a Blob
+      if (!(response.data instanceof Blob)) {
+        console.error('Response is not a blob:', response.data);
+        throw new Error('Invalid PDF response from server');
+      }
+      
+      // Verify it's actually a PDF by checking the blob type or content-type header
+      const contentType = response.headers['content-type'] || response.data.type || '';
+      if (!contentType.includes('application/pdf') && !contentType.includes('pdf')) {
+        console.error('Response is not a PDF:', contentType);
+        // Try to read as text to see if it's an error message
+        const text = await response.data.text();
+        try {
+          const json = JSON.parse(text);
+          throw new Error(json.message || 'Server returned an error instead of PDF');
+        } catch (e) {
+          throw new Error('Server returned an error. Please try again.');
+        }
+      }
+      
+      // Use the downloadFile utility for better compatibility
+      const filename = `Dashboard_${(currentBranch.branchName || 'Report').replace(/\s+/g, '_')}.pdf`;
+      downloadFile(response.data, filename);
+      console.log('PDF download initiated');
     } catch (error) {
       console.error('Error exporting dashboard PDF:', error);
-      const message = error.response?.data?.message || 'Failed to export dashboard PDF';
-      alert(message);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response,
+        status: error.response?.status,
+        data: error.response?.data
+      });
+      
+      // Try to extract error message
+      let errorMessage = 'Failed to export dashboard PDF';
+      
+      if (error.message) {
+        errorMessage = error.message;
+      } else if (error.response?.data) {
+        if (error.response.data instanceof Blob) {
+          try {
+            const text = await error.response.data.text();
+            const json = JSON.parse(text);
+            errorMessage = json.message || errorMessage;
+          } catch (e) {
+            errorMessage = 'Server error. Please check your connection and try again.';
+          }
+        } else if (error.response.data.message) {
+          errorMessage = error.response.data.message;
+        }
+      }
+      
+      alert(errorMessage);
     }
   };
 
