@@ -11,56 +11,7 @@ const Dashboard = () => {
   const [users, setUsers] = useState([]);
   const { currentBranch, user } = useApp();
 
-  // Fetch all data in parallel for faster loading
-  const fetchAllData = useCallback(async () => {
-    if (!currentBranch) return;
-    
-    try {
-      setLoading(true);
-      // Fetch all data in parallel
-      const [dashboardRes, settingsRes, usersRes] = await Promise.allSettled([
-        summaryAPI.getDashboard(currentBranch._id),
-        settingsAPI.getByBranch(currentBranch._id),
-        usersAPI.getAll()
-      ]);
-
-      if (dashboardRes.status === 'fulfilled') {
-        setStats(dashboardRes.value.data.dashboard);
-      }
-      if (settingsRes.status === 'fulfilled') {
-        setSettings(settingsRes.value.data.settings);
-      }
-      if (usersRes.status === 'fulfilled') {
-        setUsers(usersRes.value.data.users || []);
-      }
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [currentBranch]);
-
-  useEffect(() => {
-    fetchAllData();
-  }, [fetchAllData]);
-
-  if (loading) {
-    return <Loader text="Loading dashboard..." />;
-  }
-
-  if (!stats) {
-    return (
-      <div>
-        <NotificationContainer />
-        <div className="error-state">
-          <h3>No data available</h3>
-          <p>Please check if you have selected a branch.</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Memoize quick actions to prevent recalculation
+  // Memoize quick actions to prevent recalculation (must be before conditional returns)
   const quickActionItems = useMemo(() => [
     {
       key: 'sell',
@@ -106,6 +57,35 @@ const Dashboard = () => {
     [quickActionItems, user?.role]
   );
 
+  // Fetch all data in parallel for faster loading
+  const fetchAllData = useCallback(async () => {
+    if (!currentBranch) return;
+    
+    try {
+      setLoading(true);
+      // Fetch all data in parallel
+      const [dashboardRes, settingsRes, usersRes] = await Promise.allSettled([
+        summaryAPI.getDashboard(currentBranch._id),
+        settingsAPI.getByBranch(currentBranch._id),
+        usersAPI.getAll()
+      ]);
+
+      if (dashboardRes.status === 'fulfilled') {
+        setStats(dashboardRes.value.data.dashboard);
+      }
+      if (settingsRes.status === 'fulfilled') {
+        setSettings(settingsRes.value.data.settings);
+      }
+      if (usersRes.status === 'fulfilled') {
+        setUsers(usersRes.value.data.users || []);
+      }
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentBranch]);
+
   const exportDashboardToPDF = useCallback(async () => {
     try {
       if (!currentBranch?._id) {
@@ -128,6 +108,26 @@ const Dashboard = () => {
       alert(errorMessage);
     }
   }, [currentBranch]);
+
+  useEffect(() => {
+    fetchAllData();
+  }, [fetchAllData]);
+
+  if (loading) {
+    return <Loader text="Loading dashboard..." />;
+  }
+
+  if (!stats) {
+    return (
+      <div>
+        <NotificationContainer />
+        <div className="error-state">
+          <h3>No data available</h3>
+          <p>Please check if you have selected a branch.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
