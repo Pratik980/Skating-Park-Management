@@ -2,11 +2,13 @@ services:
   - type: web
     name: skating-park-backend
     env: node
-    buildCommand: npm install
+    buildCommand: npm install && npm run postinstall || true
     startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
+      - key: RENDER
+        value: true
       - key: PUPPETEER_SKIP_CHROMIUM_DOWNLOAD
         value: false
       # Add your other environment variables here:

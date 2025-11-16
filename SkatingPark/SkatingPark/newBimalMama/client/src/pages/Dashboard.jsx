@@ -118,82 +118,15 @@ const Dashboard = () => {
       console.log('Starting PDF export for branch:', currentBranch._id);
       const response = await pdfAPI.getDashboard(currentBranch._id);
       
-      console.log('PDF response received:', {
-        status: response.status,
-        contentType: response.headers['content-type'],
-        dataType: typeof response.data,
-        isBlob: response.data instanceof Blob
-      });
-      
-      // Check if response status indicates an error
-      if (response.status !== 200) {
-        console.error('PDF generation failed with status:', response.status);
-        // Try to parse error message from blob
-        if (response.data instanceof Blob) {
-          try {
-            const text = await response.data.text();
-            const json = JSON.parse(text);
-            throw new Error(json.message || `Server error: ${response.status}`);
-          } catch (parseError) {
-            throw new Error(`Failed to generate PDF. Server returned status ${response.status}`);
-          }
-        } else {
-          throw new Error(`Failed to generate PDF. Server returned status ${response.status}`);
-        }
-      }
-      
-      // Check if response.data is a Blob
-      if (!(response.data instanceof Blob)) {
-        console.error('Response is not a blob:', response.data);
-        throw new Error('Invalid PDF response from server');
-      }
-      
-      // Verify it's actually a PDF by checking the blob type or content-type header
-      const contentType = response.headers['content-type'] || response.data.type || '';
-      if (!contentType.includes('application/pdf') && !contentType.includes('pdf')) {
-        console.error('Response is not a PDF:', contentType);
-        // Try to read as text to see if it's an error message
-        const text = await response.data.text();
-        try {
-          const json = JSON.parse(text);
-          throw new Error(json.message || 'Server returned an error instead of PDF');
-        } catch (e) {
-          throw new Error('Server returned an error. Please try again.');
-        }
-      }
-      
-      // Use the downloadFile utility for better compatibility
+      // If we get here, the response is valid and contains a PDF blob
       const filename = `Dashboard_${(currentBranch.branchName || 'Report').replace(/\s+/g, '_')}.pdf`;
       downloadFile(response.data, filename);
-      console.log('PDF download initiated');
+      console.log('PDF download initiated successfully');
     } catch (error) {
       console.error('Error exporting dashboard PDF:', error);
-      console.error('Error details:', {
-        message: error.message,
-        response: error.response,
-        status: error.response?.status,
-        data: error.response?.data
-      });
       
-      // Try to extract error message
-      let errorMessage = 'Failed to export dashboard PDF';
-      
-      if (error.message) {
-        errorMessage = error.message;
-      } else if (error.response?.data) {
-        if (error.response.data instanceof Blob) {
-          try {
-            const text = await error.response.data.text();
-            const json = JSON.parse(text);
-            errorMessage = json.message || errorMessage;
-          } catch (e) {
-            errorMessage = 'Server error. Please check your connection and try again.';
-          }
-        } else if (error.response.data.message) {
-          errorMessage = error.response.data.message;
-        }
-      }
-      
+      // The API layer already handles error parsing, so we can use the error message directly
+      const errorMessage = error.message || 'Failed to export dashboard PDF. Please try again.';
       alert(errorMessage);
     }
   };

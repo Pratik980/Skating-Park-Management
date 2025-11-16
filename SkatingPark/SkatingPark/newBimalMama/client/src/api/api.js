@@ -123,19 +123,69 @@ export const backupAPI = {
 
 // PDF API
 export const pdfAPI = {
-  getDashboard: (branchId) => {
+  getDashboard: async (branchId) => {
     const token = localStorage.getItem('token');
-    return axios.get(`${API_BASE_URL}/pdf/dashboard`, {
-      params: { branchId },
-      responseType: 'blob',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      },
-      validateStatus: (status) => {
-        // Don't throw error for non-2xx status, we'll handle it manually
-        return status >= 200 && status < 500;
+    try {
+      const response = await axios.get(`${API_BASE_URL}/pdf/dashboard`, {
+        params: { branchId },
+        responseType: 'blob',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        validateStatus: (status) => {
+          // Don't throw error for non-2xx status, we'll handle it manually
+          return status >= 200 && status < 500;
+        }
+      });
+      
+      // Check if response is actually an error (JSON) masquerading as a blob
+      if (response.status !== 200) {
+        // Try to parse as JSON to get error message
+        try {
+          const text = await response.data.text();
+          const json = JSON.parse(text);
+          throw new Error(json.message || `Server error: ${response.status}`);
+        } catch (parseError) {
+          // If parsing fails, it might be a real blob error, but unlikely
+          throw new Error(`Failed to generate PDF. Server returned status ${response.status}`);
+        }
       }
-    });
+      
+      // Check if the blob is actually JSON (error response)
+      const contentType = response.headers['content-type'] || '';
+      if (contentType.includes('application/json') || !contentType.includes('application/pdf')) {
+        try {
+          const text = await response.data.text();
+          const json = JSON.parse(text);
+          throw new Error(json.message || 'Server returned an error instead of PDF');
+        } catch (parseError) {
+          throw new Error('Server returned an error. Please try again.');
+        }
+      }
+      
+      return response;
+    } catch (error) {
+      // If it's already an Error object with a message, rethrow it
+      if (error instanceof Error && error.message) {
+        throw error;
+      }
+      // Otherwise, handle axios errors
+      if (error.response) {
+        // Try to parse error response as JSON
+        if (error.response.data instanceof Blob) {
+          try {
+            const text = await error.response.data.text();
+            const json = JSON.parse(text);
+            throw new Error(json.message || 'Failed to generate PDF');
+          } catch (parseError) {
+            throw new Error('Failed to generate PDF. Please try again.');
+          }
+        } else if (error.response.data?.message) {
+          throw new Error(error.response.data.message);
+        }
+      }
+      throw error;
+    }
   },
 };
 

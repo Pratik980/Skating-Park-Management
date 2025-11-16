@@ -123,12 +123,11 @@ const buildDashboardHtml = ({ stats, settings, branch, generatedAt, user }) => {
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <title>Dashboard Report</title>
       <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Noto+Sans+Devanagari:wght@500;600&display=swap');
         * { box-sizing: border-box; }
         body {
           margin: 0;
           padding: 24px;
-          font-family: 'Inter', 'Noto Sans Devanagari', sans-serif;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
           background: #f5f7fb;
           color: #1d1f2c;
         }
@@ -146,7 +145,7 @@ const buildDashboardHtml = ({ stats, settings, branch, generatedAt, user }) => {
           font-size: 24px;
           font-weight: 600;
           color: #101936;
-          font-family: 'Noto Sans Devanagari', 'Inter', sans-serif;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
         }
         .header .branch {
           margin-top: 6px;
@@ -368,27 +367,50 @@ router.get('/dashboard', protect, async (req, res) => {
       puppeteerArgs.push('--single-process');
     }
 
-    browser = await puppeteer.launch({
-      headless: 'new',
-      args: puppeteerArgs,
-      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
-      timeout: 30000
-    });
+    // Launch browser with improved error handling
+    try {
+      browser = await puppeteer.launch({
+        headless: 'new',
+        args: puppeteerArgs,
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
+        timeout: 60000,
+        // Additional options for stability
+        ignoreHTTPSErrors: true,
+        ignoreDefaultArgs: ['--disable-extensions']
+      });
+    } catch (launchError) {
+      console.error('Failed to launch browser:', launchError);
+      throw new Error(`Failed to launch browser: ${launchError.message}`);
+    }
 
     const page = await browser.newPage();
     
     // Set a longer timeout for page operations
-    page.setDefaultTimeout(30000);
-    page.setDefaultNavigationTimeout(30000);
+    page.setDefaultTimeout(60000);
+    page.setDefaultNavigationTimeout(60000);
     
-    // Set content and wait for it to be fully loaded
-    await page.setContent(html, { 
-      waitUntil: 'networkidle0',
-      timeout: 30000
+    // Disable images and media to speed up rendering (fonts are system fonts, so we allow them)
+    await page.setRequestInterception(true);
+    page.on('request', (req) => {
+      const resourceType = req.resourceType();
+      // Block images and media that might cause timeouts
+      // Allow fonts since we're using system fonts
+      if (['image', 'media'].includes(resourceType)) {
+        req.abort();
+      } else {
+        req.continue();
+      }
     });
     
-    // Wait a bit to ensure all content is rendered (using Promise instead of deprecated waitForTimeout)
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Set content with a more lenient wait strategy
+    // Use 'domcontentloaded' instead of 'networkidle0' for faster, more reliable rendering
+    await page.setContent(html, { 
+      waitUntil: 'domcontentloaded',
+      timeout: 60000
+    });
+    
+    // Wait a bit to ensure all content is rendered
+    await new Promise(resolve => setTimeout(resolve, 2000));
     
     await page.emulateMediaType('screen');
 
@@ -401,7 +423,7 @@ router.get('/dashboard', protect, async (req, res) => {
         margin: { top: '8mm', right: '8mm', bottom: '10mm', left: '8mm' },
         scale: 0.82,
         preferCSSPageSize: true,
-        timeout: 30000
+        timeout: 60000
       });
     } catch (pdfError) {
       // If PDF generation fails, try to close resources before throwing
@@ -432,28 +454,50 @@ router.get('/dashboard', protect, async (req, res) => {
     res.send(pdfBuffer);
   } catch (error) {
     console.error('Dashboard PDF export error:', error);
+    console.error('Error name:', error.name);
+    console.error('Error message:', error.message);
     console.error('Error stack:', error.stack);
     
+    // Ensure browser is closed
     if (browser) {
-      await browser.close().catch(() => {});
+      try {
+        await browser.close();
+      } catch (closeError) {
+        console.error('Error closing browser:', closeError);
+      }
     }
     
     // Provide more helpful error messages
     let errorMessage = 'Failed to generate dashboard PDF';
-    if (error.message.includes('Could not find Chrome') || error.message.includes('Executable doesn\'t exist')) {
-      errorMessage = 'Chrome/Chromium not found. Please ensure Puppeteer dependencies are installed.';
-    } else if (error.message.includes('Navigation timeout') || error.message.includes('timeout')) {
-      errorMessage = 'PDF generation timed out. Please try again.';
-    } else if (error.message.includes('Target closed') || error.message.includes('TargetCloseError')) {
-      errorMessage = 'Browser closed unexpectedly during PDF generation. This may be due to memory issues or browser crash. Try again or check server resources.';
+    const errorMsgLower = (error.message || '').toLowerCase();
+    
+    if (errorMsgLower.includes('could not find chrome') || 
+        errorMsgLower.includes('executable doesn\'t exist') ||
+        errorMsgLower.includes('no usable sandbox')) {
+      errorMessage = 'Chrome/Chromium not found. Please ensure Puppeteer dependencies are installed on the server.';
+    } else if (errorMsgLower.includes('navigation timeout') || 
+               errorMsgLower.includes('timeout') ||
+               errorMsgLower.includes('timeout exceeded')) {
+      errorMessage = 'PDF generation timed out. The server may be under heavy load. Please try again.';
+    } else if (errorMsgLower.includes('target closed') || 
+               errorMsgLower.includes('targetcloseerror') ||
+               errorMsgLower.includes('browsing context')) {
+      errorMessage = 'Browser closed unexpectedly during PDF generation. This may be due to memory constraints. Please try again or contact support.';
+    } else if (errorMsgLower.includes('protocol error')) {
+      errorMessage = 'Browser communication error. Please try again.';
     } else {
       errorMessage = error.message || errorMessage;
     }
     
+    // Always return JSON (not blob) for errors
     res.status(500).json({
       success: false,
       message: errorMessage,
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      error: process.env.NODE_ENV === 'development' ? {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      } : undefined
     });
   }
 });
