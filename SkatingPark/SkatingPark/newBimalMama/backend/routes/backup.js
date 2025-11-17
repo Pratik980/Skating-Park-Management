@@ -18,11 +18,20 @@ const router = express.Router();
 // @route   DELETE /api/backup/erase-data
 // @access  Private/Admin
 router.delete('/erase-data', protect, authorize('admin'), async (req, res) => {
-  const branchId = req.query.branchId;
-  const types = req.query.types ? req.query.types.split(',') : [];
+  const branchId = req.query.branchId || req.body?.branchId;
+  const rawTypes = req.query.types ?? req.body?.types;
+
+  let types = [];
+  if (Array.isArray(rawTypes)) {
+    types = rawTypes;
+  } else if (typeof rawTypes === 'string') {
+    types = rawTypes.split(',').map(t => t.trim()).filter(Boolean);
+  }
+
   if (!branchId || types.length === 0) {
     return res.status(400).json({ success: false, message: 'branchId and at least one type are required.' });
   }
+
   const results = {};
   try {
     if (types.includes('tickets')) {
@@ -37,10 +46,10 @@ router.delete('/erase-data', protect, authorize('admin'), async (req, res) => {
       const { deletedCount } = await Expense.deleteMany({ branch: branchId });
       results.expenses = deletedCount;
     }
-    res.json({ success: true, message: 'Deletion complete', results });
+    return res.json({ success: true, message: 'Deletion complete', results });
   } catch (error) {
     console.error('Erase data error:', error);
-    res.status(500).json({ success: false, message: 'Error erasing data', error: error.message });
+    return res.status(500).json({ success: false, message: 'Error erasing data', error: error.message });
   }
 });
 

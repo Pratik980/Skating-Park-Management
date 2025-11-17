@@ -119,6 +119,9 @@ export const backupAPI = {
   restore: (id) => axios.post(`${API_BASE_URL}/backup/restore/${id}`),
   delete: (id) => axios.delete(`${API_BASE_URL}/backup/${id}`),
   download: (id) => axios.get(`${API_BASE_URL}/backup/download/${id}`, { responseType: 'blob' }),
+  eraseData: (branchId, types = []) => axios.delete(`${API_BASE_URL}/backup/erase-data`, {
+    params: { branchId, types: Array.isArray(types) ? types.join(',') : types }
+  }),
 };
 
 // PDF API
