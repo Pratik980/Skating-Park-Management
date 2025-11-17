@@ -18,8 +18,9 @@ const router = express.Router();
 // @route   DELETE /api/backup/erase-data
 // @access  Private/Admin
 router.delete('/erase-data', protect, authorize('admin'), async (req, res) => {
-  const { branchId, types = [] } = req.body;
-  if (!branchId || !Array.isArray(types) || types.length === 0) {
+  const branchId = req.query.branchId;
+  const types = req.query.types ? req.query.types.split(',') : [];
+  if (!branchId || types.length === 0) {
     return res.status(400).json({ success: false, message: 'branchId and at least one type are required.' });
   }
   const results = {};
