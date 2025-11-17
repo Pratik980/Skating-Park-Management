@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ticketsAPI } from '../api/api';
 import Loader from '../components/Loader';
 import TicketPrint from '../components/TicketPrint';
+import { useApp } from '../context/AppContext';
 
 // Utility to get end time as HH:mm
 function getEndTime(startTimeStr, dateObj, extraMinutes = 0, isRefunded = false) {
@@ -20,6 +21,74 @@ export default function TicketHistory() {
   const [ticket, setTicket] = useState(null);
   const [error, setError] = useState('');
   const [showPrint, setShowPrint] = useState(false);
+  const { user } = useApp();
+
+  // Open ticket print window
+  const openTicketPrintWindow = (ticket) => {
+    if (!ticket) return;
+    const printHtml = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Ticket Print</title>
+          <style>
+            @page {
+              size: 80mm auto;
+              margin: 0;
+            }
+            body {
+              margin: 0;
+              padding: 0;
+              font-family: "Courier New", monospace;
+              background: white;
+              width: 80mm;
+              font-size: 10px;
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
+            }
+            .ticket-print {
+              width: 76mm;
+              padding: 2mm;
+              box-sizing: border-box;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="ticket-print">
+            ${document.getElementById(`ticket-print-${ticket._id}`)?.innerHTML || ''}
+          </div>
+          <script>
+            window.onload = function() {
+              setTimeout(() => {
+                window.print();
+                window.close();
+              }, 500);
+            };
+          </script>
+        </body>
+      </html>
+    `;
+
+    const printWindow = window.open('', '_blank', 'width=400,height=600');
+    printWindow.document.open();
+    printWindow.document.write(printHtml);
+    printWindow.document.close();
+  };
+
+  // Handle delete ticket
+  const handleDelete = async (ticketId) => {
+    if (window.confirm('Are you sure you want to delete this ticket? This action cannot be undone.')) {
+      try {
+        await ticketsAPI.delete(ticketId);
+        setTicket(null);
+        setSearchValue('');
+        alert('Ticket deleted successfully');
+      } catch (error) {
+        console.error('Error deleting ticket:', error);
+        alert(error.response?.data?.message || 'Error deleting ticket');
+      }
+    }
+  };
 
   const handleSearch = async (e) => {
     e.preventDefault();
@@ -71,12 +140,35 @@ export default function TicketHistory() {
             <div className="card-body">
               <div className="d-flex justify-between align-center mb-3">
                 <h3>Ticket Details</h3>
-                <button 
-                  className="btn btn-primary btn-sm"
-                  onClick={() => setShowPrint(true)}
-                >
-                  🖨️ Print Ticket
-                </button>
+                <div className="d-flex gap-1">
+                  {/* Preview button */}
+                  <button 
+                    className="btn btn-sm btn-outline-primary"
+                    style={{ minWidth: 30 }}
+                    onClick={() => setShowPrint(true)}
+                    title="Preview Ticket"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" stroke="#1976d2" strokeWidth="1.5"/><circle cx="10" cy="10" r="3" stroke="#1976d2" strokeWidth="1.4"/></svg>
+                  </button>
+                  {/* Print button */}
+                  <button 
+                    className="btn btn-sm btn-info"
+                    onClick={() => openTicketPrintWindow(ticket)}
+                    title="Print Ticket"
+                  >
+                    🖨️
+                  </button>
+                  {/* Delete button - only for admin */}
+                  {user?.role === 'admin' && (
+                    <button 
+                      className="btn btn-sm btn-danger"
+                      onClick={() => handleDelete(ticket._id)}
+                      title="Delete Ticket"
+                    >
+                      🗑️
+                    </button>
+                  )}
+                </div>
               </div>
               <div className="grid grid-2">
                 <div>
@@ -114,6 +206,13 @@ export default function TicketHistory() {
             </div>
           </div>
           
+          {/* Hidden print block for direct printing */}
+          {ticket && (
+            <div id={`ticket-print-${ticket._id}`} style={{ display: 'none' }}>
+              <TicketPrint ticket={ticket} />
+            </div>
+          )}
+
           {/* Print Preview Modal */}
           {showPrint && (
             <div className="modal-overlay" style={{ zIndex: 1000 }}>

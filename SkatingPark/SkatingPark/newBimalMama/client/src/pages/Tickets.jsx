@@ -657,7 +657,8 @@ const Tickets = () => {
       alert('Please provide a refund reason');
       return;
     }
-    const ticket = tickets.find(t => t._id === ticketId);
+    // Try to find ticket in current tickets list, or in history tickets
+    const ticket = tickets.find(t => t._id === ticketId) || historyTickets.find(t => t._id === ticketId);
     if (!ticket) {
       alert('Ticket not found');
       return;
@@ -669,9 +670,18 @@ const Tickets = () => {
     if (window.confirm(`Refund रु ${calculatedRefund.toFixed(2)} for this ticket?`)) {
       try {
         await ticketsAPI.refund(ticketId, { refundReason: reason, refundAmount: calculatedRefund });
-        setTickets(tickets.map(t => 
-          t._id === ticketId ? { ...t, isRefunded: true, refundReason: reason, refundAmount: calculatedRefund } : t
-        ));
+        // Update current tickets list if ticket exists there
+        if (tickets.find(t => t._id === ticketId)) {
+          setTickets(tickets.map(t => 
+            t._id === ticketId ? { ...t, isRefunded: true, refundReason: reason, refundAmount: calculatedRefund } : t
+          ));
+        }
+        // Update history tickets list if ticket exists there
+        if (historyTickets.find(t => t._id === ticketId)) {
+          setHistoryTickets(historyTickets.map(t => 
+            t._id === ticketId ? { ...t, isRefunded: true, refundReason: reason, refundAmount: calculatedRefund } : t
+          ));
+        }
         alert('Ticket refunded successfully');
       } catch (error) {
         console.error('Error refunding ticket:', error);
@@ -771,7 +781,10 @@ const Tickets = () => {
     if (window.confirm('Are you sure you want to delete this ticket? This action cannot be undone.')) {
       try {
         await ticketsAPI.delete(ticketId);
+        // Remove from current tickets list
         setTickets(tickets.filter(t => t._id !== ticketId));
+        // Remove from history tickets list
+        setHistoryTickets(historyTickets.filter(t => t._id !== ticketId));
         alert('Ticket deleted successfully');
       } catch (error) {
         console.error('Error deleting ticket:', error);
@@ -2096,11 +2109,14 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
                   <th>Ticket No</th>
                   <th>Customer/Players</th>
                   <th>Type</th>
-                  <th>Fee</th>
-                  <th>Date/Time</th>
-                  <th>Remarks</th>
+                  <th style={{ minWidth: '180px', width: '180px' }}>Fee</th>
+                  <th>People</th>
+                  <th>Extra Time</th>
+                  <th>Date</th>
+                  <th>Time</th>
                   <th>Status</th>
                   <th>Refund</th>
+                  <th>Remarks</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -2135,52 +2151,75 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
                           <div>
                             <strong>{ticket.name}</strong>
                             {ticket.playerNames && ticket.playerNames.length > 0 && (
-                              <div><small className="text-muted">Players: {ticket.playerNames.join(', ')}</small></div>)
-                            }
-                            <div><small className="text-muted">People: {ticket.numberOfPeople || ticket.playerStatus?.totalPlayers || 1}</small></div>
-                            {ticket.groupInfo?.groupName && (<div><small className="text-muted">Group: {ticket.groupInfo.groupName} {ticket.groupInfo.groupNumber ? `(${ticket.groupInfo.groupNumber})` : ''}</small></div>)}
+                              <div>
+                                <small className="text-muted">
+                                  {ticket.playerNames.join(', ')}
+                                </small>
+                              </div>
+                            )}
+                            {ticket.groupInfo?.groupName && (
+                              <div>
+                                <small className="text-muted">
+                                  Group: {ticket.groupInfo.groupName} {ticket.groupInfo.groupNumber ? `(${ticket.groupInfo.groupNumber})` : ''}
+                                </small>
+                              </div>
+                            )}
                           </div>
                         </td>
                         <td>{ticket.ticketType}</td>
-                        <td>
-                          <div style={{ fontSize: '0.9em' }}>
-                            <div><strong>Actual Price:</strong> रु {actualPrice.toLocaleString()}</div>
+                        <td style={{ minWidth: '180px', width: '180px', padding: '8px' }}>
+                          <div style={{ fontSize: '0.85em', lineHeight: '1.6' }}>
+                            <div style={{ marginBottom: '4px' }}><strong>Actual Price:</strong> रु {actualPrice.toLocaleString()}</div>
                             {discountAmount > 0 ? (
-                              <div>
+                              <div style={{ marginBottom: '4px' }}>
                                 <strong>Discount:</strong> -रु {discountAmount.toLocaleString()}
                               </div>
                             ) : (
-                              <div><strong>Discount:</strong> रु 0</div>
+                              <div style={{ marginBottom: '4px' }}><strong>Discount:</strong> रु 0</div>
                             )}
-                            <div className={refundAmount > 0 ? 'text-danger' : ''}>
+                            <div className={refundAmount > 0 ? 'text-danger' : ''} style={{ marginBottom: '4px' }}>
                               <strong>Refund:</strong> रु {refundAmount.toLocaleString()}
                             </div>
-                            <div><strong>Total Price:</strong> रु {priceAfterDiscount.toLocaleString()}</div>
+                            <div style={{ marginBottom: '4px' }}><strong>Total Price:</strong> रु {priceAfterDiscount.toLocaleString()}</div>
                           </div>
+                        </td>
+                        <td>{ticket.numberOfPeople || ticket.playerStatus?.totalPlayers || 1}</td>
+                        <td>{ticket.totalExtraMinutes || 0} min</td>
+                        <td>
+                          <small>
+                            {ticket.date?.englishDate 
+                              ? new Date(ticket.date.englishDate).toLocaleDateString()
+                              : new Date(ticket.createdAt).toLocaleDateString()}
+                            <br />
+                            {ticket.date?.nepaliDate || '—'}
+                          </small>
                         </td>
                         <td>
                           <small>
-                            {ticket.date?.englishDate ? new Date(ticket.date.englishDate).toLocaleDateString() : ''}<br/>
-                            {ticket.date?.nepaliDate}<br/>
-                            {/* Show start to end time if possible */}
-                            {ticket.time || ''} {/* add end time support here if available */}
+                            {ticket.time || '—'}
                             {(() => {
+                              if (!ticket.time) return '';
                               const dateObj = ticket.date?.englishDate ? new Date(ticket.date.englishDate) : null;
+                              if (!dateObj) return '';
                               const endTime = getEndTime(ticket.time, dateObj, ticket.totalExtraMinutes || 0, ticket.isRefunded);
-                              if (!ticket.time || !endTime) return '';
-                              return ` - ${endTime}`;
+                              return endTime ? ` - ${endTime}` : '';
                             })()}
                           </small>
                         </td>
-                        <td><small>{ticket.remarks}</small></td>
-                        <td>{(() => {
-                          const created = ticket.date?.englishDate ? new Date(ticket.date.englishDate) : new Date(ticket.createdAt);
-                          const now = new Date();
-                          const oneHourPassed = ((now - created) / 36e5) > 1;
-                          if (oneHourPassed && !ticket.isRefunded) return <span className="badge badge-secondary">Deactivated</span>;
-                          if (ticket.isRefunded) return <span className="badge badge-danger">Refunded</span>;
-                          return <span className="badge badge-warning">Playing</span>;
-                        })()}</td>
+                        <td>
+                          {(() => {
+                            const created = ticket.date?.englishDate ? new Date(ticket.date.englishDate) : new Date(ticket.createdAt);
+                            const now = new Date();
+                            const oneHourPassed = ((now - created) / 36e5) > 1;
+                            if (oneHourPassed && !ticket.isRefunded) {
+                              return <span className="badge badge-secondary">Deactivated</span>;
+                            }
+                            if (ticket.isRefunded) {
+                              return <span className="badge badge-danger">Refunded</span>;
+                            }
+                            return <span className="badge badge-warning">Playing</span>;
+                          })()}
+                        </td>
                         <td>
                           {(() => {
                             const refundAmt = ticket.refundAmount || (ticket.isRefunded ? priceAfterDiscount : 0);
@@ -2199,6 +2238,9 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
                             }
                             return <span>रु 0</span>;
                           })()}
+                        </td>
+                        <td>
+                          <small>{ticket.remarks || '—'}</small>
                         </td>
                         <td>
                           <div className="d-flex gap-1">
@@ -2309,7 +2351,7 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
       {/* Ticket History Modal */}
       {showHistory && user?.role === 'admin' && (
         <div className="modal-overlay" style={{ zIndex: 1000 }}>
-          <div className="modal-content" style={{ maxWidth: '90%', width: '1200px', maxHeight: '90vh', overflow: 'auto' }}>
+          <div className="modal-content" style={{ maxWidth: '95%', width: '1400px', maxHeight: '90vh', overflow: 'auto' }}>
             <div className="modal-header">
               <h3 className="modal-title">📜 Ticket History - All Records</h3>
               <button 
@@ -2407,7 +2449,7 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
                                 <th>Ticket No</th>
                                 <th>Customer/Players</th>
                                 <th>Type</th>
-                                <th>Fee</th>
+                                <th style={{ minWidth: '180px', width: '180px' }}>Fee</th>
                                 <th>People</th>
                                 <th>Extra Time</th>
                                 <th>Date</th>
@@ -2415,6 +2457,7 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
                                 <th>Status</th>
                                 <th>Refund</th>
                                 <th>Remarks</th>
+                                <th>Actions</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -2469,20 +2512,20 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
                                       </div>
                                     </td>
                                     <td>{ticket.ticketType}</td>
-                                    <td>
-                                      <div style={{ fontSize: '0.9em' }}>
-                                        <div><strong>Actual Price:</strong> रु {actualPrice.toLocaleString()}</div>
+                                    <td style={{ minWidth: '180px', width: '180px', padding: '8px' }}>
+                                      <div style={{ fontSize: '0.85em', lineHeight: '1.6' }}>
+                                        <div style={{ marginBottom: '4px' }}><strong>Actual Price:</strong> रु {actualPrice.toLocaleString()}</div>
                                         {discountAmount > 0 ? (
-                                          <div>
+                                          <div style={{ marginBottom: '4px' }}>
                                             <strong>Discount:</strong> -रु {discountAmount.toLocaleString()}
                                           </div>
                                         ) : (
-                                          <div><strong>Discount:</strong> रु 0</div>
+                                          <div style={{ marginBottom: '4px' }}><strong>Discount:</strong> रु 0</div>
                                         )}
-                                        <div className={refundAmount > 0 ? 'text-danger' : ''}>
+                                        <div className={refundAmount > 0 ? 'text-danger' : ''} style={{ marginBottom: '4px' }}>
                                           <strong>Refund:</strong> रु {refundAmount.toLocaleString()}
                                         </div>
-                                        <div><strong>Total Price:</strong> रु {priceAfterDiscount.toLocaleString()}</div>
+                                        <div style={{ marginBottom: '4px' }}><strong>Total Price:</strong> रु {priceAfterDiscount.toLocaleString()}</div>
                                       </div>
                                     </td>
                                     <td>{ticket.numberOfPeople || ticket.playerStatus?.totalPlayers || 1}</td>
@@ -2546,6 +2589,58 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
                                     </td>
                                     <td>
                                       <small>{ticket.remarks || '—'}</small>
+                                    </td>
+                                    <td>
+                                      <div className="d-flex gap-1">
+                                        {/* Preview button */}
+                                        <button 
+                                          className="btn btn-sm btn-outline-primary"
+                                          style={{ minWidth: 30 }}
+                                          onClick={() => { setSelectedTicket(ticket); setShowPrint(true); setAutoPrint(false); }}
+                                          title="Preview Ticket"
+                                        >
+                                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" stroke="#1976d2" strokeWidth="1.5"/><circle cx="10" cy="10" r="3" stroke="#1976d2" strokeWidth="1.4"/></svg>
+                                        </button>
+                                        {/* Print button */}
+                                        <button 
+                                          className="btn btn-sm btn-info"
+                                          onClick={() => openTicketPrintWindow(ticket)}
+                                          title="Print Ticket"
+                                        >
+                                          🖨️
+                                        </button>
+                                        {/* Refund button */}
+                                        {!ticket.isRefunded && (user?.role === 'admin' || user?.role === 'staff') && (
+                                          <button 
+                                            className="btn btn-sm btn-warning"
+                                            onClick={async () => {
+                                              const reason = prompt('Enter refund reason:');
+                                              if (reason) {
+                                                await handleRefund(ticket._id, reason);
+                                                // Refresh history after refund
+                                                fetchTicketHistory(1, false);
+                                              }
+                                            }}
+                                            title="Refund Ticket"
+                                          >
+                                            🔄
+                                          </button>
+                                        )}
+                                        {/* Delete button - only for admin */}
+                                        {user?.role === 'admin' && (
+                                          <button 
+                                            className="btn btn-sm btn-danger"
+                                            onClick={async () => {
+                                              await handleDelete(ticket._id);
+                                              // Refresh history after delete
+                                              fetchTicketHistory(1, false);
+                                            }}
+                                            title="Delete Ticket"
+                                          >
+                                            🗑️
+                                          </button>
+                                        )}
+                                      </div>
                                     </td>
                                   </tr>
                                   {/* hidden print block */}
