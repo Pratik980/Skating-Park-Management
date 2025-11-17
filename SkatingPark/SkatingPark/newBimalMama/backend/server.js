@@ -38,7 +38,7 @@ const corsOptions = {
     
     // In production, check allowed origins
     const allowedOrigins = process.env.FRONTEND_URL 
-      ? process.env.FRONTEND_URL.split(',').map(url => url.trim())
+      ? process.env.FRONTEND_URL.split(',').map(url => url.trim().replace(/\/+$/, ''))
       : ['*'];
     
     // If '*' is in allowed origins, allow all
@@ -47,7 +47,8 @@ const corsOptions = {
     }
     
     // Check if origin is allowed
-    if (allowedOrigins.includes(origin)) {
+    const normalizedOrigin = origin.replace(/\/+$/, '');
+    if (allowedOrigins.includes(normalizedOrigin)) {
       callback(null, true);
     } else {
       console.log('⚠️ CORS blocked origin:', origin);
