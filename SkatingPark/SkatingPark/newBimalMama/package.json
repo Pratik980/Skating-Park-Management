@@ -1,9 +1,0 @@
- {
-  "name": "skating-park-root",
-  "private": true,
-  "type": "module",
-  "workspaces": [
-    "backend"
-  ]
-}
-

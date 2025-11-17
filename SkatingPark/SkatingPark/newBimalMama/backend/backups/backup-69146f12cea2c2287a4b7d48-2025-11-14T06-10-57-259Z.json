@@ -1,0 +1,134 @@
+{
+  "timestamp": "2025-11-14T06:10:57.259Z",
+  "branch": "69146f12cea2c2287a4b7d48",
+  "data": {
+    "tickets": [
+      {
+        "date": {
+          "englishDate": "2025-11-14T05:11:03.150Z",
+          "nepaliDate": "2082-11-14"
+        },
+        "playerStatus": {
+          "totalPlayers": 1,
+          "playedPlayers": 0,
+          "waitingPlayers": 1,
+          "refundedPlayersCount": 0
+        },
+        "_id": "6916b9e7bfedeca0da330812",
+        "name": "rammm",
+        "playerNames": [
+          "ritesh"
+        ],
+        "ticketType": "Adult",
+        "fee": 100,
+        "currency": "NPR",
+        "time": "10:56",
+        "branch": "69146f12cea2c2287a4b7d48",
+        "staff": "6916b48945981cc0276849fa",
+        "remarks": "hi",
+        "isRefunded": false,
+        "refundAmount": 0,
+        "refundedPlayers": [],
+        "status": "booked",
+        "printed": false,
+        "ticketNo": "20251113-001",
+        "createdAt": "2025-11-14T05:11:03.232Z",
+        "updatedAt": "2025-11-14T05:11:03.339Z",
+        "__v": 0,
+        "qrCode": "data:image/png;base64,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"
+      }
+    ],
+    "sales": [
+      {
+        "date": {
+          "englishDate": "2025-11-12T11:43:26.826Z",
+          "nepaliDate": "2082-11-12"
+        },
+        "discount": 0,
+        "stockQuantity": 0,
+        "minStockLevel": 5,
+        "customerType": "Retail",
+        "pendingAmount": 0,
+        "isSale": false,
+        "isProduct": false,
+        "isCustomer": false,
+        "_id": "691472de476d20f22e3547db",
+        "customerName": "Pratik",
+        "items": [
+          {
+            "itemName": "Skating",
+            "quantity": 6,
+            "price": 0.28,
+            "total": 1.6800000000000002,
+            "_id": "691472de476d20f22e3547dc"
+          }
+        ],
+        "currency": "NPR",
+        "paymentMethod": "Card",
+        "branch": "69146f12cea2c2287a4b7d48",
+        "staff": "69146f12cea2c2287a4b7d4a",
+        "remarks": "hi",
+        "isPaid": true,
+        "saleNo": "SALE00001",
+        "totalAmount": 1.6800000000000002,
+        "createdAt": "2025-11-12T11:43:26.887Z",
+        "updatedAt": "2025-11-12T11:43:26.887Z",
+        "__v": 0
+      }
+    ],
+    "expenses": [],
+    "users": [
+      {
+        "_id": "69146f12cea2c2287a4b7d4a",
+        "name": "Pratik chaudhary",
+        "email": "pratikadmin@gmail.com",
+        "phone": "9762825200",
+        "role": "admin",
+        "branch": "69146f12cea2c2287a4b7d48",
+        "isActive": true,
+        "createdAt": "2025-11-12T11:27:14.773Z",
+        "updatedAt": "2025-11-14T06:10:36.427Z",
+        "__v": 0,
+        "lastLogin": "2025-11-14T06:10:36.426Z"
+      },
+      {
+        "_id": "69147b7552f4ec6ba61aa387",
+        "name": "Sajan Amatya",
+        "email": "sajan@gmail.com",
+        "phone": "9844433304",
+        "role": "ticket",
+        "branch": "69146f12cea2c2287a4b7d48",
+        "isActive": true,
+        "createdAt": "2025-11-12T12:20:05.817Z",
+        "updatedAt": "2025-11-12T15:24:14.974Z",
+        "__v": 0,
+        "lastLogin": "2025-11-12T15:24:14.973Z"
+      },
+      {
+        "_id": "6914a63a30267b78ceca4454",
+        "name": "animesh awal",
+        "email": "animesh@gmail.com",
+        "phone": "9844433304",
+        "role": "expenses",
+        "branch": "69146f12cea2c2287a4b7d48",
+        "isActive": true,
+        "createdAt": "2025-11-12T15:22:34.193Z",
+        "updatedAt": "2025-11-12T15:22:34.193Z",
+        "__v": 0
+      },
+      {
+        "_id": "6916b48945981cc0276849fa",
+        "name": "Pratik Chaudhary",
+        "email": "pratik@gmail.com",
+        "phone": "9762825200",
+        "role": "staff",
+        "branch": "69146f12cea2c2287a4b7d48",
+        "isActive": true,
+        "createdAt": "2025-11-14T04:48:09.824Z",
+        "updatedAt": "2025-11-14T04:48:59.114Z",
+        "__v": 0,
+        "lastLogin": "2025-11-14T04:48:59.112Z"
+      }
+    ]
+  }
+}
