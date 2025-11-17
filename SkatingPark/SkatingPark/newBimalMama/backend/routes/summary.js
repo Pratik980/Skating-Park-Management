@@ -196,8 +196,10 @@ router.get('/dashboard/:branchId', protect, async (req, res) => {
       }
     });
 
+    // Only count actual sales (not other Sales documents like stock/other types)
     const todaySales = await Sales.countDocuments({
       branch: branchId,
+      isSale: true,
       'date.englishDate': {
         $gte: startOfToday,
         $lte: endOfToday
@@ -214,7 +216,8 @@ router.get('/dashboard/:branchId', protect, async (req, res) => {
 
     // Total stats
     const totalTickets = await Ticket.countDocuments({ branch: branchId });
-    const totalSales = await Sales.countDocuments({ branch: branchId });
+    // Total number of actual sales
+    const totalSales = await Sales.countDocuments({ branch: branchId, isSale: true });
     const totalExpenses = await Expense.countDocuments({ branch: branchId });
 
     // Revenue calculations
@@ -224,7 +227,7 @@ router.get('/dashboard/:branchId', protect, async (req, res) => {
     ]);
 
     const salesRevenue = await Sales.aggregate([
-      { $match: { branch: new mongoose.Types.ObjectId(branchId) } },
+      { $match: { branch: new mongoose.Types.ObjectId(branchId), isSale: true } },
       { $group: { _id: null, total: { $sum: '$totalAmount' } } }
     ]);
 
