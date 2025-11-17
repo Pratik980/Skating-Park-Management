@@ -46,7 +46,8 @@ const Tickets = () => {
     paymentReference: '',
     groupName: '',
     groupNumber: '',
-    groupPrice: ''
+    groupPrice: '',
+    cancellationFee: ''
   });
   const [quickAddData, setQuickAddData] = useState({
     name: '',
@@ -221,8 +222,45 @@ const Tickets = () => {
       paymentReference: '',
       groupName: '',
       groupNumber: '',
-      groupPrice: ''
+      groupPrice: '',
+      cancellationFee: ''
     });
+  };
+
+  // Calculate refund amount based on actual amount paid
+  // Rule: Refund = Amount Actually Paid = Ticket Price - Discount
+  // For partial refunds: Refund = (Amount Actually Paid / Total People) * Refunded People
+  const calculateRefundAmount = (ticket, refundedPeopleCount = null, cancellationFee = 0) => {
+    if (!ticket) return 0;
+    
+    // Get the actual amount paid (after discount)
+    const amountPaid = ticket.fee || 0;
+    const discount = ticket.discount || 0;
+    
+    // Calculate original price before discount
+    const originalPrice = amountPaid + discount;
+    
+    // The refund should be the actual amount paid (after discount)
+    // This is the simple rule: refund = what they actually paid
+    let refundAmount = amountPaid;
+    
+    // For partial refunds, calculate per-person refund
+    if (refundedPeopleCount !== null && refundedPeopleCount > 0) {
+      const totalPeople = ticket.numberOfPeople || ticket.playerStatus?.totalPlayers || 1;
+      if (totalPeople > 0) {
+        // Calculate per-person amount paid
+        const perPersonAmountPaid = amountPaid / totalPeople;
+        // Refund for the specified number of people
+        refundAmount = perPersonAmountPaid * refundedPeopleCount;
+      }
+    }
+    
+    // Deduct cancellation fee if applicable
+    if (cancellationFee > 0) {
+      refundAmount = Math.max(0, refundAmount - cancellationFee);
+    }
+    
+    return Math.round(refundAmount * 100) / 100; // Round to 2 decimal places
   };
 
   const lookupRefundTicket = async () => {
@@ -235,15 +273,20 @@ const Tickets = () => {
       const response = await ticketsAPI.lookup(refundForm.ticketNo.trim());
       const ticket = response.data.ticket;
       setRefundTicket(ticket);
+      
+      // Calculate refund amount automatically based on actual amount paid
+      const calculatedRefund = calculateRefundAmount(ticket, null, parseFloat(refundForm.cancellationFee) || 0);
+      
       setRefundForm((prev) => ({
         ...prev,
         refundName: ticket.name,
-        refundAmount: ticket.fee?.toString() || '',
+        refundAmount: calculatedRefund.toString(),
         refundReason: prev.refundReason,
         refundMethod: 'cash',
         groupName: ticket.groupInfo?.groupName || '',
         groupNumber: ticket.groupInfo?.groupNumber || '',
-        groupPrice: ticket.groupInfo?.groupPrice?.toString() || ''
+        groupPrice: ticket.groupInfo?.groupPrice?.toString() || '',
+        cancellationFee: prev.cancellationFee || ''
       }));
     } catch (error) {
       console.error('Error fetching ticket for refund:', error);
@@ -614,12 +657,20 @@ const Tickets = () => {
       alert('Please provide a refund reason');
       return;
     }
-
-    if (window.confirm('Are you sure you want to refund this ticket?')) {
+    const ticket = tickets.find(t => t._id === ticketId);
+    if (!ticket) {
+      alert('Ticket not found');
+      return;
+    }
+    
+    // Calculate refund amount based on actual amount paid
+    const calculatedRefund = calculateRefundAmount(ticket, null, 0);
+    
+    if (window.confirm(`Refund रु ${calculatedRefund.toFixed(2)} for this ticket?`)) {
       try {
-        await ticketsAPI.refund(ticketId, { refundReason: reason });
+        await ticketsAPI.refund(ticketId, { refundReason: reason, refundAmount: calculatedRefund });
         setTickets(tickets.map(t => 
-          t._id === ticketId ? { ...t, isRefunded: true, refundReason: reason } : t
+          t._id === ticketId ? { ...t, isRefunded: true, refundReason: reason, refundAmount: calculatedRefund } : t
         ));
         alert('Ticket refunded successfully');
       } catch (error) {
@@ -641,7 +692,6 @@ const Tickets = () => {
     }
 
     const selectedPlayers = [];
-    const playerFee = ticket.fee / ticket.playerStatus.totalPlayers;
     
     refundablePlayers.forEach(player => {
       if (confirm(`Refund ${player}?`)) {
@@ -651,12 +701,14 @@ const Tickets = () => {
 
     if (selectedPlayers.length === 0) return;
 
-    const refundAmount = selectedPlayers.length * playerFee;
+    // Calculate refund based on actual amount paid per person
+    // Use the new calculation method: (Amount Actually Paid / Total People) * Refunded People
+    const refundAmount = calculateRefundAmount(ticket, selectedPlayers.length, 0);
     const reason = prompt('Enter refund reason:', 'Player did not play');
 
     if (!reason) return;
 
-    if (window.confirm(`Refund रु ${refundAmount} for ${selectedPlayers.length} player(s)?`)) {
+    if (window.confirm(`Refund रु ${refundAmount.toFixed(2)} for ${selectedPlayers.length} player(s)?`)) {
       try {
         await ticketsAPI.partialRefund(ticket._id, {
           refundReason: reason,
@@ -1284,33 +1336,60 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
                 <small className="text-muted">Ticket details auto-fill as soon as ID is found.</small>
               </div>
 
-              {refundTicket && (
-                <div className="card mb-3">
-                  <h4>Ticket Details</h4>
-                  <div className="grid grid-2">
-                    <div>
-                      <p><strong>Name:</strong> {refundTicket.name}</p>
-                      <p><strong>People:</strong> {refundTicket.numberOfPeople || refundTicket.playerStatus?.totalPlayers || 1}</p>
-                      <p><strong>Ticket Amount:</strong> रु {refundTicket.fee?.toLocaleString()}</p>
-                      {refundTicket.groupInfo?.groupName && (
-                        <p><strong>Group:</strong> {refundTicket.groupInfo.groupName} {refundTicket.groupInfo.groupNumber && `(${refundTicket.groupInfo.groupNumber})`}</p>
-                      )}
+              {refundTicket && (() => {
+                const discount = refundTicket.discount || 0;
+                const amountPaid = refundTicket.fee || 0;
+                const originalPrice = amountPaid + discount;
+                const cancellationFee = parseFloat(refundForm.cancellationFee) || 0;
+                const calculatedRefund = calculateRefundAmount(refundTicket, null, cancellationFee);
+                
+                return (
+                  <div className="card mb-3">
+                    <h4>Ticket Details</h4>
+                    <div className="grid grid-2">
+                      <div>
+                        <p><strong>Name:</strong> {refundTicket.name}</p>
+                        <p><strong>People:</strong> {refundTicket.numberOfPeople || refundTicket.playerStatus?.totalPlayers || 1}</p>
+                        {discount > 0 ? (
+                          <>
+                            <p><strong>Original Price:</strong> रु {originalPrice.toLocaleString()}</p>
+                            <p><strong>Discount:</strong> <span style={{color: '#d32f2f'}}>- रु {discount.toLocaleString()}</span></p>
+                            <p><strong>Amount Paid:</strong> <strong>रु {amountPaid.toLocaleString()}</strong></p>
+                          </>
+                        ) : (
+                          <p><strong>Ticket Amount:</strong> रु {amountPaid.toLocaleString()}</p>
+                        )}
+                        {refundTicket.groupInfo?.groupName && (
+                          <p><strong>Group:</strong> {refundTicket.groupInfo.groupName} {refundTicket.groupInfo.groupNumber && `(${refundTicket.groupInfo.groupNumber})`}</p>
+                        )}
+                      </div>
+                      <div>
+                        <p><strong>Ticket Type:</strong> {refundTicket.ticketType}</p>
+                        <p><strong>Date:</strong> {refundTicket.date?.nepaliDate} ({new Date(refundTicket.date?.englishDate).toLocaleDateString()})</p>
+                        <p><strong>Time:</strong> {(() => {
+                          if (!refundTicket.time) return '—';
+                          const dateObj = refundTicket.date?.englishDate ? new Date(refundTicket.date.englishDate) : null;
+                          if (!dateObj) return refundTicket.time;
+                          const endTime = getEndTime(refundTicket.time, dateObj, refundTicket.totalExtraMinutes || 0, refundTicket.isRefunded);
+                          return endTime ? `${refundTicket.time} - ${endTime}` : refundTicket.time;
+                        })()}</p>
+                        <p><strong>Extra Time:</strong> {refundTicket.totalExtraMinutes || 0} min</p>
+                      </div>
                     </div>
-                    <div>
-                      <p><strong>Ticket Type:</strong> {refundTicket.ticketType}</p>
-                      <p><strong>Date:</strong> {refundTicket.date?.nepaliDate} ({new Date(refundTicket.date?.englishDate).toLocaleDateString()})</p>
-                      <p><strong>Time:</strong> {(() => {
-                        if (!refundTicket.time) return '—';
-                        const dateObj = refundTicket.date?.englishDate ? new Date(refundTicket.date.englishDate) : null;
-                        if (!dateObj) return refundTicket.time;
-                        const endTime = getEndTime(refundTicket.time, dateObj, refundTicket.totalExtraMinutes || 0, refundTicket.isRefunded);
-                        return endTime ? `${refundTicket.time} - ${endTime}` : refundTicket.time;
-                      })()}</p>
-                      <p><strong>Extra Time:</strong> {refundTicket.totalExtraMinutes || 0} min</p>
+                    <div style={{ marginTop: '15px', padding: '10px', backgroundColor: '#f0f8ff', borderRadius: '4px', border: '1px solid #007bff' }}>
+                      <h5 style={{ marginBottom: '8px' }}>Refund Calculation:</h5>
+                      <p style={{ margin: '4px 0' }}>Amount Paid: <strong>रु {amountPaid.toLocaleString()}</strong></p>
+                      {cancellationFee > 0 && (
+                        <p style={{ margin: '4px 0', color: '#d32f2f' }}>Cancellation Fee: <strong>- रु {cancellationFee.toLocaleString()}</strong></p>
+                      )}
+                      <p style={{ margin: '4px 0', fontSize: '16px', fontWeight: 'bold', color: '#1a7e1a' }}>
+                        Refund Amount: <strong>रु {calculatedRefund.toLocaleString()}</strong>
+                      </p>
+                      <small className="text-muted">Rule: Refund = Amount Actually Paid {cancellationFee > 0 ? '- Cancellation Fee' : ''}</small>
                     </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               <div className="grid grid-2 gap-3">
                 <div className="form-group">
@@ -1324,16 +1403,35 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
                   />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Refund Amount (NPR)</label>
+                  <label className="form-label">Cancellation Fee (Optional)</label>
                   <input
                     type="number"
                     className="form-control"
-                    value={refundForm.refundAmount}
-                    onChange={(e) => setRefundForm({ ...refundForm, refundAmount: e.target.value })}
+                    value={refundForm.cancellationFee}
+                    onChange={(e) => {
+                      const fee = parseFloat(e.target.value) || 0;
+                      const newRefund = calculateRefundAmount(refundTicket, null, fee);
+                      setRefundForm({ ...refundForm, cancellationFee: e.target.value, refundAmount: newRefund.toString() });
+                    }}
                     min="0"
                     step="1"
+                    placeholder="0"
                   />
+                  <small className="text-muted">Deduct this amount from refund (if applicable)</small>
                 </div>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Refund Amount (NPR) - Auto-calculated</label>
+                <input
+                  type="number"
+                  className="form-control"
+                  value={refundForm.refundAmount}
+                  onChange={(e) => setRefundForm({ ...refundForm, refundAmount: e.target.value })}
+                  min="0"
+                  step="0.01"
+                  style={{ backgroundColor: '#f0f8ff', fontWeight: 'bold' }}
+                />
+                <small className="text-muted">This is calculated automatically. You can adjust if needed.</small>
               </div>
               <div className="grid grid-2 gap-3">
                 <div className="form-group">
@@ -2054,10 +2152,10 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
                             ) : (
                               <div><strong>Discount:</strong> रु 0</div>
                             )}
-                            <div><strong>Price After Discount:</strong> रु {priceAfterDiscount.toLocaleString()}</div>
                             <div className={refundAmount > 0 ? 'text-danger' : ''}>
                               <strong>Refund:</strong> रु {refundAmount.toLocaleString()}
                             </div>
+                            <div><strong>Total Price:</strong> रु {priceAfterDiscount.toLocaleString()}</div>
                           </div>
                         </td>
                         <td>
@@ -2381,10 +2479,10 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
                                         ) : (
                                           <div><strong>Discount:</strong> रु 0</div>
                                         )}
-                                        <div><strong>Price After Discount:</strong> रु {priceAfterDiscount.toLocaleString()}</div>
                                         <div className={refundAmount > 0 ? 'text-danger' : ''}>
                                           <strong>Refund:</strong> रु {refundAmount.toLocaleString()}
                                         </div>
+                                        <div><strong>Total Price:</strong> रु {priceAfterDiscount.toLocaleString()}</div>
                                       </div>
                                     </td>
                                     <td>{ticket.numberOfPeople || ticket.playerStatus?.totalPlayers || 1}</td>

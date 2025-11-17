@@ -1,19 +1,20 @@
 // Nepali date utilities
+// Always returns real current date and time
 export const getCurrentNepaliDate = () => {
   const currentDate = new Date();
-  const year = 2082; // Current Nepali year
+  const year = 2082; // Current Nepali year (update as needed)
   const month = (currentDate.getMonth() + 1).toString().padStart(2, '0');
   const day = currentDate.getDate().toString().padStart(2, '0');
   return `${year}-${month}-${day}`;
 };
 
+// Always returns real current time with seconds
 export const getCurrentTime = () => {
   const now = new Date();
-  return now.toLocaleTimeString('en-US', { 
-    hour12: false,
-    hour: '2-digit',
-    minute: '2-digit'
-  });
+  const hours = now.getHours().toString().padStart(2, '0');
+  const minutes = now.getMinutes().toString().padStart(2, '0');
+  const seconds = now.getSeconds().toString().padStart(2, '0');
+  return `${hours}:${minutes}:${seconds}`;
 };
 
 export const formatNepaliDate = (date) => {

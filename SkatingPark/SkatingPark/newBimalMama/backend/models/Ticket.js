@@ -1,4 +1,6 @@
 import mongoose from 'mongoose';
+import Sequence from './Sequence.js';
+import { getCurrentNepaliDate } from '../utils/nepaliDate.js';
 
 const ticketSchema = new mongoose.Schema({
   ticketNo: {
@@ -189,19 +191,51 @@ const ticketSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Generate simple ticket number starting from 01
+// Generate unique sequential ticket number
 ticketSchema.pre('validate', async function(next) {
   if (this.isNew && !this.ticketNo) {
     try {
-      const TicketModel = mongoose.model('Ticket');
-      const totalCount = await TicketModel.countDocuments(); // all tickets ever
-      const sequence = (totalCount + 1).toString().padStart(3, '0');
-      this.ticketNo = sequence;
+      // Get next sequence number atomically (ensures uniqueness)
+      const sequenceValue = await Sequence.getNext('ticketNo');
+      // Format as 6-digit number (e.g., 000001, 000002, etc.)
+      this.ticketNo = sequenceValue.toString().padStart(6, '0');
     } catch (err) {
-      // fallback unique
-      this.ticketNo = (Date.now() + '').slice(-6);
+      console.error('Error generating ticket number:', err);
+      // Fallback: use timestamp-based unique number
+      const timestamp = Date.now().toString();
+      this.ticketNo = timestamp.slice(-8);
     }
   }
+  next();
+});
+
+// Ensure dates and times are always set to real current date/time for new tickets
+ticketSchema.pre('save', function(next) {
+  // Only set date/time for new tickets (not updates)
+  if (this.isNew) {
+    const now = new Date();
+    
+    // Always use real current date and time for new tickets
+    if (!this.date) {
+      this.date = {};
+    }
+    // Set to current real date/time
+    this.date.englishDate = now;
+    
+    // Set Nepali date if not already set
+    if (!this.date.nepaliDate) {
+      this.date.nepaliDate = getCurrentNepaliDate();
+    }
+    
+    // Always set time to current real time for new tickets
+    if (!this.time) {
+      const hours = now.getHours().toString().padStart(2, '0');
+      const minutes = now.getMinutes().toString().padStart(2, '0');
+      const seconds = now.getSeconds().toString().padStart(2, '0');
+      this.time = `${hours}:${minutes}:${seconds}`;
+    }
+  }
+  
   next();
 });
 
