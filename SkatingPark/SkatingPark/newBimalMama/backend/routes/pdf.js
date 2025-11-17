@@ -134,8 +134,9 @@ const getBrowser = async () => {
       }
     }
     
+    console.log('🟡 About to launch Puppeteer (Chrome)');
     const browser = await puppeteer.launch({
-      headless: 'new',
+      headless: true, // legacy headless mode
       args: puppeteerArgs,
       executablePath: executablePath || undefined,
       timeout: 60000,          // allow more time for Chrome to start
@@ -143,6 +144,7 @@ const getBrowser = async () => {
       ignoreHTTPSErrors: true,
       ignoreDefaultArgs: ['--disable-extensions']
     });
+    console.log('🟢 Puppeteer/Chrome launched');
     
     console.log('✅ Browser launched successfully');
     cachedBrowser = browser;
