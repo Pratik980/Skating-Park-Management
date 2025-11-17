@@ -2,6 +2,13 @@
   command = "npm run build"
   publish = "dist"
 
+# Proxy API calls to backend before SPA fallback
+[[redirects]]
+  from = "/api/*"
+  to = "https://skating-park-management.onrender.com/api/:splat"
+  status = 200
+  force = true
+
 # Handle client-side routing - redirect all routes to index.html
 [[redirects]]
   from = "/*"
