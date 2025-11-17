@@ -34,6 +34,7 @@
     "qr-image": "^3.2.0",
     "qrcode": "^1.5.4",
     "socket.io": "^4.8.1",
-    "unzipper": "^0.10.14"
+    "unzipper": "^0.10.14",
+    "serverless-http": "^3.2.0"
   }
 }
