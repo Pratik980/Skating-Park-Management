@@ -15,6 +15,13 @@ import { protect } from '../middleware/auth.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Local Devanagari font (use the same font as frontend, stored in client/public/fonts)
+// This ensures Nepali text renders correctly in PDFs even if Google Fonts fails.
+const localDevanagariFontPath = path
+  .join(__dirname, '../../client/public/fonts/NotoSansDevanagari-Regular.ttf')
+  .replace(/\\/g, '/');
+const localDevanagariFontUrl = `file://${localDevanagariFontPath}`;
+
 const router = express.Router();
 
 // Cache browser instance for faster PDF generation (reuse across requests)
@@ -264,15 +271,23 @@ const buildDashboardHtml = ({ stats, settings, branch, generatedAt, user }) => {
       <meta http-equiv="X-UA-Compatible" content="IE=edge" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <title>Dashboard Report</title>
+      <!-- Try Google Fonts as a fallback -->
       <link rel="preconnect" href="https://fonts.googleapis.com">
       <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
       <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600&display=swap" rel="stylesheet">
       <style>
+        /* Embed local Devanagari font so Nepali text shows even if Google Fonts fails */
+        @font-face {
+          font-family: 'Noto Sans Devanagari Local';
+          src: url('${localDevanagariFontUrl}') format('truetype');
+          font-weight: 400;
+          font-style: normal;
+        }
         * { box-sizing: border-box; }
         body {
           margin: 0;
           padding: 24px;
-          font-family: 'Noto Sans Devanagari', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+          font-family: 'Noto Sans Devanagari Local', 'Noto Sans Devanagari', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
           background: #f5f7fb;
           color: #1d1f2c;
         }
@@ -290,7 +305,7 @@ const buildDashboardHtml = ({ stats, settings, branch, generatedAt, user }) => {
           font-size: 24px;
           font-weight: 600;
           color: #101936;
-          font-family: 'Noto Sans Devanagari', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+          font-family: 'Noto Sans Devanagari Local', 'Noto Sans Devanagari', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
         }
         .header .branch {
           margin-top: 6px;
