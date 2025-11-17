@@ -3,7 +3,6 @@ import { useApp } from '../context/AppContext';
 import { backupAPI } from '../api/api';
 import Loader from '../components/Loader';
 import NotificationContainer from '../components/NotificationContainer';
-import axios from 'axios';
 
 const BackupRestore = () => {
   const [backups, setBackups] = useState([]);
@@ -127,12 +126,8 @@ const BackupRestore = () => {
     if (deleteConfirm !== 'DELETE') return;
     setDeleting(true);
     try {
-      const res = await axios.delete('/api/backup/erase-data', {
-        data: {
-          branchId: currentBranch._id || currentBranch,
-          types: eraseTypes
-        }
-      });
+      // Use centralized API helper so base URL & params are correct in production
+      const res = await backupAPI.eraseData(currentBranch._id, eraseTypes);
       setEraseResult(res.data);
       setEraseTypes([]);
       setShowErase(false);
