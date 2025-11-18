@@ -21,6 +21,8 @@ const localDevanagariFontPath = path
   .join(__dirname, '../../client/public/fonts/NotoSansDevanagari-Regular.ttf')
   .replace(/\\/g, '/');
 const localDevanagariFontUrl = `file://${localDevanagariFontPath}`;
+const valyntixLogoPath = path.join(__dirname, '../../client/public/valyntix-logo.png').replace(/\\/g, '/');
+const valyntixLogoUrl = `file://${valyntixLogoPath}`;
 
 const router = express.Router();
 
@@ -304,6 +306,14 @@ const buildDashboardHtml = ({ stats, settings, branch, generatedAt, user }) => {
           text-align: center;
           margin-bottom: 26px;
         }
+        .header .logo {
+          margin-bottom: 10px;
+        }
+        .header .logo img {
+          display: inline-block;
+          width: 120px;
+          height: auto;
+        }
         .header .company {
           font-size: 24px;
           font-weight: 600;
@@ -369,15 +379,19 @@ const buildDashboardHtml = ({ stats, settings, branch, generatedAt, user }) => {
           margin-top: 28px;
           padding-top: 16px;
           border-top: 1px solid #e2e6f5;
-          font-size: 12px;
-          color: #7c86a7;
+          font-size: 13px;
+          color: #60708e;
+          text-align: center;
         }
       </style>
     </head>
     <body>
       <div class="report" style="padding: 12px;">
         <div class="header">
-          <div class="company">${companyName}</div>
+          <div class="logo">
+            <img src="${valyntixLogoUrl}" alt="Valyntix Logo" />
+          </div>
+          <div class="company">Valyntix AI TECH SYSTEM</div>
           <div class="branch">${branchLine}</div>
           <div class="meta">Reg No: ${regNo} • Generated on ${escapeHtml(generatedText)}</div>
         </div>
@@ -470,7 +484,7 @@ const buildDashboardHtml = ({ stats, settings, branch, generatedAt, user }) => {
         </div>
 
         <div class="footer">
-          Report generated for ${escapeHtml(manager)} • ${companyName}
+          &copy; Valyntix AI TECH SYSTEM. All rights reserved.
         </div>
       </div>
     </body>
