@@ -78,7 +78,7 @@ function App() {
           <Suspense fallback={<Loader text="Loading..." />}>
             <Routes>
               <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
+              <Route path="/valyntixsignup" element={<Signup />} />
               <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
                 <Route index element={<RoleBasedDashboard />} />
                 <Route path="users" element={<AdminOnly><Users /></AdminOnly>} />
