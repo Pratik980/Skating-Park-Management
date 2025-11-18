@@ -4,6 +4,7 @@ import { ticketsAPI, salesAPI, expensesAPI, summaryAPI } from '../api/api';
 import Loader from '../components/Loader';
 import NotificationContainer from '../components/NotificationContainer';
 import TicketPrint from '../components/TicketPrint';
+import logo from '/valyntix-logo.png.jpg';
 
 const StaffDashboard = () => {
   const [stats, setStats] = useState(null);
@@ -341,597 +342,605 @@ const StaffDashboard = () => {
   }
 
   return (
-    <div>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <NotificationContainer />
-      
-      <div className="d-flex justify-between align-center mb-3">
-        <div>
-          <h1>Staff Dashboard</h1>
-          <p className="text-muted mb-0">Welcome, {user?.name}! - {currentBranch?.branchName}</p>
+      <header style={{ textAlign: 'center', margin: '24px 0 8px 0' }}>
+        <img src={logo} alt="Valyntix Logo" style={{ maxWidth: 120, height: 'auto', marginBottom: 8 }} />
+        <h2 style={{ margin: 0, fontWeight: 700, color: '#233043', letterSpacing: 1 }}>Valyntix AI TECH SYSTEM</h2>
+      </header>
+      <div style={{ flex: 1 }}>
+        <div className="d-flex justify-between align-center mb-3">
+          <div>
+            <h1>Staff Dashboard</h1>
+            <p className="text-muted mb-0">Welcome, {user?.name}! - {currentBranch?.branchName}</p>
+          </div>
+          <button 
+            className="btn btn-sm btn-secondary"
+            onClick={() => {
+              fetchDashboardData();
+              fetchTickets();
+              fetchSales();
+              fetchExpenses();
+            }}
+          >
+            🔄 Refresh All
+          </button>
         </div>
-        <button 
-          className="btn btn-sm btn-secondary"
-          onClick={() => {
-            fetchDashboardData();
-            fetchTickets();
-            fetchSales();
-            fetchExpenses();
-          }}
-        >
-          🔄 Refresh All
-        </button>
-      </div>
 
-      {/* Stats Overview */}
-      {stats && (
-        <div className="stats-grid mb-4">
-          <div className="stat-card tickets">
-            <div className="stat-label">Today's Tickets</div>
-            <div className="stat-number">{stats.today.tickets}</div>
-            <small>Total tickets sold today</small>
-          </div>
-          <div className="stat-card sales">
-            <div className="stat-label">Today's Sales</div>
-            <div className="stat-number">{stats.today.sales}</div>
-            <small>Total sales transactions</small>
-          </div>
-          <div className="stat-card expenses">
-            <div className="stat-label">Today's Expenses</div>
-            <div className="stat-number">{stats.today.expenses}</div>
-            <small>Total expenses recorded</small>
-          </div>
-          <div className="stat-card profit">
-            <div className="stat-label">Net Profit</div>
-            <div className="stat-number" style={{ color: stats.totals.netProfit >= 0 ? '#27ae60' : '#e74c3c' }}>
-              रु {stats.totals.netProfit?.toLocaleString()}
+        {/* Stats Overview */}
+        {stats && (
+          <div className="stats-grid mb-4">
+            <div className="stat-card tickets">
+              <div className="stat-label">Today's Tickets</div>
+              <div className="stat-number">{stats.today.tickets}</div>
+              <small>Total tickets sold today</small>
             </div>
-            <small>Overall profit/loss</small>
+            <div className="stat-card sales">
+              <div className="stat-label">Today's Sales</div>
+              <div className="stat-number">{stats.today.sales}</div>
+              <small>Total sales transactions</small>
+            </div>
+            <div className="stat-card expenses">
+              <div className="stat-label">Today's Expenses</div>
+              <div className="stat-number">{stats.today.expenses}</div>
+              <small>Total expenses recorded</small>
+            </div>
+            <div className="stat-card profit">
+              <div className="stat-label">Net Profit</div>
+              <div className="stat-number" style={{ color: stats.totals.netProfit >= 0 ? '#27ae60' : '#e74c3c' }}>
+                रु {stats.totals.netProfit?.toLocaleString()}
+              </div>
+              <small>Overall profit/loss</small>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Hidden print content */}
-      {showPrint && selectedTicket && (
-        <div ref={printContentRef} style={{ display: 'none' }}>
-          <TicketPrint ticket={selectedTicket} />
-        </div>
-      )}
+        {/* Hidden print content */}
+        {showPrint && selectedTicket && (
+          <div ref={printContentRef} style={{ display: 'none' }}>
+            <TicketPrint ticket={selectedTicket} />
+          </div>
+        )}
 
-      {/* TICKETS SECTION */}
-      <div className="card mb-4">
-        <div className="card-header">
-          <h3 className="card-title">🎫 Tickets</h3>
-        </div>
-        <div className="card-body">
-          {/* Quick Add Ticket Form */}
-          <div className="card mb-3" style={{ backgroundColor: '#f0f8ff', border: '2px solid #007bff' }}>
-            <div className="card-body">
-              <h5 className="card-title">Quick Ticket Entry</h5>
-              <div className="grid grid-5 gap-2">
-                <div>
-                  <label className="form-label">Customer Name *</label>
-                  <input
-                    ref={nameInputRef}
-                    type="text"
-                    className="form-control"
-                    value={quickAddData.name}
-                    onChange={(e) => setQuickAddData({ ...quickAddData, name: e.target.value })}
-                    onKeyPress={handleKeyPress}
-                    placeholder="Enter customer name"
-                    required
-                  />
+        {/* TICKETS SECTION */}
+        <div className="card mb-4">
+          <div className="card-header">
+            <h3 className="card-title">🎫 Tickets</h3>
+          </div>
+          <div className="card-body">
+            {/* Quick Add Ticket Form */}
+            <div className="card mb-3" style={{ backgroundColor: '#f0f8ff', border: '2px solid #007bff' }}>
+              <div className="card-body">
+                <h5 className="card-title">Quick Ticket Entry</h5>
+                <div className="grid grid-5 gap-2">
+                  <div>
+                    <label className="form-label">Customer Name *</label>
+                    <input
+                      ref={nameInputRef}
+                      type="text"
+                      className="form-control"
+                      value={quickAddData.name}
+                      onChange={(e) => setQuickAddData({ ...quickAddData, name: e.target.value })}
+                      onKeyPress={handleKeyPress}
+                      placeholder="Enter customer name"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label">Player Names</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={quickAddData.playerNames}
+                      onChange={(e) => setQuickAddData({ ...quickAddData, playerNames: e.target.value })}
+                      onKeyPress={handleKeyPress}
+                      placeholder="Rahul, Ritesh, Suresh"
+                    />
+                    <small className="text-muted">Separate with commas</small>
+                  </div>
+                  <div>
+                    <label className="form-label">Ticket Type</label>
+                    <select
+                      className="form-control"
+                      value={quickAddData.ticketType}
+                      onChange={(e) => {
+                        const type = e.target.value;
+                        setQuickAddData({
+                          ...quickAddData,
+                          ticketType: type,
+                          fee: ticketTypes[type].price.toString()
+                        });
+                      }}
+                    >
+                      {Object.entries(ticketTypes).map(([key, value]) => (
+                        <option key={key} value={key}>{value.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="form-label">Fee (NPR) *</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={quickAddData.fee}
+                      onChange={(e) => setQuickAddData({ ...quickAddData, fee: e.target.value })}
+                      onKeyPress={handleKeyPress}
+                      min="0"
+                      step="1"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label">Remarks</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={quickAddData.remarks}
+                      onChange={(e) => setQuickAddData({ ...quickAddData, remarks: e.target.value })}
+                      onKeyPress={handleKeyPress}
+                      placeholder="Any remarks"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="form-label">Player Names</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={quickAddData.playerNames}
-                    onChange={(e) => setQuickAddData({ ...quickAddData, playerNames: e.target.value })}
-                    onKeyPress={handleKeyPress}
-                    placeholder="Rahul, Ritesh, Suresh"
-                  />
-                  <small className="text-muted">Separate with commas</small>
-                </div>
-                <div>
-                  <label className="form-label">Ticket Type</label>
-                  <select
-                    className="form-control"
-                    value={quickAddData.ticketType}
-                    onChange={(e) => {
-                      const type = e.target.value;
-                      setQuickAddData({
-                        ...quickAddData,
-                        ticketType: type,
-                        fee: ticketTypes[type].price.toString()
-                      });
-                    }}
+                <div className="d-flex gap-2 mt-3">
+                  <button 
+                    className="btn btn-success"
+                    onClick={handleQuickAddSubmit}
+                    disabled={ticketsLoading}
                   >
-                    {Object.entries(ticketTypes).map(([key, value]) => (
-                      <option key={key} value={key}>{value.label}</option>
-                    ))}
-                  </select>
+                    {ticketsLoading ? 'Creating...' : 'Add & Auto-Print (Enter)'}
+                  </button>
+                  <button 
+                    className="btn btn-secondary"
+                    onClick={() => setQuickAddData({
+                      name: '',
+                      playerNames: '',
+                      ticketType: 'Adult',
+                      fee: '100',
+                      remarks: ''
+                    })}
+                  >
+                    Clear
+                  </button>
                 </div>
-                <div>
-                  <label className="form-label">Fee (NPR) *</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    value={quickAddData.fee}
-                    onChange={(e) => setQuickAddData({ ...quickAddData, fee: e.target.value })}
-                    onKeyPress={handleKeyPress}
-                    min="0"
-                    step="1"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="form-label">Remarks</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={quickAddData.remarks}
-                    onChange={(e) => setQuickAddData({ ...quickAddData, remarks: e.target.value })}
-                    onKeyPress={handleKeyPress}
-                    placeholder="Any remarks"
-                  />
-                </div>
-              </div>
-              <div className="d-flex gap-2 mt-3">
-                <button 
-                  className="btn btn-success"
-                  onClick={handleQuickAddSubmit}
-                  disabled={ticketsLoading}
-                >
-                  {ticketsLoading ? 'Creating...' : 'Add & Auto-Print (Enter)'}
-                </button>
-                <button 
-                  className="btn btn-secondary"
-                  onClick={() => setQuickAddData({
-                    name: '',
-                    playerNames: '',
-                    ticketType: 'Adult',
-                    fee: '100',
-                    remarks: ''
-                  })}
-                >
-                  Clear
-                </button>
               </div>
             </div>
-          </div>
 
-          {/* Today's Tickets Table */}
-          <div className="table-container">
-            <div className="table-header">
-              <h4 className="table-title">Today's Tickets ({tickets.length})</h4>
-              <button className="btn btn-sm btn-secondary" onClick={fetchTickets} disabled={ticketsLoading}>
-                {ticketsLoading ? 'Refreshing...' : 'Refresh'}
-              </button>
-            </div>
-            {tickets.length === 0 ? (
-              <div className="empty-state">
-                <p>No tickets found for today</p>
+            {/* Today's Tickets Table */}
+            <div className="table-container">
+              <div className="table-header">
+                <h4 className="table-title">Today's Tickets ({tickets.length})</h4>
+                <button className="btn btn-sm btn-secondary" onClick={fetchTickets} disabled={ticketsLoading}>
+                  {ticketsLoading ? 'Refreshing...' : 'Refresh'}
+                </button>
               </div>
-            ) : (
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>Ticket No</th>
-                    <th>Customer/Players</th>
-                    <th>Type</th>
-                    <th>Fee</th>
-                    <th>Date/Time</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {tickets.slice(0, 10).map(ticket => (
-                    <tr key={ticket._id} className={ticket.isRefunded ? 'table-danger' : ''}>
-                      <td><strong>{ticket.ticketNo}</strong></td>
-                      <td>
-                        {ticket.name}
-                        {ticket.playerNames && ticket.playerNames.length > 0 && (
-                          <div className="text-muted small">
-                            {ticket.playerNames.join(', ')}
-                          </div>
-                        )}
-                      </td>
-                      <td>{ticket.ticketType}</td>
-                      <td>
-                        <div>
-                          <strong>रु {ticket.fee?.toLocaleString()}</strong>
-                          {ticket.discount > 0 && (
-                            <div>
-                              <small className="text-muted" style={{ textDecoration: 'line-through' }}>
-                                रु {((ticket.fee || 0) + (ticket.discount || 0)).toLocaleString()}
-                              </small>
-                              <small className="text-success" style={{ marginLeft: '5px' }}>
-                                -रु {ticket.discount.toLocaleString()}
-                              </small>
+              {tickets.length === 0 ? (
+                <div className="empty-state">
+                  <p>No tickets found for today</p>
+                </div>
+              ) : (
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Ticket No</th>
+                      <th>Customer/Players</th>
+                      <th>Type</th>
+                      <th>Fee</th>
+                      <th>Date/Time</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tickets.slice(0, 10).map(ticket => (
+                      <tr key={ticket._id} className={ticket.isRefunded ? 'table-danger' : ''}>
+                        <td><strong>{ticket.ticketNo}</strong></td>
+                        <td>
+                          {ticket.name}
+                          {ticket.playerNames && ticket.playerNames.length > 0 && (
+                            <div className="text-muted small">
+                              {ticket.playerNames.join(', ')}
                             </div>
                           )}
-                        </div>
-                      </td>
-                      <td>
-                        <small>
-                          {ticket.date?.englishDate 
-                            ? new Date(ticket.date.englishDate).toLocaleDateString()
-                            : new Date(ticket.createdAt).toLocaleDateString()}
-                          <br />
-                          {ticket.date?.nepaliDate || '—'}
-                        </small>
-                      </td>
-                      <td>
-                        {ticket.isRefunded ? (
-                          <span className="badge bg-danger">Refunded</span>
-                        ) : (
-                          <span className="badge bg-success">Active</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
+                        </td>
+                        <td>{ticket.ticketType}</td>
+                        <td>
+                          <div>
+                            <strong>रु {ticket.fee?.toLocaleString()}</strong>
+                            {ticket.discount > 0 && (
+                              <div>
+                                <small className="text-muted" style={{ textDecoration: 'line-through' }}>
+                                  रु {((ticket.fee || 0) + (ticket.discount || 0)).toLocaleString()}
+                                </small>
+                                <small className="text-success" style={{ marginLeft: '5px' }}>
+                                  -रु {ticket.discount.toLocaleString()}
+                                </small>
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                        <td>
+                          <small>
+                            {ticket.date?.englishDate 
+                              ? new Date(ticket.date.englishDate).toLocaleDateString()
+                              : new Date(ticket.createdAt).toLocaleDateString()}
+                            <br />
+                            {ticket.date?.nepaliDate || '—'}
+                          </small>
+                        </td>
+                        <td>
+                          {ticket.isRefunded ? (
+                            <span className="badge bg-danger">Refunded</span>
+                          ) : (
+                            <span className="badge bg-success">Active</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* SALES SECTION */}
-      <div className="card mb-4">
-        <div className="card-header">
-          <h3 className="card-title">💰 Sales</h3>
+        {/* SALES SECTION */}
+        <div className="card mb-4">
+          <div className="card-header">
+            <h3 className="card-title">💰 Sales</h3>
+          </div>
+          <div className="card-body">
+            {/* Sales Form */}
+            <div className="card mb-3" style={{ backgroundColor: '#f8fbff', border: '1px solid #e1ecff' }}>
+              <div className="card-body">
+                <h5 className="card-title">Record New Sale</h5>
+                <form onSubmit={handleSalesSubmit}>
+                  <div className="grid grid-2 gap-3">
+                    <div>
+                      <div className="form-group">
+                        <label className="form-label">Customer Name</label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          value={formData.customerName}
+                          onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
+                          required
+                          placeholder="Walk-in customer"
+                        />
+                      </div>
+                      <div className="d-flex justify-between align-center mt-3 mb-2">
+                        <label className="form-label mb-0">Sale Items</label>
+                        <button type="button" className="btn btn-sm btn-outline-primary" onClick={addItem}>
+                          + Add item
+                        </button>
+                      </div>
+                      <div className="d-flex flex-column gap-2">
+                        {formData.items.map((item, index) => (
+                          <div key={index} className="p-2 rounded" style={{ background: '#ffffff', border: '1px solid #e9ecef' }}>
+                            <div className="d-flex justify-between align-center mb-2">
+                              <strong>Item {index + 1}</strong>
+                              {formData.items.length > 1 && (
+                                <button type="button" className="btn btn-sm btn-light text-danger" onClick={() => removeItem(index)}>
+                                  ✕
+                                </button>
+                              )}
+                            </div>
+                            <div className="grid grid-4 gap-2">
+                              <div className="form-group mb-0">
+                                <label className="form-label text-muted small">Item Name</label>
+                                <input
+                                  type="text"
+                                  className="form-control form-control-sm"
+                                  value={item.itemName}
+                                  onChange={(e) => handleItemChange(index, 'itemName', e.target.value)}
+                                  required
+                                />
+                              </div>
+                              <div className="form-group mb-0">
+                                <label className="form-label text-muted small">Qty</label>
+                                <input
+                                  type="number"
+                                  className="form-control form-control-sm"
+                                  value={item.quantity}
+                                  min="1"
+                                  onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
+                                />
+                              </div>
+                              <div className="form-group mb-0">
+                                <label className="form-label text-muted small">Price</label>
+                                <input
+                                  type="number"
+                                  className="form-control form-control-sm"
+                                  value={item.price}
+                                  min="0"
+                                  step="0.01"
+                                  onChange={(e) => handleItemChange(index, 'price', e.target.value)}
+                                />
+                              </div>
+                              <div className="form-group mb-0">
+                                <label className="form-label text-muted small">Total</label>
+                                <input
+                                  type="text"
+                                  className="form-control form-control-sm"
+                                  value={formatCurrency(item.total)}
+                                  readOnly
+                                  style={{ backgroundColor: '#f8f9fa', fontWeight: 600 }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="form-group">
+                        <label className="form-label">Payment Method</label>
+                        <select
+                          className="form-control"
+                          value={formData.paymentMethod}
+                          onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}
+                        >
+                          <option value="Cash">Cash</option>
+                          <option value="Card">Card</option>
+                          <option value="Digital Wallet">Digital Wallet</option>
+                          <option value="Bank Transfer">Bank Transfer</option>
+                        </select>
+                      </div>
+                      <div className="p-3 rounded mb-3" style={{ background: '#1e90ff', color: 'white' }}>
+                        <div className="d-flex justify-between align-center">
+                          <span>Total Due</span>
+                          <strong style={{ fontSize: '1.5rem' }}>{formattedTotalAmount}</strong>
+                        </div>
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label">Remarks</label>
+                        <textarea
+                          className="form-control"
+                          value={formData.remarks}
+                          onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
+                          rows="3"
+                          placeholder="Notes or special instructions"
+                        />
+                      </div>
+                      <div className="form-actions mt-3">
+                        <button type="button" className="btn btn-light" onClick={() => setFormData({
+                          customerName: '',
+                          items: [{ itemName: '', quantity: 1, price: 0, total: 0 }],
+                          paymentMethod: 'Cash',
+                          remarks: ''
+                        })}>
+                          Clear
+                        </button>
+                        <button type="submit" className="btn btn-primary" disabled={salesLoading || !isFormValid}>
+                          {salesLoading ? 'Saving...' : 'Record Sale'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            {/* Recent Sales Table */}
+            <div className="table-container">
+              <div className="table-header">
+                <h4 className="table-title">Recent Sales ({sales.length})</h4>
+                <button className="btn btn-sm btn-secondary" onClick={fetchSales} disabled={salesLoading}>
+                  {salesLoading ? 'Refreshing...' : 'Refresh'}
+                </button>
+              </div>
+              {sales.length === 0 ? (
+                <div className="empty-state">
+                  <p>No sales found</p>
+                </div>
+              ) : (
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Sale No</th>
+                      <th>Customer</th>
+                      <th>Items</th>
+                      <th>Amount</th>
+                      <th>Payment</th>
+                      <th>Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sales.map(sale => (
+                      <tr key={sale._id}>
+                        <td><strong>{sale.saleNo}</strong></td>
+                        <td>{sale.customerName}</td>
+                        <td>
+                          {sale.items?.map(i => `${i.itemName} (x${i.quantity})`).join(', ') || 'N/A'}
+                        </td>
+                        <td>रु {sale.totalAmount?.toLocaleString()}</td>
+                        <td>{sale.paymentMethod}</td>
+                        <td>
+                          <small>
+                            {sale.date?.englishDate 
+                              ? new Date(sale.date.englishDate).toLocaleDateString()
+                              : new Date(sale.createdAt).toLocaleDateString()}
+                            <br />
+                            {sale.date?.nepaliDate || '—'}
+                          </small>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
         </div>
-        <div className="card-body">
-          {/* Sales Form */}
-          <div className="card mb-3" style={{ backgroundColor: '#f8fbff', border: '1px solid #e1ecff' }}>
-            <div className="card-body">
-              <h5 className="card-title">Record New Sale</h5>
-              <form onSubmit={handleSalesSubmit}>
-                <div className="grid grid-2 gap-3">
-                  <div>
+
+        {/* EXPENSES SECTION */}
+        <div className="card mb-4">
+          <div className="card-header">
+            <h3 className="card-title">📝 Expenses</h3>
+          </div>
+          <div className="card-body">
+            {/* Expense Form */}
+            <div className="card mb-3" style={{ backgroundColor: '#fff8e1', border: '1px solid #ffc107' }}>
+              <div className="card-body">
+                <h5 className="card-title">Add New Expense</h5>
+                <form onSubmit={handleExpenseSubmit}>
+                  <div className="form-grid">
                     <div className="form-group">
-                      <label className="form-label">Customer Name</label>
+                      <label className="form-label">Category *</label>
                       <input
                         type="text"
                         className="form-control"
-                        value={formData.customerName}
-                        onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
+                        value={expenseFormData.category}
+                        onChange={(e) => setExpenseFormData({ ...expenseFormData, category: e.target.value })}
+                        onKeyPress={handleCategoryKeyPress}
+                        list="categoryOptions"
                         required
-                        placeholder="Walk-in customer"
+                        placeholder="Type category and press Enter"
+                      />
+                      <datalist id="categoryOptions">
+                        {expenseCategories.map(category => (
+                          <option key={category} value={category} />
+                        ))}
+                      </datalist>
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Amount (NPR) *</label>
+                      <input
+                        type="number"
+                        name="expense-amount"
+                        className="form-control"
+                        value={expenseFormData.amount}
+                        onChange={(e) => setExpenseFormData({ ...expenseFormData, amount: e.target.value })}
+                        required
+                        min="0"
+                        step="0.01"
                       />
                     </div>
-                    <div className="d-flex justify-between align-center mt-3 mb-2">
-                      <label className="form-label mb-0">Sale Items</label>
-                      <button type="button" className="btn btn-sm btn-outline-primary" onClick={addItem}>
-                        + Add item
-                      </button>
+                    <div className="form-group">
+                      <label className="form-label">Vendor</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={expenseFormData.vendor}
+                        onChange={(e) => setExpenseFormData({ ...expenseFormData, vendor: e.target.value })}
+                        placeholder="Enter vendor name"
+                      />
                     </div>
-                    <div className="d-flex flex-column gap-2">
-                      {formData.items.map((item, index) => (
-                        <div key={index} className="p-2 rounded" style={{ background: '#ffffff', border: '1px solid #e9ecef' }}>
-                          <div className="d-flex justify-between align-center mb-2">
-                            <strong>Item {index + 1}</strong>
-                            {formData.items.length > 1 && (
-                              <button type="button" className="btn btn-sm btn-light text-danger" onClick={() => removeItem(index)}>
-                                ✕
-                              </button>
-                            )}
-                          </div>
-                          <div className="grid grid-4 gap-2">
-                            <div className="form-group mb-0">
-                              <label className="form-label text-muted small">Item Name</label>
-                              <input
-                                type="text"
-                                className="form-control form-control-sm"
-                                value={item.itemName}
-                                onChange={(e) => handleItemChange(index, 'itemName', e.target.value)}
-                                required
-                              />
-                            </div>
-                            <div className="form-group mb-0">
-                              <label className="form-label text-muted small">Qty</label>
-                              <input
-                                type="number"
-                                className="form-control form-control-sm"
-                                value={item.quantity}
-                                min="1"
-                                onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
-                              />
-                            </div>
-                            <div className="form-group mb-0">
-                              <label className="form-label text-muted small">Price</label>
-                              <input
-                                type="number"
-                                className="form-control form-control-sm"
-                                value={item.price}
-                                min="0"
-                                step="0.01"
-                                onChange={(e) => handleItemChange(index, 'price', e.target.value)}
-                              />
-                            </div>
-                            <div className="form-group mb-0">
-                              <label className="form-label text-muted small">Total</label>
-                              <input
-                                type="text"
-                                className="form-control form-control-sm"
-                                value={formatCurrency(item.total)}
-                                readOnly
-                                style={{ backgroundColor: '#f8f9fa', fontWeight: 600 }}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
                     <div className="form-group">
                       <label className="form-label">Payment Method</label>
                       <select
                         className="form-control"
-                        value={formData.paymentMethod}
-                        onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}
+                        value={expenseFormData.paymentMethod}
+                        onChange={(e) => setExpenseFormData({ ...expenseFormData, paymentMethod: e.target.value })}
                       >
                         <option value="Cash">Cash</option>
                         <option value="Card">Card</option>
-                        <option value="Digital Wallet">Digital Wallet</option>
                         <option value="Bank Transfer">Bank Transfer</option>
                       </select>
                     </div>
-                    <div className="p-3 rounded mb-3" style={{ background: '#1e90ff', color: 'white' }}>
-                      <div className="d-flex justify-between align-center">
-                        <span>Total Due</span>
-                        <strong style={{ fontSize: '1.5rem' }}>{formattedTotalAmount}</strong>
-                      </div>
-                    </div>
                     <div className="form-group">
+                      <label className="form-label">Receipt No</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={expenseFormData.receiptNo}
+                        onChange={(e) => setExpenseFormData({ ...expenseFormData, receiptNo: e.target.value })}
+                        placeholder="Enter receipt number"
+                      />
+                    </div>
+                    <div className="form-group full-width">
+                      <label className="form-label">Description</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={expenseFormData.description}
+                        onChange={(e) => setExpenseFormData({ ...expenseFormData, description: e.target.value })}
+                        placeholder="Enter expense description"
+                      />
+                    </div>
+                    <div className="form-group full-width">
                       <label className="form-label">Remarks</label>
                       <textarea
                         className="form-control"
-                        value={formData.remarks}
-                        onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
-                        rows="3"
-                        placeholder="Notes or special instructions"
+                        value={expenseFormData.remarks}
+                        onChange={(e) => setExpenseFormData({ ...expenseFormData, remarks: e.target.value })}
+                        rows="2"
+                        placeholder="Any additional notes"
                       />
                     </div>
-                    <div className="form-actions mt-3">
-                      <button type="button" className="btn btn-light" onClick={() => setFormData({
-                        customerName: '',
-                        items: [{ itemName: '', quantity: 1, price: 0, total: 0 }],
-                        paymentMethod: 'Cash',
-                        remarks: ''
-                      })}>
-                        Clear
-                      </button>
-                      <button type="submit" className="btn btn-primary" disabled={salesLoading || !isFormValid}>
-                        {salesLoading ? 'Saving...' : 'Record Sale'}
-                      </button>
-                    </div>
                   </div>
-                </div>
-              </form>
-            </div>
-          </div>
-
-          {/* Recent Sales Table */}
-          <div className="table-container">
-            <div className="table-header">
-              <h4 className="table-title">Recent Sales ({sales.length})</h4>
-              <button className="btn btn-sm btn-secondary" onClick={fetchSales} disabled={salesLoading}>
-                {salesLoading ? 'Refreshing...' : 'Refresh'}
-              </button>
-            </div>
-            {sales.length === 0 ? (
-              <div className="empty-state">
-                <p>No sales found</p>
+                  <div className="form-actions mt-3">
+                    <button type="button" className="btn btn-light" onClick={() => setExpenseFormData({
+                      category: '',
+                      description: '',
+                      amount: '',
+                      receiptNo: '',
+                      vendor: '',
+                      paymentMethod: 'Cash',
+                      remarks: ''
+                    })}>
+                      Clear
+                    </button>
+                    <button type="submit" className="btn btn-warning" disabled={expensesLoading}>
+                      {expensesLoading ? 'Saving...' : 'Record Expense'}
+                    </button>
+                  </div>
+                </form>
               </div>
-            ) : (
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>Sale No</th>
-                    <th>Customer</th>
-                    <th>Items</th>
-                    <th>Amount</th>
-                    <th>Payment</th>
-                    <th>Date</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sales.map(sale => (
-                    <tr key={sale._id}>
-                      <td><strong>{sale.saleNo}</strong></td>
-                      <td>{sale.customerName}</td>
-                      <td>
-                        {sale.items?.map(i => `${i.itemName} (x${i.quantity})`).join(', ') || 'N/A'}
-                      </td>
-                      <td>रु {sale.totalAmount?.toLocaleString()}</td>
-                      <td>{sale.paymentMethod}</td>
-                      <td>
-                        <small>
-                          {sale.date?.englishDate 
-                            ? new Date(sale.date.englishDate).toLocaleDateString()
-                            : new Date(sale.createdAt).toLocaleDateString()}
-                          <br />
-                          {sale.date?.nepaliDate || '—'}
-                        </small>
-                      </td>
+            </div>
+
+            {/* Recent Expenses Table */}
+            <div className="table-container">
+              <div className="table-header">
+                <h4 className="table-title">Recent Expenses ({expenses.length})</h4>
+                <button className="btn btn-sm btn-secondary" onClick={fetchExpenses} disabled={expensesLoading}>
+                  {expensesLoading ? 'Refreshing...' : 'Refresh'}
+                </button>
+              </div>
+              {expenses.length === 0 ? (
+                <div className="empty-state">
+                  <p>No expenses found</p>
+                </div>
+              ) : (
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Category</th>
+                      <th>Description</th>
+                      <th>Amount</th>
+                      <th>Vendor</th>
+                      <th>Payment</th>
+                      <th>Date</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
+                  </thead>
+                  <tbody>
+                    {expenses.map(expense => (
+                      <tr key={expense._id}>
+                        <td><strong>{expense.category}</strong></td>
+                        <td>{expense.description || '—'}</td>
+                        <td>रु {expense.amount?.toLocaleString()}</td>
+                        <td>{expense.vendor || '—'}</td>
+                        <td>{expense.paymentMethod}</td>
+                        <td>
+                          <small>
+                            {expense.date?.englishDate 
+                              ? new Date(expense.date.englishDate).toLocaleDateString()
+                              : new Date(expense.createdAt).toLocaleDateString()}
+                            <br />
+                            {expense.date?.nepaliDate || '—'}
+                          </small>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
           </div>
         </div>
       </div>
-
-      {/* EXPENSES SECTION */}
-      <div className="card mb-4">
-        <div className="card-header">
-          <h3 className="card-title">📝 Expenses</h3>
-        </div>
-        <div className="card-body">
-          {/* Expense Form */}
-          <div className="card mb-3" style={{ backgroundColor: '#fff8e1', border: '1px solid #ffc107' }}>
-            <div className="card-body">
-              <h5 className="card-title">Add New Expense</h5>
-              <form onSubmit={handleExpenseSubmit}>
-                <div className="form-grid">
-                  <div className="form-group">
-                    <label className="form-label">Category *</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={expenseFormData.category}
-                      onChange={(e) => setExpenseFormData({ ...expenseFormData, category: e.target.value })}
-                      onKeyPress={handleCategoryKeyPress}
-                      list="categoryOptions"
-                      required
-                      placeholder="Type category and press Enter"
-                    />
-                    <datalist id="categoryOptions">
-                      {expenseCategories.map(category => (
-                        <option key={category} value={category} />
-                      ))}
-                    </datalist>
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Amount (NPR) *</label>
-                    <input
-                      type="number"
-                      name="expense-amount"
-                      className="form-control"
-                      value={expenseFormData.amount}
-                      onChange={(e) => setExpenseFormData({ ...expenseFormData, amount: e.target.value })}
-                      required
-                      min="0"
-                      step="0.01"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Vendor</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={expenseFormData.vendor}
-                      onChange={(e) => setExpenseFormData({ ...expenseFormData, vendor: e.target.value })}
-                      placeholder="Enter vendor name"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Payment Method</label>
-                    <select
-                      className="form-control"
-                      value={expenseFormData.paymentMethod}
-                      onChange={(e) => setExpenseFormData({ ...expenseFormData, paymentMethod: e.target.value })}
-                    >
-                      <option value="Cash">Cash</option>
-                      <option value="Card">Card</option>
-                      <option value="Bank Transfer">Bank Transfer</option>
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Receipt No</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={expenseFormData.receiptNo}
-                      onChange={(e) => setExpenseFormData({ ...expenseFormData, receiptNo: e.target.value })}
-                      placeholder="Enter receipt number"
-                    />
-                  </div>
-                  <div className="form-group full-width">
-                    <label className="form-label">Description</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={expenseFormData.description}
-                      onChange={(e) => setExpenseFormData({ ...expenseFormData, description: e.target.value })}
-                      placeholder="Enter expense description"
-                    />
-                  </div>
-                  <div className="form-group full-width">
-                    <label className="form-label">Remarks</label>
-                    <textarea
-                      className="form-control"
-                      value={expenseFormData.remarks}
-                      onChange={(e) => setExpenseFormData({ ...expenseFormData, remarks: e.target.value })}
-                      rows="2"
-                      placeholder="Any additional notes"
-                    />
-                  </div>
-                </div>
-                <div className="form-actions mt-3">
-                  <button type="button" className="btn btn-light" onClick={() => setExpenseFormData({
-                    category: '',
-                    description: '',
-                    amount: '',
-                    receiptNo: '',
-                    vendor: '',
-                    paymentMethod: 'Cash',
-                    remarks: ''
-                  })}>
-                    Clear
-                  </button>
-                  <button type="submit" className="btn btn-warning" disabled={expensesLoading}>
-                    {expensesLoading ? 'Saving...' : 'Record Expense'}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-
-          {/* Recent Expenses Table */}
-          <div className="table-container">
-            <div className="table-header">
-              <h4 className="table-title">Recent Expenses ({expenses.length})</h4>
-              <button className="btn btn-sm btn-secondary" onClick={fetchExpenses} disabled={expensesLoading}>
-                {expensesLoading ? 'Refreshing...' : 'Refresh'}
-              </button>
-            </div>
-            {expenses.length === 0 ? (
-              <div className="empty-state">
-                <p>No expenses found</p>
-              </div>
-            ) : (
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>Category</th>
-                    <th>Description</th>
-                    <th>Amount</th>
-                    <th>Vendor</th>
-                    <th>Payment</th>
-                    <th>Date</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {expenses.map(expense => (
-                    <tr key={expense._id}>
-                      <td><strong>{expense.category}</strong></td>
-                      <td>{expense.description || '—'}</td>
-                      <td>रु {expense.amount?.toLocaleString()}</td>
-                      <td>{expense.vendor || '—'}</td>
-                      <td>{expense.paymentMethod}</td>
-                      <td>
-                        <small>
-                          {expense.date?.englishDate 
-                            ? new Date(expense.date.englishDate).toLocaleDateString()
-                            : new Date(expense.createdAt).toLocaleDateString()}
-                          <br />
-                          {expense.date?.nepaliDate || '—'}
-                        </small>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-        </div>
-      </div>
+      <footer style={{ textAlign: 'center', margin: '32px 0 12px 0', fontSize: '12px', color: '#708090' }}>
+        &copy; Valyntix AI TECH SYSTEM. All rights reserved.
+      </footer>
     </div>
   );
 };

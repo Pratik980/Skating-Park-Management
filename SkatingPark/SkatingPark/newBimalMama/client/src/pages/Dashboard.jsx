@@ -3,6 +3,7 @@ import { useApp } from '../context/AppContext';
 import { summaryAPI, settingsAPI, usersAPI, pdfAPI, downloadFile } from '../api/api';
 import Loader from '../components/Loader';
 import NotificationContainer from '../components/NotificationContainer';
+import logo from '/valyntix-logo.png.jpg';
 
 const Dashboard = () => {
   const [stats, setStats] = useState(null);
@@ -130,167 +131,175 @@ const Dashboard = () => {
   }
 
   return (
-    <div>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <NotificationContainer />
-      
-      <div className="d-flex justify-between align-center mb-3">
-        <h1>Dashboard</h1>
-        <div className="d-flex gap-2 align-center">
-          <button 
-            type="button"
-            className="btn btn-info"
-            onClick={(e) => {
-              e.preventDefault();
-              exportDashboardToPDF();
-            }}
-            style={{ cursor: 'pointer' }}
-          >
-            📄 Export PDF
-          </button>
-          <div className="text-muted">
-            Welcome back, {user?.name}!
-          </div>
-        </div>
-      </div>
-
-      {/* Today's Overview */}
-      <div className="stats-grid">
-        <div className="stat-card tickets">
-          <div className="stat-label">Today's Tickets</div>
-          <div className="stat-number">{stats.today.tickets}</div>
-          <small>Total tickets sold today</small>
-        </div>
-        
-        <div className="stat-card sales">
-          <div className="stat-label">Today's Sales</div>
-          <div className="stat-number">{stats.today.sales}</div>
-          <small>Total sales transactions today</small>
-        </div>
-        
-        <div className="stat-card expenses">
-          <div className="stat-label">Today's Expenses</div>
-          <div className="stat-number">{stats.today.expenses}</div>
-          <small>Total expenses recorded today</small>
-        </div>
-        
-        <div className="stat-card profit">
-          <div className="stat-label">Net Profit</div>
-          <div className="stat-number" style={{ color: stats.totals.netProfit >= 0 ? '#27ae60' : '#e74c3c' }}>
-            रु {stats.totals.netProfit?.toLocaleString()}
-          </div>
-          <small>Overall profit/loss</small>
-        </div>
-      </div>
-
-      {/* Overall Statistics */}
-      <div className="grid grid-2">
-        <div className="card">
-          <h3>Revenue Overview</h3>
-          <div className="stats-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
-            <div className="text-center">
-              <div className="stat-number text-info">रु {stats.totals.revenue?.toLocaleString()}</div>
-              <div className="stat-label">Total Revenue</div>
-            </div>
-            <div className="text-center">
-              <div className="stat-number text-danger">रु {stats.totals.expensesAmount?.toLocaleString()}</div>
-              <div className="stat-label">Total Expenses</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="card">
-          <h3>Records Summary</h3>
-          <div className="stats-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
-            <div className="text-center">
-              <div className="stat-number" style={{ color: '#e74c3c' }}>{stats.totals.tickets}</div>
-              <div className="stat-label">Total Tickets</div>
-            </div>
-            <div className="text-center">
-              <div className="stat-number" style={{ color: '#27ae60' }}>{stats.totals.sales}</div>
-              <div className="stat-label">Total Sales</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="card">
-        <div className="d-flex justify-between align-center flex-wrap gap-2">
-          <div>
-            <h3 className="mb-1">Quick Actions</h3>
-            <small className="text-muted">Jump into the most common workflows</small>
-          </div>
-        </div>
-        <div
-          style={{
-            display: 'grid',
-            gap: '1rem',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))',
-            marginTop: '1rem'
-          }}
-        >
-          {visibleQuickActions.map((action) => (
-            <a
-              key={action.key}
-              href={action.href}
-              style={{
-                textDecoration: 'none',
-                border: '1px solid #e6eaf5',
-                borderRadius: '12px',
-                padding: '1rem',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '0.5rem',
-                boxShadow: '0 6px 20px rgba(17, 38, 146, 0.08)',
-                transition: 'transform 0.15s ease, box-shadow 0.15s ease',
-                background: '#fff'
+      <header style={{ textAlign: 'center', margin: '24px 0 8px 0' }}>
+        <img src={logo} alt="Valyntix Logo" style={{ maxWidth: 120, height: 'auto', marginBottom: 8 }} />
+        <h2 style={{ margin: 0, fontWeight: 700, color: '#233043', letterSpacing: 1 }}>Valyntix AI TECH SYSTEM</h2>
+      </header>
+      <div style={{ flex: 1 }}>
+        <div className="d-flex justify-between align-center mb-3">
+          <h1>Dashboard</h1>
+          <div className="d-flex gap-2 align-center">
+            <button 
+              type="button"
+              className="btn btn-info"
+              onClick={(e) => {
+                e.preventDefault();
+                exportDashboardToPDF();
               }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = '0 12px 28px rgba(17,38,146,0.12)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 6px 20px rgba(17, 38, 146, 0.08)';
-              }}
+              style={{ cursor: 'pointer' }}
             >
-              <span
+              📄 Export PDF
+            </button>
+            <div className="text-muted">
+              Welcome back, {user?.name}!
+            </div>
+          </div>
+        </div>
+
+        {/* Today's Overview */}
+        <div className="stats-grid">
+          <div className="stat-card tickets">
+            <div className="stat-label">Today's Tickets</div>
+            <div className="stat-number">{stats.today.tickets}</div>
+            <small>Total tickets sold today</small>
+          </div>
+          
+          <div className="stat-card sales">
+            <div className="stat-label">Today's Sales</div>
+            <div className="stat-number">{stats.today.sales}</div>
+            <small>Total sales transactions today</small>
+          </div>
+          
+          <div className="stat-card expenses">
+            <div className="stat-label">Today's Expenses</div>
+            <div className="stat-number">{stats.today.expenses}</div>
+            <small>Total expenses recorded today</small>
+          </div>
+          
+          <div className="stat-card profit">
+            <div className="stat-label">Net Profit</div>
+            <div className="stat-number" style={{ color: stats.totals.netProfit >= 0 ? '#27ae60' : '#e74c3c' }}>
+              रु {stats.totals.netProfit?.toLocaleString()}
+            </div>
+            <small>Overall profit/loss</small>
+          </div>
+        </div>
+
+        {/* Overall Statistics */}
+        <div className="grid grid-2">
+          <div className="card">
+            <h3>Revenue Overview</h3>
+            <div className="stats-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
+              <div className="text-center">
+                <div className="stat-number text-info">रु {stats.totals.revenue?.toLocaleString()}</div>
+                <div className="stat-label">Total Revenue</div>
+              </div>
+              <div className="text-center">
+                <div className="stat-number text-danger">रु {stats.totals.expensesAmount?.toLocaleString()}</div>
+                <div className="stat-label">Total Expenses</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="card">
+            <h3>Records Summary</h3>
+            <div className="stats-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
+              <div className="text-center">
+                <div className="stat-number" style={{ color: '#e74c3c' }}>{stats.totals.tickets}</div>
+                <div className="stat-label">Total Tickets</div>
+              </div>
+              <div className="text-center">
+                <div className="stat-number" style={{ color: '#27ae60' }}>{stats.totals.sales}</div>
+                <div className="stat-label">Total Sales</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="card">
+          <div className="d-flex justify-between align-center flex-wrap gap-2">
+            <div>
+              <h3 className="mb-1">Quick Actions</h3>
+              <small className="text-muted">Jump into the most common workflows</small>
+            </div>
+          </div>
+          <div
+            style={{
+              display: 'grid',
+              gap: '1rem',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))',
+              marginTop: '1rem'
+            }}
+          >
+            {visibleQuickActions.map((action) => (
+              <a
+                key={action.key}
+                href={action.href}
                 style={{
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: '10px',
-                  background: `${action.accent}22`,
-                  color: action.accent,
+                  textDecoration: 'none',
+                  border: '1px solid #e6eaf5',
+                  borderRadius: '12px',
+                  padding: '1rem',
                   display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '1.3rem'
+                  flexDirection: 'column',
+                  gap: '0.5rem',
+                  boxShadow: '0 6px 20px rgba(17, 38, 146, 0.08)',
+                  transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+                  background: '#fff'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 12px 28px rgba(17,38,146,0.12)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 6px 20px rgba(17, 38, 146, 0.08)';
                 }}
               >
-                {action.icon}
-              </span>
-              <div>
-                <div style={{ fontWeight: 600, color: '#233043' }}>{action.label}</div>
-                <small style={{ color: '#6c7a99' }}>{action.description}</small>
-              </div>
-              <span style={{ fontSize: '0.85rem', color: action.accent, fontWeight: 600 }}>
-                Go &rarr;
-              </span>
-            </a>
-          ))}
+                <span
+                  style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '10px',
+                    background: `${action.accent}22`,
+                    color: action.accent,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '1.3rem'
+                  }}
+                >
+                  {action.icon}
+                </span>
+                <div>
+                  <div style={{ fontWeight: 600, color: '#233043' }}>{action.label}</div>
+                  <small style={{ color: '#6c7a99' }}>{action.description}</small>
+                </div>
+                <span style={{ fontSize: '0.85rem', color: action.accent, fontWeight: 600 }}>
+                  Go &rarr;
+                </span>
+              </a>
+            ))}
+          </div>
         </div>
-      </div>
 
-      {/* Branch Info */}
-      {currentBranch && (
-        <div className="card">
-          <h3>Current Branch</h3>
-          <p><strong>Name:</strong> {currentBranch.branchName}</p>
-          <p><strong>Location:</strong> {currentBranch.location}</p>
-          <p><strong>Contact:</strong> {currentBranch.contactNumber}</p>
-          <p><strong>Hours:</strong> {currentBranch.openingTime} - {currentBranch.closingTime}</p>
-        </div>
-      )}
+        {/* Branch Info */}
+        {currentBranch && (
+          <div className="card">
+            <h3>Current Branch</h3>
+            <p><strong>Name:</strong> {currentBranch.branchName}</p>
+            <p><strong>Location:</strong> {currentBranch.location}</p>
+            <p><strong>Contact:</strong> {currentBranch.contactNumber}</p>
+            <p><strong>Hours:</strong> {currentBranch.openingTime} - {currentBranch.closingTime}</p>
+          </div>
+        )}
+      </div>
+      <footer style={{ textAlign: 'center', margin: '32px 0 12px 0', fontSize: '12px', color: '#708090' }}>
+        &copy; Valyntix AI TECH SYSTEM. All rights reserved.
+      </footer>
     </div>
   );
 };
