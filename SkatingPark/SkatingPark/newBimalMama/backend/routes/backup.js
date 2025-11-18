@@ -24,7 +24,7 @@ router.delete('/erase-data', protect, authorize('admin'), async (req, res) => {
   let types = [];
   if (Array.isArray(rawTypes)) {
     types = rawTypes;
-  } else if (typeof rawTypes === 'string') {
+  } else if (typeof rawTypes === 'string') { 
     types = rawTypes.split(',').map(t => t.trim()).filter(Boolean);
   }
 
