@@ -938,8 +938,11 @@ const StaffDashboard = () => {
           </div>
         </div>
       </div>
-      <footer style={{ textAlign: 'center', margin: '32px 0 12px 0', fontSize: '12px', color: '#708090' }}>
-        &copy; Valyntix AI TECH SYSTEM. All rights reserved.
+      <footer style={{ textAlign: 'center', margin: '32px 0 12px 0', fontSize: '12px', color: '#708090', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+          <img src={logo} alt="Valyntix Logo" style={{ width: 24, height: 24, verticalAlign: 'middle', borderRadius: 4, objectFit: 'contain' }} />
+          &copy; Valyntix AI TECH SYSTEM. All rights reserved.
+        </span>
       </footer>
     </div>
   );

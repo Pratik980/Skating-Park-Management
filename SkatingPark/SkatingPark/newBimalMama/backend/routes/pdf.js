@@ -21,7 +21,7 @@ const localDevanagariFontPath = path
   .join(__dirname, '../../client/public/fonts/NotoSansDevanagari-Regular.ttf')
   .replace(/\\/g, '/');
 const localDevanagariFontUrl = `file://${localDevanagariFontPath}`;
-const valyntixLogoPath = path.join(__dirname, '../../client/public/valyntix-logo.png').replace(/\\/g, '/');
+const valyntixLogoPath = path.join(__dirname, '../../client/public/valyntix-logo.png.jpg').replace(/\\/g, '/');
 const valyntixLogoUrl = `file://${valyntixLogoPath}`;
 
 const router = express.Router();
@@ -483,8 +483,11 @@ const buildDashboardHtml = ({ stats, settings, branch, generatedAt, user }) => {
           </table>
         </div>
 
-        <div class="footer">
-          &copy; Valyntix AI TECH SYSTEM. All rights reserved.
+        <div class="footer" style="text-align:center; margin-top:28px; padding-top:16px; border-top:1px solid #e2e6f5; font-size:13px; color:#60708e; display:flex; flex-direction:column; align-items:center; gap:6px;">
+          <span style="display:inline-flex;align-items:center;gap:8px;">
+            <img src='${valyntixLogoUrl}' alt='Valyntix Logo' style='width:24px;height:24px;vertical-align:middle;border-radius:4px;object-fit:contain;margin-right:2px;' />
+            &copy; Valyntix AI TECH SYSTEM. All rights reserved.
+          </span>
         </div>
       </div>
     </body>
