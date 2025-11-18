@@ -416,10 +416,6 @@ const Summary = () => {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <NotificationContainer />
-      <header style={{ textAlign: 'center', margin: '24px 0 8px 0' }}>
-        <img src={logo} alt="Valyntix Logo" style={{ maxWidth: 120, height: 'auto', marginBottom: 8 }} />
-        <h2 style={{ margin: 0, fontWeight: 700, color: '#233043', letterSpacing: 1 }}>Valyntix AI TECH SYSTEM</h2>
-      </header>
       <div style={{ flex: 1 }}>
         <div className="d-flex justify-between align-center mb-3">
           <h1>Reports & Summary</h1>
