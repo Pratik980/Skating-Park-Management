@@ -6,6 +6,7 @@ import NotificationContainer from '../components/NotificationContainer';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import Modal from 'react-modal';
+import logo from '/valyntix-logo.png.jpg';
 
 const createEmptyItem = () => ({
   itemName: '',
@@ -657,6 +658,12 @@ const Sales = () => {
         </div>
       )}
       <Modal isOpen={!!previewSale} onRequestClose={() => setPreviewSale(null)} ariaHideApp={false} style={{ content: { maxWidth: 470, margin: '25px auto', borderRadius: 13, padding: '0 0 13px 0', minHeight: 330, boxShadow: '0 2px 20px #0003', border:'none' }, overlay: { background: 'rgba(70,90,120,0.17)' } }}> <div dangerouslySetInnerHTML={{__html: renderSaleBillHtml(previewSale)}} /> <div style={{ textAlign: 'center', marginTop: 15 }}><button className="btn btn-secondary" onClick={()=>setPreviewSale(null)}>Close</button></div> </Modal>
+      <footer style={{ textAlign: 'center', margin: '32px 0 12px 0', fontSize: '12px', color: '#708090', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+          <img src={logo} alt="Valyntix Logo" style={{ width: 24, height: 24, verticalAlign: 'middle', borderRadius: 4, objectFit: 'contain' }} />
+          &copy; Valyntix AI TECH SYSTEM. All rights reserved.
+        </span>
+      </footer>
     </div>
   );
 };
