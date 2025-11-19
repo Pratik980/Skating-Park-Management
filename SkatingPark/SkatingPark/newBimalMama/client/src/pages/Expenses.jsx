@@ -4,6 +4,7 @@ import { expensesAPI } from '../api/api';
 import Loader from '../components/Loader';
 import NotificationContainer from '../components/NotificationContainer';
 import logo from '/valyntix-logo.png.jpg';
+import Modal from 'react-modal';
 
 const Expenses = () => {
   const [expenses, setExpenses] = useState([]);
@@ -18,6 +19,7 @@ const Expenses = () => {
     remarks: ''
   });
   const [customCategories, setCustomCategories] = useState([]);
+  const [previewExpense, setPreviewExpense] = useState(null);
   const { currentBranch, user } = useApp();
 
 
@@ -136,6 +138,61 @@ const fetchCategories = async () => {
   ];
 
   const expenseCategories = [...predefinedCategories, ...customCategories];
+
+  // Render expense receipt HTML
+  const renderExpenseReceiptHtml = (expense, title = 'Expense Receipt') => {
+    const staffName = expense.staff?.name || '—';
+    const date = expense.date?.englishDate ? new Date(expense.date.englishDate).toLocaleDateString() : '—';
+    const nepaliDate = expense.date?.nepaliDate || '—';
+    
+    return `
+    <div style='max-width:480px;margin:0 auto;background:white;padding:20px;font-family:Arial,sans-serif;'>
+      <div style='text-align:center;border-bottom:2px solid #000;padding-bottom:12px;margin-bottom:20px;'>
+        <h2 style='margin:0;font-size:22px;font-weight:bold;'>${title}</h2>
+      </div>
+      <table style='width:100%;border-collapse:collapse;margin-bottom:16px;'>
+        <tr><td style='padding:6px 0;font-weight:bold;width:40%;'>Expense No:</td><td style='padding:6px 0;'>${expense.expenseNo || '—'}</td></tr>
+        <tr><td style='padding:6px 0;font-weight:bold;'>Category:</td><td style='padding:6px 0;'>${expense.category || '—'}</td></tr>
+        <tr><td style='padding:6px 0;font-weight:bold;'>Description:</td><td style='padding:6px 0;'>${expense.description || '—'}</td></tr>
+        <tr><td style='padding:6px 0;font-weight:bold;'>Amount:</td><td style='padding:6px 0;font-size:18px;color:#d32f2f;font-weight:bold;'>रु ${expense.amount ? expense.amount.toLocaleString() : '0'}</td></tr>
+        <tr><td style='padding:6px 0;font-weight:bold;'>Vendor:</td><td style='padding:6px 0;'>${expense.vendor || '—'}</td></tr>
+        <tr><td style='padding:6px 0;font-weight:bold;'>Payment Method:</td><td style='padding:6px 0;'>${expense.paymentMethod || '—'}</td></tr>
+        <tr><td style='padding:6px 0;font-weight:bold;'>Receipt No:</td><td style='padding:6px 0;'>${expense.receiptNo || '—'}</td></tr>
+        <tr><td style='padding:6px 0;font-weight:bold;'>Date:</td><td style='padding:6px 0;'>${date} (${nepaliDate})</td></tr>
+        <tr><td style='padding:6px 0;font-weight:bold;'>Staff:</td><td style='padding:6px 0;'>${staffName}</td></tr>
+        ${expense.remarks ? `<tr><td style='padding:6px 0;font-weight:bold;'>Remarks:</td><td style='padding:6px 0;'>${expense.remarks}</td></tr>` : ''}
+      </table>
+      <div style='text-align:center;color:#125a15;font-weight:700;font-size:15px;margin-top:14px;'>धन्यवाद!</div>
+    </div>`;
+  };
+
+  // Print expense receipt
+  const printExpenseReceipt = (expense, title = 'Expense Receipt') => {
+    if (!expense) return;
+    const html = renderExpenseReceiptHtml(expense, title);
+    const win = window.open('', '_blank', 'width=480,height=870');
+    win.document.write(`<!DOCTYPE html><html><head><title>${title}</title></head><body style='margin:0;background:#e8edfa'>${html}<script>window.onload=()=>{window.print();setTimeout(()=>window.close(),700);}</script></body></html>`);
+    win.document.close();
+  };
+
+  // Print all expense receipts one by one
+  const printAllExpenses = async (expensesToPrint) => {
+    if (!expensesToPrint || expensesToPrint.length === 0) {
+      alert('No expenses to print');
+      return;
+    }
+
+    // Print each expense with a delay to allow print dialog to appear
+    for (let i = 0; i < expensesToPrint.length; i++) {
+      const expense = expensesToPrint[i];
+      printExpenseReceipt(expense, `Expense Receipt - ${expense.expenseNo || i + 1}`);
+      
+      // Wait before printing next (except for last one)
+      if (i < expensesToPrint.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    }
+  };
 
   if (loading && expenses.length === 0) {
     return <Loader text="Loading expenses..." />;
@@ -272,6 +329,16 @@ const fetchCategories = async () => {
         <div className="table-header">
           <h3 className="table-title">Expense Records</h3>
           <div className="table-actions">
+            {expenses.length > 0 && (
+              <button
+                className="btn btn-sm btn-info"
+                onClick={() => printAllExpenses(expenses)}
+                style={{ marginRight: 8 }}
+                title="Print All Expense Receipts"
+              >
+                🖨️ Print All
+              </button>
+            )}
             <button 
               className="btn btn-sm btn-secondary"
               onClick={fetchExpenses}
@@ -331,13 +398,29 @@ const fetchCategories = async () => {
                     <td data-label="Staff">{expense.staff?.name}</td>
                     {user?.role === 'admin' && (
                       <td data-label="Actions">
-                        <button 
-                          className="btn btn-sm btn-danger"
-                          onClick={() => handleDelete(expense._id)}
-                          title="Delete Expense"
-                        >
-                          🗑️
-                        </button>
+                        <div className="d-flex gap-1">
+                          <button 
+                            className="btn btn-sm btn-outline-primary"
+                            onClick={() => setPreviewExpense(expense)}
+                            title="Preview Expense"
+                          >
+                            👁️
+                          </button>
+                          <button 
+                            className="btn btn-sm btn-info"
+                            onClick={() => printExpenseReceipt(expense)}
+                            title="Print Expense"
+                          >
+                            🖨️
+                          </button>
+                          <button 
+                            className="btn btn-sm btn-danger"
+                            onClick={() => handleDelete(expense._id)}
+                            title="Delete Expense"
+                          >
+                            🗑️
+                          </button>
+                        </div>
                       </td>
                     )}
                   </tr>
@@ -524,6 +607,56 @@ const fetchCategories = async () => {
           }
         }
       `}</style>
+
+      {/* Preview Expense Modal */}
+      {previewExpense && (
+        <Modal
+          isOpen={!!previewExpense}
+          onRequestClose={() => setPreviewExpense(null)}
+          contentLabel="Expense Preview"
+          style={{
+            overlay: {
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              zIndex: 1000
+            },
+            content: {
+              maxWidth: '600px',
+              margin: 'auto',
+              padding: '20px',
+              borderRadius: '8px'
+            }
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <h3>Expense Receipt Preview</h3>
+            <button 
+              onClick={() => setPreviewExpense(null)}
+              style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer' }}
+            >
+              ×
+            </button>
+          </div>
+          <div dangerouslySetInnerHTML={{ __html: renderExpenseReceiptHtml(previewExpense) }} />
+          <div style={{ marginTop: '20px', display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+            <button 
+              className="btn btn-secondary"
+              onClick={() => setPreviewExpense(null)}
+            >
+              Close
+            </button>
+            <button 
+              className="btn btn-primary"
+              onClick={() => {
+                printExpenseReceipt(previewExpense);
+                setPreviewExpense(null);
+              }}
+            >
+              Print
+            </button>
+          </div>
+        </Modal>
+      )}
+
       <footer style={{ textAlign: 'center', margin: '32px 0 12px 0', fontSize: '12px', color: '#708090', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
           <img src={logo} alt="Valyntix Logo" style={{ width: 24, height: 24, verticalAlign: 'middle', borderRadius: 4, objectFit: 'contain' }} />
