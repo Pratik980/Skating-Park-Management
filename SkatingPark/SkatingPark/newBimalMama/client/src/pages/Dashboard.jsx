@@ -10,7 +10,18 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [settings, setSettings] = useState(null);
   const [users, setUsers] = useState([]);
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem('dashboardDarkMode');
+    return saved ? JSON.parse(saved) : false;
+  });
   const { currentBranch, user } = useApp();
+
+  // Toggle dark mode
+  const toggleDarkMode = () => {
+    const newMode = !darkMode;
+    setDarkMode(newMode);
+    localStorage.setItem('dashboardDarkMode', JSON.stringify(newMode));
+  };
 
   // Memoize quick actions to prevent recalculation (must be before conditional returns)
   const quickActionItems = useMemo(() => [
@@ -130,104 +141,426 @@ const Dashboard = () => {
     );
   }
 
+  // Theme colors based on dark mode
+  const theme = {
+    bg: darkMode ? '#0f172a' : 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+    cardBg: darkMode ? '#1e293b' : '#ffffff',
+    text: darkMode ? '#f1f5f9' : '#1e293b',
+    textSecondary: darkMode ? '#94a3b8' : '#64748b',
+    border: darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+    shadow: darkMode ? '0 10px 40px rgba(0, 0, 0, 0.5)' : '0 10px 40px rgba(0, 0, 0, 0.1)',
+    headerGradient: darkMode 
+      ? 'linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)'
+      : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    cardShadow: darkMode ? '0 8px 25px rgba(0, 0, 0, 0.4)' : '0 8px 25px rgba(0, 0, 0, 0.08)'
+  };
+
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ 
+      minHeight: '100vh', 
+      display: 'flex', 
+      flexDirection: 'column', 
+      background: theme.bg,
+      transition: 'background 0.3s ease'
+    }}>
       <NotificationContainer />
-      <div style={{ flex: 1 }}>
-        <div className="d-flex justify-between align-center mb-3">
-          <h1>Dashboard</h1>
-          <div className="d-flex gap-2 align-center">
-            <button 
-              type="button"
-              className="btn btn-info"
-              onClick={(e) => {
-                e.preventDefault();
-                exportDashboardToPDF();
-              }}
-              style={{ cursor: 'pointer' }}
-            >
-              📄 Export PDF
-            </button>
-            <div className="text-muted">
-              Welcome back, {user?.name}!
+      <div style={{ flex: 1, padding: '20px' }}>
+        {/* Modern Header with Dark Mode Toggle */}
+        <div style={{
+          background: theme.headerGradient,
+          borderRadius: '24px',
+          padding: '35px',
+          marginBottom: '30px',
+          boxShadow: theme.shadow,
+          color: 'white',
+          position: 'relative',
+          overflow: 'hidden'
+        }}>
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            <div className="d-flex justify-between align-center flex-wrap gap-2">
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '10px' }}>
+                  <h1 style={{ margin: 0, fontSize: '2.8rem', fontWeight: 800, color: 'white', textShadow: '0 2px 20px rgba(0,0,0,0.3)', letterSpacing: '-0.5px' }}>
+                    Dashboard
+                  </h1>
+                  <button
+                    onClick={toggleDarkMode}
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.15)',
+                      border: '2px solid rgba(255, 255, 255, 0.2)',
+                      borderRadius: '12px',
+                      padding: '10px 15px',
+                      cursor: 'pointer',
+                      fontSize: '1.5rem',
+                      backdropFilter: 'blur(10px)',
+                      transition: 'all 0.3s ease',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: '48px',
+                      height: '48px'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.25)';
+                      e.currentTarget.style.transform = 'scale(1.1)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
+                      e.currentTarget.style.transform = 'scale(1)';
+                    }}
+                    title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+                  >
+                    {darkMode ? '☀️' : '🌙'}
+                  </button>
+                </div>
+                <p style={{ margin: 0, fontSize: '1.15rem', opacity: 0.95, fontWeight: 400 }}>
+                  Welcome back, <strong style={{ fontWeight: 600 }}>{user?.name}</strong>! 👋
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <button 
+                  type="button"
+                  className="btn"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    exportDashboardToPDF();
+                  }}
+                  style={{
+                    cursor: 'pointer',
+                    background: 'rgba(255, 255, 255, 0.2)',
+                    border: '2px solid rgba(255, 255, 255, 0.3)',
+                    color: 'white',
+                    padding: '12px 24px',
+                    borderRadius: '14px',
+                    fontWeight: 600,
+                    backdropFilter: 'blur(10px)',
+                    transition: 'all 0.3s ease',
+                    fontSize: '0.95rem'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
+                >
+                  📄 Export PDF
+                </button>
+              </div>
             </div>
           </div>
+          {/* Animated background elements */}
+          <div style={{
+            position: 'absolute',
+            top: '-30%',
+            right: '-5%',
+            width: '400px',
+            height: '400px',
+            background: 'rgba(255, 255, 255, 0.08)',
+            borderRadius: '50%',
+            filter: 'blur(60px)',
+            animation: 'float 6s ease-in-out infinite'
+          }}></div>
+          <div style={{
+            position: 'absolute',
+            bottom: '-20%',
+            left: '-5%',
+            width: '300px',
+            height: '300px',
+            background: 'rgba(255, 255, 255, 0.05)',
+            borderRadius: '50%',
+            filter: 'blur(50px)',
+            animation: 'float 8s ease-in-out infinite reverse'
+          }}></div>
         </div>
 
-        {/* Today's Overview */}
-        <div className="stats-grid">
-          <div className="stat-card tickets">
-            <div className="stat-label">Today's Tickets</div>
-            <div className="stat-number">{stats.today.tickets}</div>
-            <small>Total tickets sold today</small>
+        {/* Today's Overview - Modern Cards */}
+        <div className="stats-grid" style={{ marginBottom: '30px' }}>
+          <div style={{
+            background: 'linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%)',
+            borderRadius: '20px',
+            padding: '30px',
+            color: 'white',
+            boxShadow: '0 10px 30px rgba(255, 107, 107, 0.3)',
+            transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+            cursor: 'pointer',
+            position: 'relative',
+            overflow: 'hidden'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateY(-5px)';
+            e.currentTarget.style.boxShadow = '0 15px 40px rgba(255, 107, 107, 0.4)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 10px 30px rgba(255, 107, 107, 0.3)';
+          }}
+          >
+            <div style={{ fontSize: '0.9rem', opacity: 0.9, marginBottom: '10px', fontWeight: 500 }}>Today's Tickets</div>
+            <div style={{ fontSize: '3.5rem', fontWeight: 700, marginBottom: '8px', textShadow: '0 2px 10px rgba(0,0,0,0.2)' }}>
+              {stats.today.tickets}
+            </div>
+            <small style={{ opacity: 0.85, fontSize: '0.85rem' }}>Total tickets sold today</small>
+            <div style={{
+              position: 'absolute',
+              bottom: '-20px',
+              right: '-20px',
+              fontSize: '6rem',
+              opacity: 0.1,
+              fontWeight: 700
+            }}>🎟️</div>
           </div>
           
-          <div className="stat-card sales">
-            <div className="stat-label">Today's Sales</div>
-            <div className="stat-number">{stats.today.sales}</div>
-            <small>Total sales transactions today</small>
+          <div style={{
+            background: 'linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%)',
+            borderRadius: '20px',
+            padding: '30px',
+            color: 'white',
+            boxShadow: '0 10px 30px rgba(78, 205, 196, 0.3)',
+            transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+            cursor: 'pointer',
+            position: 'relative',
+            overflow: 'hidden'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateY(-5px)';
+            e.currentTarget.style.boxShadow = '0 15px 40px rgba(78, 205, 196, 0.4)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 10px 30px rgba(78, 205, 196, 0.3)';
+          }}
+          >
+            <div style={{ fontSize: '0.9rem', opacity: 0.9, marginBottom: '10px', fontWeight: 500 }}>Today's Sales</div>
+            <div style={{ fontSize: '3.5rem', fontWeight: 700, marginBottom: '8px', textShadow: '0 2px 10px rgba(0,0,0,0.2)' }}>
+              {stats.today.sales}
+            </div>
+            <small style={{ opacity: 0.85, fontSize: '0.85rem' }}>Total sales transactions today</small>
+            <div style={{
+              position: 'absolute',
+              bottom: '-20px',
+              right: '-20px',
+              fontSize: '6rem',
+              opacity: 0.1,
+              fontWeight: 700
+            }}>💰</div>
           </div>
           
-          <div className="stat-card expenses">
-            <div className="stat-label">Today's Expenses</div>
-            <div className="stat-number">{stats.today.expenses}</div>
-            <small>Total expenses recorded today</small>
+          <div style={{
+            background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+            borderRadius: '20px',
+            padding: '30px',
+            color: 'white',
+            boxShadow: '0 10px 30px rgba(245, 87, 108, 0.3)',
+            transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+            cursor: 'pointer',
+            position: 'relative',
+            overflow: 'hidden'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateY(-5px)';
+            e.currentTarget.style.boxShadow = '0 15px 40px rgba(245, 87, 108, 0.4)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 10px 30px rgba(245, 87, 108, 0.3)';
+          }}
+          >
+            <div style={{ fontSize: '0.9rem', opacity: 0.9, marginBottom: '10px', fontWeight: 500 }}>Today's Expenses</div>
+            <div style={{ fontSize: '3.5rem', fontWeight: 700, marginBottom: '8px', textShadow: '0 2px 10px rgba(0,0,0,0.2)' }}>
+              {stats.today.expenses}
+            </div>
+            <small style={{ opacity: 0.85, fontSize: '0.85rem' }}>Total expenses recorded today</small>
+            <div style={{
+              position: 'absolute',
+              bottom: '-20px',
+              right: '-20px',
+              fontSize: '6rem',
+              opacity: 0.1,
+              fontWeight: 700
+            }}>🧾</div>
           </div>
           
-          <div className="stat-card profit">
-            <div className="stat-label">Net Profit</div>
-            <div className="stat-number" style={{ color: stats.totals.netProfit >= 0 ? '#27ae60' : '#e74c3c' }}>
+          <div style={{
+            background: stats.totals.netProfit >= 0 
+              ? 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)'
+              : 'linear-gradient(135deg, #eb3349 0%, #f45c43 100%)',
+            borderRadius: '20px',
+            padding: '30px',
+            color: 'white',
+            boxShadow: stats.totals.netProfit >= 0
+              ? '0 10px 30px rgba(56, 239, 125, 0.3)'
+              : '0 10px 30px rgba(235, 51, 73, 0.3)',
+            transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+            cursor: 'pointer',
+            position: 'relative',
+            overflow: 'hidden'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateY(-5px)';
+            e.currentTarget.style.boxShadow = stats.totals.netProfit >= 0
+              ? '0 15px 40px rgba(56, 239, 125, 0.4)'
+              : '0 15px 40px rgba(235, 51, 73, 0.4)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = stats.totals.netProfit >= 0
+              ? '0 10px 30px rgba(56, 239, 125, 0.3)'
+              : '0 10px 30px rgba(235, 51, 73, 0.3)';
+          }}
+          >
+            <div style={{ fontSize: '0.9rem', opacity: 0.9, marginBottom: '10px', fontWeight: 500 }}>Net Profit</div>
+            <div style={{ fontSize: '2.5rem', fontWeight: 700, marginBottom: '8px', textShadow: '0 2px 10px rgba(0,0,0,0.2)' }}>
               रु {stats.totals.netProfit?.toLocaleString()}
             </div>
-            <small>Overall profit/loss</small>
+            <small style={{ opacity: 0.85, fontSize: '0.85rem' }}>Overall profit/loss</small>
+            <div style={{
+              position: 'absolute',
+              bottom: '-20px',
+              right: '-20px',
+              fontSize: '6rem',
+              opacity: 0.1,
+              fontWeight: 700
+            }}>{stats.totals.netProfit >= 0 ? '📈' : '📉'}</div>
           </div>
         </div>
 
-        {/* Overall Statistics */}
-        <div className="grid grid-2">
-          <div className="card">
-            <h3>Revenue Overview</h3>
-            <div className="stats-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
-              <div className="text-center">
-                <div className="stat-number text-info">रु {stats.totals.revenue?.toLocaleString()}</div>
-                <div className="stat-label">Total Revenue</div>
+        {/* Overall Statistics - Modern Cards */}
+        <div className="grid grid-2" style={{ gap: '20px', marginBottom: '30px' }}>
+          <div style={{
+            background: theme.cardBg,
+            borderRadius: '24px',
+            padding: '30px',
+            boxShadow: theme.cardShadow,
+            border: `1px solid ${theme.border}`,
+            transition: 'all 0.3s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateY(-5px)';
+            e.currentTarget.style.boxShadow = darkMode 
+              ? '0 15px 45px rgba(0, 0, 0, 0.6)' 
+              : '0 15px 40px rgba(0,0,0,0.15)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = theme.cardShadow;
+          }}
+          >
+            <h3 style={{ marginTop: 0, marginBottom: '25px', fontSize: '1.5rem', fontWeight: 700, color: theme.text }}>
+              💵 Revenue Overview
+            </h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+              <div style={{ 
+                textAlign: 'center', 
+                padding: '25px', 
+                background: darkMode 
+                  ? 'linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%)'
+                  : 'linear-gradient(135deg, #667eea15 0%, #764ba215 100%)', 
+                borderRadius: '18px',
+                border: `1px solid ${darkMode ? 'rgba(102, 126, 234, 0.3)' : 'rgba(102, 126, 234, 0.1)'}`
+              }}>
+                <div style={{ fontSize: '2.2rem', fontWeight: 700, color: '#667eea', marginBottom: '10px' }}>
+                  रु {stats.totals.revenue?.toLocaleString()}
+                </div>
+                <div style={{ fontSize: '0.9rem', color: theme.textSecondary, fontWeight: 500 }}>Total Revenue</div>
               </div>
-              <div className="text-center">
-                <div className="stat-number text-danger">रु {stats.totals.expensesAmount?.toLocaleString()}</div>
-                <div className="stat-label">Total Expenses</div>
+              <div style={{ 
+                textAlign: 'center', 
+                padding: '25px', 
+                background: darkMode 
+                  ? 'linear-gradient(135deg, rgba(245, 87, 108, 0.2) 0%, rgba(240, 147, 251, 0.2) 100%)'
+                  : 'linear-gradient(135deg, #f093fb15 0%, #f5576c15 100%)', 
+                borderRadius: '18px',
+                border: `1px solid ${darkMode ? 'rgba(245, 87, 108, 0.3)' : 'rgba(245, 87, 108, 0.1)'}`
+              }}>
+                <div style={{ fontSize: '2.2rem', fontWeight: 700, color: '#f5576c', marginBottom: '10px' }}>
+                  रु {stats.totals.expensesAmount?.toLocaleString()}
+                </div>
+                <div style={{ fontSize: '0.9rem', color: theme.textSecondary, fontWeight: 500 }}>Total Expenses</div>
               </div>
             </div>
           </div>
 
-          <div className="card">
-            <h3>Records Summary</h3>
-            <div className="stats-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
-              <div className="text-center">
-                <div className="stat-number" style={{ color: '#e74c3c' }}>{stats.totals.tickets}</div>
-                <div className="stat-label">Total Tickets</div>
+          <div style={{
+            background: theme.cardBg,
+            borderRadius: '24px',
+            padding: '30px',
+            boxShadow: theme.cardShadow,
+            border: `1px solid ${theme.border}`,
+            transition: 'all 0.3s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateY(-5px)';
+            e.currentTarget.style.boxShadow = darkMode 
+              ? '0 15px 45px rgba(0, 0, 0, 0.6)' 
+              : '0 15px 40px rgba(0,0,0,0.15)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = theme.cardShadow;
+          }}
+          >
+            <h3 style={{ marginTop: 0, marginBottom: '25px', fontSize: '1.5rem', fontWeight: 700, color: theme.text }}>
+              📋 Records Summary
+            </h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+              <div style={{ 
+                textAlign: 'center', 
+                padding: '25px', 
+                background: darkMode 
+                  ? 'linear-gradient(135deg, rgba(255, 107, 107, 0.2) 0%, rgba(238, 90, 111, 0.2) 100%)'
+                  : 'linear-gradient(135deg, #ff6b6b15 0%, #ee5a6f15 100%)', 
+                borderRadius: '18px',
+                border: `1px solid ${darkMode ? 'rgba(255, 107, 107, 0.3)' : 'rgba(255, 107, 107, 0.1)'}`
+              }}>
+                <div style={{ fontSize: '2.2rem', fontWeight: 700, color: '#ff6b6b', marginBottom: '10px' }}>
+                  {stats.totals.tickets}
+                </div>
+                <div style={{ fontSize: '0.9rem', color: theme.textSecondary, fontWeight: 500 }}>Total Tickets</div>
               </div>
-              <div className="text-center">
-                <div className="stat-number" style={{ color: '#27ae60' }}>{stats.totals.sales}</div>
-                <div className="stat-label">Total Sales</div>
+              <div style={{ 
+                textAlign: 'center', 
+                padding: '25px', 
+                background: darkMode 
+                  ? 'linear-gradient(135deg, rgba(78, 205, 196, 0.2) 0%, rgba(68, 160, 141, 0.2) 100%)'
+                  : 'linear-gradient(135deg, #4ecdc415 0%, #44a08d15 100%)', 
+                borderRadius: '18px',
+                border: `1px solid ${darkMode ? 'rgba(78, 205, 196, 0.3)' : 'rgba(78, 205, 196, 0.1)'}`
+              }}>
+                <div style={{ fontSize: '2.2rem', fontWeight: 700, color: '#4ecdc4', marginBottom: '10px' }}>
+                  {stats.totals.sales}
+                </div>
+                <div style={{ fontSize: '0.9rem', color: theme.textSecondary, fontWeight: 500 }}>Total Sales</div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Quick Actions */}
-        <div className="card">
-          <div className="d-flex justify-between align-center flex-wrap gap-2">
+        {/* Quick Actions - Enhanced */}
+        <div style={{
+          background: theme.cardBg,
+          borderRadius: '24px',
+          padding: '35px',
+          boxShadow: theme.cardShadow,
+          border: `1px solid ${theme.border}`,
+          marginBottom: '30px',
+          transition: 'all 0.3s ease'
+        }}>
+          <div className="d-flex justify-between align-center flex-wrap gap-2" style={{ marginBottom: '30px' }}>
             <div>
-              <h3 className="mb-1">Quick Actions</h3>
-              <small className="text-muted">Jump into the most common workflows</small>
+              <h3 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 700, color: theme.text, marginBottom: '8px' }}>
+                ⚡ Quick Actions
+              </h3>
+              <small style={{ color: theme.textSecondary, fontSize: '0.95rem' }}>Jump into the most common workflows</small>
             </div>
           </div>
           <div
             style={{
               display: 'grid',
-              gap: '1rem',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))',
-              marginTop: '1rem'
+              gap: '20px',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))'
             }}
           >
             {visibleQuickActions.map((action) => (
@@ -236,69 +569,144 @@ const Dashboard = () => {
                 href={action.href}
                 style={{
                   textDecoration: 'none',
-                  border: '1px solid #e6eaf5',
-                  borderRadius: '12px',
-                  padding: '1rem',
+                  borderRadius: '20px',
+                  padding: '28px',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '0.5rem',
-                  boxShadow: '0 6px 20px rgba(17, 38, 146, 0.08)',
-                  transition: 'transform 0.15s ease, box-shadow 0.15s ease',
-                  background: '#fff'
+                  gap: '18px',
+                  background: darkMode 
+                    ? `linear-gradient(135deg, ${action.accent}20 0%, ${action.accent}10 100%)`
+                    : `linear-gradient(135deg, ${action.accent}15 0%, ${action.accent}08 100%)`,
+                  border: `2px solid ${darkMode ? `${action.accent}40` : `${action.accent}30`}`,
+                  boxShadow: darkMode 
+                    ? '0 4px 20px rgba(0, 0, 0, 0.3)'
+                    : '0 4px 15px rgba(0,0,0,0.08)',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  position: 'relative',
+                  overflow: 'hidden'
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '0 12px 28px rgba(17,38,146,0.12)';
+                  e.currentTarget.style.transform = 'translateY(-6px) scale(1.02)';
+                  e.currentTarget.style.boxShadow = `0 15px 35px ${action.accent}50`;
+                  e.currentTarget.style.borderColor = action.accent;
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 6px 20px rgba(17, 38, 146, 0.08)';
+                  e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                  e.currentTarget.style.boxShadow = darkMode 
+                    ? '0 4px 20px rgba(0, 0, 0, 0.3)'
+                    : '0 4px 15px rgba(0,0,0,0.08)';
+                  e.currentTarget.style.borderColor = darkMode ? `${action.accent}40` : `${action.accent}30`;
                 }}
               >
-                <span
-                  style={{
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: '10px',
-                    background: `${action.accent}22`,
-                    color: action.accent,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '1.3rem'
-                  }}
-                >
+                <div style={{
+                  width: '65px',
+                  height: '65px',
+                  borderRadius: '18px',
+                  background: `linear-gradient(135deg, ${action.accent} 0%, ${action.accent}dd 100%)`,
+                  color: 'white',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '2rem',
+                  boxShadow: `0 6px 20px ${action.accent}60`,
+                  transition: 'transform 0.3s ease'
+                }}>
                   {action.icon}
-                </span>
-                <div>
-                  <div style={{ fontWeight: 600, color: '#233043' }}>{action.label}</div>
-                  <small style={{ color: '#6c7a99' }}>{action.description}</small>
                 </div>
-                <span style={{ fontSize: '0.85rem', color: action.accent, fontWeight: 600 }}>
-                  Go &rarr;
+                <div>
+                  <div style={{ fontWeight: 700, color: theme.text, fontSize: '1.15rem', marginBottom: '6px' }}>
+                    {action.label}
+                  </div>
+                  <small style={{ color: theme.textSecondary, fontSize: '0.9rem' }}>{action.description}</small>
+                </div>
+                <span style={{
+                  fontSize: '0.95rem',
+                  color: action.accent,
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}>
+                  Get Started <span style={{ fontSize: '1.3rem', transition: 'transform 0.3s ease' }}>→</span>
                 </span>
+                <div style={{
+                  position: 'absolute',
+                  top: '-40px',
+                  right: '-40px',
+                  width: '120px',
+                  height: '120px',
+                  background: `radial-gradient(circle, ${action.accent}${darkMode ? '25' : '20'} 0%, transparent 70%)`,
+                  borderRadius: '50%'
+                }}></div>
               </a>
             ))}
           </div>
         </div>
 
-        {/* Branch Info */}
+        {/* Branch Info - Enhanced */}
         {currentBranch && (
-          <div className="card">
-            <h3>Current Branch</h3>
-            <p><strong>Name:</strong> {currentBranch.branchName}</p>
-            <p><strong>Location:</strong> {currentBranch.location}</p>
-            <p><strong>Contact:</strong> {currentBranch.contactNumber}</p>
-            <p><strong>Hours:</strong> {currentBranch.openingTime} - {currentBranch.closingTime}</p>
+          <div style={{
+            background: theme.headerGradient,
+            borderRadius: '24px',
+            padding: '35px',
+            boxShadow: theme.shadow,
+            color: 'white',
+            position: 'relative',
+            overflow: 'hidden'
+          }}>
+            <h3 style={{ marginTop: 0, marginBottom: '25px', fontSize: '1.6rem', fontWeight: 700 }}>
+              🏢 Current Branch
+            </h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '25px', position: 'relative', zIndex: 1 }}>
+              <div style={{ padding: '15px', background: 'rgba(255, 255, 255, 0.1)', borderRadius: '15px', backdropFilter: 'blur(10px)' }}>
+                <div style={{ fontSize: '0.9rem', opacity: 0.9, marginBottom: '8px', fontWeight: 500 }}>Branch Name</div>
+                <div style={{ fontSize: '1.3rem', fontWeight: 700 }}>{currentBranch.branchName}</div>
+              </div>
+              <div style={{ padding: '15px', background: 'rgba(255, 255, 255, 0.1)', borderRadius: '15px', backdropFilter: 'blur(10px)' }}>
+                <div style={{ fontSize: '0.9rem', opacity: 0.9, marginBottom: '8px', fontWeight: 500 }}>Location</div>
+                <div style={{ fontSize: '1.3rem', fontWeight: 700 }}>{currentBranch.location}</div>
+              </div>
+              <div style={{ padding: '15px', background: 'rgba(255, 255, 255, 0.1)', borderRadius: '15px', backdropFilter: 'blur(10px)' }}>
+                <div style={{ fontSize: '0.9rem', opacity: 0.9, marginBottom: '8px', fontWeight: 500 }}>Contact</div>
+                <div style={{ fontSize: '1.3rem', fontWeight: 700 }}>{currentBranch.contactNumber}</div>
+              </div>
+              <div style={{ padding: '15px', background: 'rgba(255, 255, 255, 0.1)', borderRadius: '15px', backdropFilter: 'blur(10px)' }}>
+                <div style={{ fontSize: '0.9rem', opacity: 0.9, marginBottom: '8px', fontWeight: 500 }}>Operating Hours</div>
+                <div style={{ fontSize: '1.3rem', fontWeight: 700 }}>{currentBranch.openingTime} - {currentBranch.closingTime}</div>
+              </div>
+            </div>
+            <div style={{
+              position: 'absolute',
+              bottom: '-60px',
+              right: '-60px',
+              width: '250px',
+              height: '250px',
+              background: 'rgba(255, 255, 255, 0.1)',
+              borderRadius: '50%',
+              filter: 'blur(50px)',
+              animation: 'float 10s ease-in-out infinite'
+            }}></div>
           </div>
         )}
       </div>
-      <footer style={{ textAlign: 'center', margin: '32px 0 12px 0', fontSize: '12px', color: '#708090', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+      <footer style={{ textAlign: 'center', margin: '32px 0 12px 0', fontSize: '12px', color: theme.textSecondary, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
           <img src={logo} alt="Valyntix Logo" style={{ width: 24, height: 24, verticalAlign: 'middle', borderRadius: 4, objectFit: 'contain' }} />
           &copy; Copyright 2025 Valyntix AI TECH SYSTEM. All rights reserved.
         </span>
       </footer>
+
+      {/* CSS Animations */}
+      <style>{`
+        @keyframes float {
+          0%, 100% {
+            transform: translateY(0px) rotate(0deg);
+          }
+          50% {
+            transform: translateY(-20px) rotate(5deg);
+          }
+        }
+      `}</style>
     </div>
   );
 };
