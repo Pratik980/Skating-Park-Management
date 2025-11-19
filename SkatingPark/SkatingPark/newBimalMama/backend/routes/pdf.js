@@ -561,24 +561,6 @@ router.get('/dashboard', protect, async (req, res) => {
     page.setDefaultTimeout(30000);
     page.setDefaultNavigationTimeout(30000);
     
-    // Optimize request interception - block images/media, allow fonts
-    console.log('🔧 Setting up request interception...');
-    try {
-      await page.setRequestInterception(true);
-      page.on('request', (req) => {
-        const resourceType = req.resourceType();
-        const url = req.url();
-        // Block images and media for speed
-        if (['image', 'media'].includes(resourceType)) {
-          req.abort();
-        } else {
-          req.continue();
-        }
-      });
-    } catch (interceptError) {
-      console.warn('⚠️ Request interception failed, continuing without it');
-    }
-    
     // Use faster wait strategy - domcontentloaded is much faster than networkidle0
     console.log('📝 Setting page content...');
     await page.setContent(html, { 
