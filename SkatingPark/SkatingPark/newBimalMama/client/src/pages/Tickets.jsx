@@ -1639,12 +1639,23 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
               <div className="mt-4">
                 <div className="d-flex justify-between align-center mb-2">
                   <h4>Recent Refunds</h4>
-                  <button 
-                    className="btn btn-sm btn-secondary"
-                    onClick={fetchRecentRefunds}
-                  >
-                    {recentRefundsLoading ? 'Loading...' : 'Refresh'}
-                  </button>
+                  <div className="d-flex gap-2">
+                    {recentRefunds.length > 0 && (
+                      <button 
+                        className="btn btn-sm btn-info"
+                        onClick={() => printAllTicketsOneByOne(recentRefunds)}
+                        title="Print All Refunded Tickets"
+                      >
+                        🖨️ Print All
+                      </button>
+                    )}
+                    <button 
+                      className="btn btn-sm btn-secondary"
+                      onClick={fetchRecentRefunds}
+                    >
+                      {recentRefundsLoading ? 'Loading...' : 'Refresh'}
+                    </button>
+                  </div>
                 </div>
                 {recentRefunds.length === 0 ? (
                   <p className="text-muted">No refund records yet.</p>
@@ -1660,6 +1671,7 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
                           <th>Method</th>
                           <th>Reason</th>
                           <th>Date</th>
+                          <th>Actions</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -1687,6 +1699,42 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
                                     {formatDate(ticket.date?.englishDate || ticket.createdAt)}
                                   </span>
                                 </small>
+                              </td>
+                              <td>
+                                <div className="d-flex gap-1">
+                                  {/* Preview button */}
+                                  <button 
+                                    className="btn btn-sm btn-outline-primary"
+                                    style={{ minWidth: 30 }}
+                                    onClick={() => { setSelectedTicket(ticket); setShowPrint(true); setAutoPrint(false); }}
+                                    title="Preview Ticket"
+                                  >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" stroke="#1976d2" strokeWidth="1.5"/><circle cx="10" cy="10" r="3" stroke="#1976d2" strokeWidth="1.4"/></svg>
+                                  </button>
+                                  {/* Print button */}
+                                  <button 
+                                    className="btn btn-sm btn-info"
+                                    onClick={() => openTicketPrintWindow(ticket)}
+                                    title="Print Ticket"
+                                  >
+                                    🖨️
+                                  </button>
+                                  {/* Delete button - only for admin */}
+                                  {user?.role === 'admin' && (
+                                    <button 
+                                      className="btn btn-sm btn-danger"
+                                      onClick={async () => {
+                                        if (window.confirm(`Are you sure you want to delete ticket ${ticket.ticketNo}?`)) {
+                                          await handleDelete(ticket._id);
+                                          fetchRecentRefunds(); // Refresh the refunds list
+                                        }
+                                      }}
+                                      title="Delete Ticket"
+                                    >
+                                      🗑️
+                                    </button>
+                                  )}
+                                </div>
                               </td>
                             </tr>
                           );
@@ -1923,12 +1971,41 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
               <div className="mt-4">
                 <div className="d-flex justify-between align-center mb-2">
                   <h4>Extra Time Report</h4>
-                  <button 
-                    className="btn btn-sm btn-secondary"
-                    onClick={fetchExtraTimeReport}
-                  >
-                    {extraTimeReportLoading ? 'Loading...' : 'Refresh Report'}
-                  </button>
+                  <div className="d-flex gap-2">
+                    {extraTimeReport.length > 0 && (
+                      <button 
+                        className="btn btn-sm btn-info"
+                        onClick={async () => {
+                          // Fetch full ticket data for all entries in the report
+                          const ticketsToPrint = [];
+                          for (const entry of extraTimeReport) {
+                            try {
+                              const response = await ticketsAPI.lookup(entry.ticketNo);
+                              if (response.data.ticket) {
+                                ticketsToPrint.push(response.data.ticket);
+                              }
+                            } catch (err) {
+                              console.error(`Error fetching ticket ${entry.ticketNo}:`, err);
+                            }
+                          }
+                          if (ticketsToPrint.length > 0) {
+                            printAllTicketsOneByOne(ticketsToPrint);
+                          } else {
+                            alert('No tickets found to print');
+                          }
+                        }}
+                        title="Print All Extra Time Tickets"
+                      >
+                        🖨️ Print All
+                      </button>
+                    )}
+                    <button 
+                      className="btn btn-sm btn-secondary"
+                      onClick={fetchExtraTimeReport}
+                    >
+                      {extraTimeReportLoading ? 'Loading...' : 'Refresh Report'}
+                    </button>
+                  </div>
                 </div>
                 {extraTimeReport.length === 0 ? (
                   <p className="text-muted">No extra time records yet.</p>
