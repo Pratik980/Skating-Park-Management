@@ -140,6 +140,12 @@ const getBrowser = async () => {
     }
     
     console.log('🟡 About to launch Puppeteer (Chrome)');
+    if (executablePath) {
+      console.log('🚦 Using executable path:', executablePath);
+    } else {
+      console.log('🚦 Using bundled Chromium executable path');
+    }
+    console.log('🔧 Launch args:', puppeteerArgs.join(' '));
     const browser = await puppeteer.launch({
       headless: true, // legacy headless mode
       args: puppeteerArgs,
