@@ -1,11 +1,35 @@
 // Nepali date utilities
+import { adToBs } from '@sbmdkl/nepali-date-converter';
+
 // Always returns real current date and time
 export const getCurrentNepaliDate = () => {
   const currentDate = new Date();
-  const year = 2082; // Current Nepali year (update as needed)
-  const month = (currentDate.getMonth() + 1).toString().padStart(2, '0');
-  const day = currentDate.getDate().toString().padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  // Format English date as YYYY-MM-DD string
+  const englishDateStr = `${currentDate.getFullYear()}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}-${currentDate.getDate().toString().padStart(2, '0')}`;
+  // Convert English date (AD) to Nepali date (BS) using the converter library
+  const nepaliDateStr = adToBs(englishDateStr);
+  // adToBs returns string in format "YYYY-MM-DD"
+  return nepaliDateStr;
+};
+
+// Convert any English date to Nepali date
+export const convertToNepaliDate = (englishDate) => {
+  if (!englishDate) return getCurrentNepaliDate();
+  
+  let date;
+  if (englishDate instanceof Date) {
+    date = englishDate;
+  } else if (typeof englishDate === 'string') {
+    date = new Date(englishDate);
+  } else {
+    date = new Date(englishDate);
+  }
+  
+  // Format English date as YYYY-MM-DD string
+  const englishDateStr = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
+  // Convert English date (AD) to Nepali date (BS)
+  const nepaliDateStr = adToBs(englishDateStr);
+  return nepaliDateStr;
 };
 
 // Always returns real current time with seconds

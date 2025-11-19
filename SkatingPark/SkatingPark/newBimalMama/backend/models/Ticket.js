@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import Sequence from './Sequence.js';
-import { getCurrentNepaliDate } from '../utils/nepaliDate.js';
+import { getCurrentNepaliDate, convertToNepaliDate } from '../utils/nepaliDate.js';
 
 const ticketSchema = new mongoose.Schema({
   ticketNo: {
@@ -222,10 +222,8 @@ ticketSchema.pre('save', function(next) {
     // Set to current real date/time
     this.date.englishDate = now;
     
-    // Set Nepali date if not already set
-    if (!this.date.nepaliDate) {
-      this.date.nepaliDate = getCurrentNepaliDate();
-    }
+    // Always convert English date to Nepali date (ensures accuracy)
+    this.date.nepaliDate = convertToNepaliDate(this.date.englishDate);
     
     // Always set time to current real time for new tickets
     if (!this.time) {
@@ -233,6 +231,11 @@ ticketSchema.pre('save', function(next) {
       const minutes = now.getMinutes().toString().padStart(2, '0');
       const seconds = now.getSeconds().toString().padStart(2, '0');
       this.time = `${hours}:${minutes}:${seconds}`;
+    }
+  } else {
+    // For updates, ensure Nepali date is synced with English date if English date changed
+    if (this.isModified('date.englishDate') && this.date?.englishDate) {
+      this.date.nepaliDate = convertToNepaliDate(this.date.englishDate);
     }
   }
   

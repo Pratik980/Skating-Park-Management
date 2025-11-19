@@ -4,7 +4,17 @@ import Loader from '../components/Loader';
 import TicketPrint from '../components/TicketPrint';
 import { useApp } from '../context/AppContext';
 
-// Utility to format date without timezone issues
+// Utility to format Nepali date nicely (e.g., "2082-11-14" -> "2082/11/14")
+function formatNepaliDate(nepaliDateStr) {
+  if (!nepaliDateStr) return '—';
+  // Convert "2082-11-14" to "2082/11/14" or keep as is if already formatted
+  if (typeof nepaliDateStr === 'string') {
+    return nepaliDateStr.replace(/-/g, '/');
+  }
+  return nepaliDateStr;
+}
+
+// Utility to format date without timezone issues (for English date fallback)
 function formatDate(dateValue) {
   if (!dateValue) return '—';
   
@@ -20,12 +30,23 @@ function formatDate(dateValue) {
     date = new Date(dateValue);
   }
   
-  // Format as DD/MM/YYYY or MM/DD/YYYY based on locale
+  // Format as DD/MM/YYYY
   return date.toLocaleDateString('en-GB', { 
     day: '2-digit', 
     month: '2-digit', 
     year: 'numeric' 
   });
+}
+
+// Utility to format time in local timezone (HH:mm or HH:mm:ss)
+function formatTime(timeStr) {
+  if (!timeStr) return '—';
+  // Time is already stored in local time, just format it nicely
+  // Remove seconds if present for display: "14:30:45" -> "14:30"
+  if (typeof timeStr === 'string') {
+    return timeStr.substring(0, 5); // Get HH:mm part
+  }
+  return timeStr;
 }
 
 // Utility to get end time as HH:mm
@@ -208,13 +229,13 @@ export default function TicketHistory() {
                   )}
                 </div>
                 <div>
-                  <p><strong>Date:</strong> {ticket.date?.nepaliDate} ({formatDate(ticket.date?.englishDate)})</p>
-                  <p><strong>Time:</strong> {(() => {
-                    if (!ticket.time) return '—';
+                  <p><strong>Date:</strong> <strong>{formatNepaliDate(ticket.date?.nepaliDate)}</strong> ({formatDate(ticket.date?.englishDate)})</p>
+                  <p><strong>Time:</strong> <strong>{formatTime(ticket.time)}</strong>{(() => {
+                    if (!ticket.time) return '';
                     const dateObj = ticket.date?.englishDate ? new Date(ticket.date.englishDate) : null;
-                    if (!dateObj) return ticket.time;
+                    if (!dateObj) return '';
                     const endTime = getEndTime(ticket.time, dateObj, ticket.totalExtraMinutes || 0, ticket.isRefunded);
-                    return endTime ? `${ticket.time} - ${endTime}` : ticket.time;
+                    return endTime ? ` - ${endTime}` : '';
                   })()}</p>
                   <p><strong>Extra Time:</strong> {ticket.totalExtraMinutes || 0} min</p>
                   <p><strong>Fee:</strong> रु {ticket.fee?.toLocaleString() || '0'}</p>

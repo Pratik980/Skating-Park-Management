@@ -10,7 +10,17 @@ import logo from '/valyntix-logo.png.jpg';
 const EXTRA_TIME_DURATION_MINUTES = 60;
 const EXTRA_TIME_RATE_PER_HOUR = 100;
 
-// Utility to format date without timezone issues
+// Utility to format Nepali date nicely (e.g., "2082-11-14" -> "2082/11/14")
+function formatNepaliDate(nepaliDateStr) {
+  if (!nepaliDateStr) return '—';
+  // Convert "2082-11-14" to "2082/11/14" or keep as is if already formatted
+  if (typeof nepaliDateStr === 'string') {
+    return nepaliDateStr.replace(/-/g, '/');
+  }
+  return nepaliDateStr;
+}
+
+// Utility to format date without timezone issues (for English date fallback)
 function formatDate(dateValue) {
   if (!dateValue) return '—';
   
@@ -26,12 +36,23 @@ function formatDate(dateValue) {
     date = new Date(dateValue);
   }
   
-  // Format as DD/MM/YYYY or MM/DD/YYYY based on locale
+  // Format as DD/MM/YYYY
   return date.toLocaleDateString('en-GB', { 
     day: '2-digit', 
     month: '2-digit', 
     year: 'numeric' 
   });
+}
+
+// Utility to format time in local timezone (HH:mm or HH:mm:ss)
+function formatTime(timeStr) {
+  if (!timeStr) return '—';
+  // Time is already stored in local time, just format it nicely
+  // Remove seconds if present for display: "14:30:45" -> "14:30"
+  if (typeof timeStr === 'string') {
+    return timeStr.substring(0, 5); // Get HH:mm part
+  }
+  return timeStr;
 }
 
 // Utility to format date and time without timezone issues
@@ -899,11 +920,11 @@ const Tickets = () => {
       </td>
       <td>${people}</td>
       <td>${t.totalExtraMinutes || 0} min</td>
-      <td>${t.date?.nepaliDate || ''}<br>${formatDate(t.date?.englishDate || t.createdAt)}</td>
-      <td>${(() => {
-        if (!t.time) return '—';
+      <td><strong>${formatNepaliDate(t.date?.nepaliDate || '')}</strong><br>${formatDate(t.date?.englishDate || t.createdAt)}</td>
+      <td><strong>${formatTime(t.time || '—')}</strong>${(() => {
+        if (!t.time) return '';
         const dateObj = t.date?.englishDate ? new Date(t.date.englishDate) : null;
-        if (!dateObj) return t.time;
+        if (!dateObj) return '';
         const [hh, mm, ss] = t.time.split(':');
         const start = new Date(dateObj);
         start.setHours(+hh, +mm, +((ss || 0)), 0);
@@ -912,7 +933,7 @@ const Tickets = () => {
         const minsToAdd = isRefunded ? extraMinutes : 60 + extraMinutes;
         const end = new Date(start.getTime() + minsToAdd * 60000);
         const endTimeStr = end.toTimeString().substring(0, 5);
-        return t.time + ' - ' + endTimeStr;
+        return ' - ' + endTimeStr;
       })()}</td>
       <td>${t.isRefunded ? 'Yes' : ''}</td>
       <td>${t.remarks || ''}</td>
@@ -1434,7 +1455,7 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
                       </div>
                       <div>
                         <p><strong>Ticket Type:</strong> {refundTicket.ticketType}</p>
-                        <p><strong>Date:</strong> {refundTicket.date?.nepaliDate} ({formatDate(refundTicket.date?.englishDate)})</p>
+                        <p><strong>Date:</strong> <strong>{formatNepaliDate(refundTicket.date?.nepaliDate)}</strong> ({formatDate(refundTicket.date?.englishDate)})</p>
                         <p><strong>Time:</strong> {(() => {
                           if (!refundTicket.time) return '—';
                           const dateObj = refundTicket.date?.englishDate ? new Date(refundTicket.date.englishDate) : null;
@@ -1606,10 +1627,10 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
                               <td>{ticket.ticketNo}</td>
                               <td>{ticket.name}</td>
                               <td>
+                                <strong>{formatTime(ticket.time)}</strong>
                                 {(() => {
-                                  if (!ticket.time) return '—';
-                                  if (!dateObj) return ticket.time;
-                                  return endTime ? `${ticket.time} - ${endTime}` : ticket.time;
+                                  if (!ticket.time || !dateObj) return '';
+                                  return endTime ? ` - ${endTime}` : '';
                                 })()}
                               </td>
                               <td>रु {(ticket.refundAmount || ticket.fee || 0).toLocaleString()}</td>
@@ -1617,8 +1638,10 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
                               <td><small>{ticket.refundReason || '—'}</small></td>
                               <td>
                                 <small>
-                                  {ticket.date?.nepaliDate || '—'}<br/>
-                                  {formatDate(ticket.date?.englishDate || ticket.createdAt)}
+                                  <strong>{formatNepaliDate(ticket.date?.nepaliDate)}</strong><br/>
+                                  <span style={{ color: '#666', fontSize: '0.85em' }}>
+                                    {formatDate(ticket.date?.englishDate || ticket.createdAt)}
+                                  </span>
                                 </small>
                               </td>
                             </tr>
@@ -2243,14 +2266,16 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
                         <td>{ticket.totalExtraMinutes || 0} min</td>
                         <td>
                           <small>
-                            {formatDate(ticket.date?.englishDate || ticket.createdAt)}
+                            <strong>{formatNepaliDate(ticket.date?.nepaliDate)}</strong>
                             <br />
-                            {ticket.date?.nepaliDate || '—'}
+                            <span style={{ color: '#666', fontSize: '0.85em' }}>
+                              {formatDate(ticket.date?.englishDate || ticket.createdAt)}
+                            </span>
                           </small>
                         </td>
                         <td>
                           <small>
-                            {ticket.time || '—'}
+                            <strong>{formatTime(ticket.time)}</strong>
                             {(() => {
                               if (!ticket.time) return '';
                               const dateObj = ticket.date?.englishDate ? new Date(ticket.date.englishDate) : null;
@@ -2586,14 +2611,16 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
                                     <td>{ticket.totalExtraMinutes || 0} min</td>
                                     <td>
                                       <small>
-                                        {formatDate(ticket.date?.englishDate || ticket.createdAt)}
+                                        <strong>{formatNepaliDate(ticket.date?.nepaliDate)}</strong>
                                         <br />
-                                        {ticket.date?.nepaliDate || '—'}
+                                        <span style={{ color: '#666', fontSize: '0.85em' }}>
+                                          {formatDate(ticket.date?.englishDate || ticket.createdAt)}
+                                        </span>
                                       </small>
                                     </td>
                                     <td>
                                       <small>
-                                        {ticket.time || '—'}
+                                        <strong>{formatTime(ticket.time)}</strong>
                                         {(() => {
                                           if (!ticket.time) return '';
                                           const dateObj = ticket.date?.englishDate ? new Date(ticket.date.englishDate) : null;
