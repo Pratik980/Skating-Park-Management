@@ -121,23 +121,6 @@ const ChartsDashboard = () => {
             </BarChart>
           </ResponsiveContainer>
         </div>
-        <div style={{flex:'1 1 220px', minWidth:160, height:290}}>
-          <div style={{fontWeight:600,marginBottom:6}}>Hourly Activity</div>
-          <ResponsiveContainer width='100%' height={220}>
-            <BarChart data={chartData.hourly} margin={{ left: 2, right: 14 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="hour" fontSize={11}/>
-              <YAxis fontSize={11}/>
-              <Tooltip/>
-              <Bar dataKey="Tickets" fill="#9b59b6" barSize={14}/>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-        <div style={{flex:'0 0 180px',minWidth:140,marginTop:12}}>
-          <div style={{fontWeight:600,marginBottom:8}}>Checked-in Now</div>
-          <div style={{fontSize:'2.5rem',fontWeight:800,color:'#4c8cf5',marginTop:10}}>{chartData.checkedIn}</div>
-          <div style={{color:'#64748b',fontWeight:400,fontSize:13}}>players checked-in</div>
-        </div>
       </div>
       <div style={{fontSize:11,color:'#708090',marginTop:14}}>Last updated: {chartData.lastUpdate.toLocaleTimeString()} (auto-refreshes every minute)</div>
       {loading && <div style={{marginTop:6,fontSize:12,color:'#ef4444'}}>Loading charts…</div>}
