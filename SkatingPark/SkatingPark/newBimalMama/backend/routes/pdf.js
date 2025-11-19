@@ -391,9 +391,6 @@ const buildDashboardHtml = ({ stats, settings, branch, generatedAt, user }) => {
     <body>
       <div class="report" style="padding: 12px;">
         <div class="header">
-          <div class="logo">
-            <img src="${valyntixLogoUrl}" alt="Valyntix Logo" />
-          </div>
           <div class="company">${companyName}</div>
           <div class="branch">${branchLine}</div>
           <div class="meta">Reg No: ${regNo} • Generated on ${escapeHtml(generatedText)}</div>
