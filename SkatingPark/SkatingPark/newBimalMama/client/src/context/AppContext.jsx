@@ -18,11 +18,7 @@ const initialState = {
   error: null,
   currentBranch: null,
   branches: [],
-  settings: null,
-  darkMode: (() => {
-    const saved = localStorage.getItem('appDarkMode');
-    return saved ? JSON.parse(saved) : false;
-  })()
+  settings: null
 };
 
 const appReducer = (state, action) => {
@@ -59,10 +55,6 @@ const appReducer = (state, action) => {
       return { ...state, currentBranch: action.payload };
     case 'SET_SETTINGS':
       return { ...state, settings: action.payload };
-    case 'TOGGLE_DARK_MODE':
-      const newMode = !state.darkMode;
-      localStorage.setItem('appDarkMode', JSON.stringify(newMode));
-      return { ...state, darkMode: newMode };
     default:
       return state;
   }
@@ -225,26 +217,6 @@ export const AppProvider = ({ children }) => {
     dispatch({ type: 'SET_LOADING', payload: loading });
   };
 
-  const toggleDarkMode = () => {
-    dispatch({ type: 'TOGGLE_DARK_MODE' });
-  };
-
-  // Apply dark mode class to document root on mount and when it changes
-  useEffect(() => {
-    if (state.darkMode) {
-      document.documentElement.classList.add('dark-mode');
-    } else {
-      document.documentElement.classList.remove('dark-mode');
-    }
-  }, [state.darkMode]);
-
-  // Apply dark mode on initial load
-  useEffect(() => {
-    if (state.darkMode) {
-      document.documentElement.classList.add('dark-mode');
-    }
-  }, []);
-
   const value = {
     ...state,
     login,
@@ -254,8 +226,7 @@ export const AppProvider = ({ children }) => {
     clearError,
     setLoading,
     fetchUserData,
-    fetchBranches,
-    toggleDarkMode
+    fetchBranches
   };
 
   return (
