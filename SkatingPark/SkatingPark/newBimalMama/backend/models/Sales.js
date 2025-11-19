@@ -1,4 +1,6 @@
 import mongoose from 'mongoose';
+import moment from 'moment-timezone';
+import { convertToNepaliDate } from '../utils/nepaliDate.js';
 
 const salesSchema = new mongoose.Schema({
   // Sale specific fields
@@ -155,6 +157,16 @@ const salesSchema = new mongoose.Schema({
   }
 }, {
   timestamps: true
+});
+
+// Add pre-save hook to set englishDate, nepaliDate using correct Nepal time
+salesSchema.pre('save', function (next) {
+  if (!this.date) this.date = {};
+  // Always set to real Kathmandu time
+  const kathmanduDate = moment().tz('Asia/Kathmandu');
+  this.date.englishDate = kathmanduDate.toDate();
+  this.date.nepaliDate = convertToNepaliDate(this.date.englishDate);
+  next();
 });
 
 // Generate sale number automatically before validation
