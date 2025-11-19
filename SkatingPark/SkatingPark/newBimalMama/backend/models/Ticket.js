@@ -1,5 +1,4 @@
 import mongoose from 'mongoose';
-import Sequence from './Sequence.js';
 import { getCurrentNepaliDate, convertToNepaliDate } from '../utils/nepaliDate.js';
 import moment from 'moment-timezone';
 
@@ -192,14 +191,36 @@ const ticketSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Generate unique sequential ticket number
+// Generate unique random ticket number (6 digits)
 ticketSchema.pre('validate', async function(next) {
   if (this.isNew && !this.ticketNo) {
     try {
-      // Get next sequence number atomically (ensures uniqueness)
-      const sequenceValue = await Sequence.getNext('ticketNo');
-      // Format as 6-digit number (e.g., 000001, 000002, etc.)
-      this.ticketNo = sequenceValue.toString().padStart(6, '0');
+      const TicketModel = mongoose.model('Ticket');
+      let ticketNo;
+      let isUnique = false;
+      let attempts = 0;
+      const maxAttempts = 10; // Prevent infinite loop
+      
+      // Generate random 6-digit number and check for uniqueness
+      while (!isUnique && attempts < maxAttempts) {
+        // Generate random 6-digit number (100000 to 999999)
+        ticketNo = Math.floor(100000 + Math.random() * 900000).toString();
+        
+        // Check if this ticket number already exists
+        const existing = await TicketModel.findOne({ ticketNo });
+        if (!existing) {
+          isUnique = true;
+        }
+        attempts++;
+      }
+      
+      if (isUnique) {
+        this.ticketNo = ticketNo;
+      } else {
+        // Fallback: use timestamp-based unique number if all random attempts failed
+        const timestamp = Date.now().toString();
+        this.ticketNo = timestamp.slice(-8);
+      }
     } catch (err) {
       console.error('Error generating ticket number:', err);
       // Fallback: use timestamp-based unique number
