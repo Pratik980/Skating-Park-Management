@@ -1435,7 +1435,7 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
       {/* Refund Modal */}
       {showRefundModal && (
         <div className="modal-overlay" style={{ zIndex: 1000 }}>
-          <div className="modal-content" style={{ maxWidth: '700px', width: '100%', maxHeight: '90vh', overflow: 'auto' }}>
+          <div className="modal-content" style={{ maxWidth: '95%', width: '1200px', maxHeight: '90vh', overflow: 'auto' }}>
             <div className="modal-header">
               <h3 className="modal-title">Ticket Refund</h3>
               <button 
@@ -1770,7 +1770,7 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
       {/* Extra Time Modal */}
       {showExtraTimeModal && (
         <div className="modal-overlay" style={{ zIndex: 1000 }}>
-          <div className="modal-content" style={{ maxWidth: '800px', width: '100%', maxHeight: '90vh', overflow: 'auto' }}>
+          <div className="modal-content" style={{ maxWidth: '95%', width: '1200px', maxHeight: '90vh', overflow: 'auto' }}>
             <div className="modal-header">
               <h3 className="modal-title">Extra Time Ticket</h3>
               <button 
