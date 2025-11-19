@@ -227,9 +227,13 @@ ticketSchema.pre('save', function(next) {
     
     // Always set time to current real time for new tickets
     if (!this.time) {
-      const hours = now.getHours().toString().padStart(2, '0');
-      const minutes = now.getMinutes().toString().padStart(2, '0');
-      const seconds = now.getSeconds().toString().padStart(2, '0');
+      // Calculate Kathmandu time (+5:45 offset from UTC)
+      const nowUtc = now.getTime() + (now.getTimezoneOffset() * 60000);
+      const nepalOffsetMin = 5 * 60 + 45;
+      const kathmandu = new Date(nowUtc + nepalOffsetMin * 60000);
+      const hours = kathmandu.getHours().toString().padStart(2, '0');
+      const minutes = kathmandu.getMinutes().toString().padStart(2, '0');
+      const seconds = kathmandu.getSeconds().toString().padStart(2, '0');
       this.time = `${hours}:${minutes}:${seconds}`;
     }
   } else {
