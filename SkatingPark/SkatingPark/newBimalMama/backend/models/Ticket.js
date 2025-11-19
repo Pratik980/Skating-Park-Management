@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import Sequence from './Sequence.js';
 import { getCurrentNepaliDate, convertToNepaliDate } from '../utils/nepaliDate.js';
+import moment from 'moment-timezone';
 
 const ticketSchema = new mongoose.Schema({
   ticketNo: {
@@ -227,14 +228,8 @@ ticketSchema.pre('save', function(next) {
     
     // Always set time to current real time for new tickets
     if (!this.time) {
-      // Calculate Kathmandu time (+5:45 offset from UTC)
-      const nowUtc = now.getTime() + (now.getTimezoneOffset() * 60000);
-      const nepalOffsetMin = 5 * 60 + 45;
-      const kathmandu = new Date(nowUtc + nepalOffsetMin * 60000);
-      const hours = kathmandu.getHours().toString().padStart(2, '0');
-      const minutes = kathmandu.getMinutes().toString().padStart(2, '0');
-      const seconds = kathmandu.getSeconds().toString().padStart(2, '0');
-      this.time = `${hours}:${minutes}:${seconds}`;
+      const kathmanduTime = moment().tz("Asia/Kathmandu");
+      this.time = kathmanduTime.format("HH:mm:ss");
     }
   } else {
     // For updates, ensure Nepali date is synced with English date if English date changed
