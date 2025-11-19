@@ -44,11 +44,50 @@ function formatDate(dateValue) {
   });
 }
 
-// Utility to format time in local timezone (HH:mm or HH:mm:ss)
-function formatTime(timeStr) {
+// Utility to get Nepal time (Asia/Kathmandu) from any date
+function getNepalTime(dateValue) {
+  if (!dateValue) return null;
+  
+  let date;
+  if (dateValue instanceof Date) {
+    date = dateValue;
+  } else if (typeof dateValue === 'string') {
+    date = new Date(dateValue);
+  } else {
+    date = new Date(dateValue);
+  }
+  
+  // Convert to Nepal time (UTC+5:45)
+  // Get UTC time in milliseconds
+  const utcTime = date.getTime() + (date.getTimezoneOffset() * 60000);
+  // Nepal is UTC+5:45 (5 hours 45 minutes = 345 minutes)
+  const nepalOffset = 5 * 60 + 45; // 345 minutes
+  const nepalTime = new Date(utcTime + (nepalOffset * 60000));
+  
+  const hours = nepalTime.getHours().toString().padStart(2, '0');
+  const minutes = nepalTime.getMinutes().toString().padStart(2, '0');
+  const seconds = nepalTime.getSeconds().toString().padStart(2, '0');
+  
+  return {
+    time: `${hours}:${minutes}:${seconds}`,
+    hours: hours,
+    minutes: minutes,
+    seconds: seconds
+  };
+}
+
+// Utility to format time - always use Nepal time from englishDate if available
+function formatTime(timeStr, englishDate = null) {
+  // If we have englishDate, use it to get correct Nepal time (frontend fix)
+  if (englishDate) {
+    const nepalTime = getNepalTime(englishDate);
+    if (nepalTime) {
+      return nepalTime.time.substring(0, 5); // Return HH:mm
+    }
+  }
+  
+  // Fallback to stored time string if no englishDate
   if (!timeStr) return '—';
-  // Time is already stored in local time, just format it nicely
-  // Remove seconds if present for display: "14:30:45" -> "14:30"
   if (typeof timeStr === 'string') {
     return timeStr.substring(0, 5); // Get HH:mm part
   }
@@ -85,18 +124,30 @@ function formatDateTime(dateValue) {
   });
 }
 
-// Utility to get end time as HH:mm
+// Utility to get end time as HH:mm - always use Nepal time
 function getEndTime(startTimeStr, dateObj, extraMinutes=0, isRefunded=false) {
-  // startTimeStr = 'HH:mm:ss' or 'HH:mm', dateObj is new Date(ticket.date.englishDate)
-  // extraMinutes = numeric, totalExtraMinutes field
-  if (!startTimeStr || !dateObj) return '';
-  const [hh, mm, ss] = startTimeStr.split(':');
+  if (!dateObj) return '';
+  
+  // Get Nepal time from englishDate
+  const nepalTime = getNepalTime(dateObj);
+  if (!nepalTime) return '';
+  
+  // Use Nepal time hours and minutes
   const start = new Date(dateObj);
-  start.setHours(+hh, +mm, +((ss || 0)), 0);
-
+  // Set hours/minutes in Nepal timezone
+  const utcTime = start.getTime() + (start.getTimezoneOffset() * 60000);
+  const nepalOffset = 5 * 60 + 45;
+  const nepalDate = new Date(utcTime + (nepalOffset * 60000));
+  
+  const startHours = parseInt(nepalTime.hours);
+  const startMinutes = parseInt(nepalTime.minutes);
+  
   let minsToAdd = isRefunded ? extraMinutes : 60 + (extraMinutes || 0);
-  const end = new Date(start.getTime() + minsToAdd*60000);
-  return end.toTimeString().substring(0,5);
+  const totalMinutes = startHours * 60 + startMinutes + minsToAdd;
+  const endHours = Math.floor(totalMinutes / 60) % 24;
+  const endMinutes = totalMinutes % 60;
+  
+  return `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
 }
 
 const Tickets = () => {
@@ -921,19 +972,12 @@ const Tickets = () => {
       <td>${people}</td>
       <td>${t.totalExtraMinutes || 0} min</td>
       <td><strong>${formatNepaliDate(t.date?.nepaliDate || '')}</strong><br>${formatDate(t.date?.englishDate || t.createdAt)}</td>
-      <td><strong>${formatTime(t.time || '—')}</strong>${(() => {
+      <td><strong>${formatTime(t.time || '—', t.date?.englishDate || t.createdAt)}</strong>${(() => {
         if (!t.time) return '';
         const dateObj = t.date?.englishDate ? new Date(t.date.englishDate) : null;
         if (!dateObj) return '';
-        const [hh, mm, ss] = t.time.split(':');
-        const start = new Date(dateObj);
-        start.setHours(+hh, +mm, +((ss || 0)), 0);
-        const extraMinutes = t.totalExtraMinutes || 0;
-        const isRefunded = t.isRefunded || false;
-        const minsToAdd = isRefunded ? extraMinutes : 60 + extraMinutes;
-        const end = new Date(start.getTime() + minsToAdd * 60000);
-        const endTimeStr = end.toTimeString().substring(0, 5);
-        return ' - ' + endTimeStr;
+        const endTime = getEndTime(t.time, dateObj, t.totalExtraMinutes || 0, t.isRefunded || false);
+        return endTime ? ' - ' + endTime : '';
       })()}</td>
       <td>${t.isRefunded ? 'Yes' : ''}</td>
       <td>${t.remarks || ''}</td>
@@ -1627,7 +1671,7 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
                               <td>{ticket.ticketNo}</td>
                               <td>{ticket.name}</td>
                               <td>
-                                <strong>{formatTime(ticket.time)}</strong>
+                                <strong>{formatTime(ticket.time, ticket.date?.englishDate || ticket.createdAt)}</strong>
                                 {(() => {
                                   if (!ticket.time || !dateObj) return '';
                                   return endTime ? ` - ${endTime}` : '';
@@ -2275,7 +2319,7 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
                         </td>
                         <td>
                           <small>
-                            <strong>{formatTime(ticket.time)}</strong>
+                            <strong>{formatTime(ticket.time, ticket.date?.englishDate || ticket.createdAt)}</strong>
                             {(() => {
                               if (!ticket.time) return '';
                               const dateObj = ticket.date?.englishDate ? new Date(ticket.date.englishDate) : null;
@@ -2620,7 +2664,7 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
                                     </td>
                                     <td>
                                       <small>
-                                        <strong>{formatTime(ticket.time)}</strong>
+                                        <strong>{formatTime(ticket.time, ticket.date?.englishDate || ticket.createdAt)}</strong>
                                         {(() => {
                                           if (!ticket.time) return '';
                                           const dateObj = ticket.date?.englishDate ? new Date(ticket.date.englishDate) : null;

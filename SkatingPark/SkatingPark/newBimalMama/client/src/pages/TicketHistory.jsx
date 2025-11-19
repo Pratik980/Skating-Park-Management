@@ -38,26 +38,71 @@ function formatDate(dateValue) {
   });
 }
 
-// Utility to format time in local timezone (HH:mm or HH:mm:ss)
-function formatTime(timeStr) {
+// Utility to get Nepal time (Asia/Kathmandu) from any date
+function getNepalTime(dateValue) {
+  if (!dateValue) return null;
+  
+  let date;
+  if (dateValue instanceof Date) {
+    date = dateValue;
+  } else if (typeof dateValue === 'string') {
+    date = new Date(dateValue);
+  } else {
+    date = new Date(dateValue);
+  }
+  
+  // Convert to Nepal time (UTC+5:45)
+  const utcTime = date.getTime() + (date.getTimezoneOffset() * 60000);
+  const nepalOffset = 5 * 60 + 45; // 345 minutes
+  const nepalTime = new Date(utcTime + (nepalOffset * 60000));
+  
+  const hours = nepalTime.getHours().toString().padStart(2, '0');
+  const minutes = nepalTime.getMinutes().toString().padStart(2, '0');
+  const seconds = nepalTime.getSeconds().toString().padStart(2, '0');
+  
+  return {
+    time: `${hours}:${minutes}:${seconds}`,
+    hours: hours,
+    minutes: minutes,
+    seconds: seconds
+  };
+}
+
+// Utility to format time - always use Nepal time from englishDate if available
+function formatTime(timeStr, englishDate = null) {
+  // If we have englishDate, use it to get correct Nepal time (frontend fix)
+  if (englishDate) {
+    const nepalTime = getNepalTime(englishDate);
+    if (nepalTime) {
+      return nepalTime.time.substring(0, 5); // Return HH:mm
+    }
+  }
+  
+  // Fallback to stored time string if no englishDate
   if (!timeStr) return '—';
-  // Time is already stored in local time, just format it nicely
-  // Remove seconds if present for display: "14:30:45" -> "14:30"
   if (typeof timeStr === 'string') {
     return timeStr.substring(0, 5); // Get HH:mm part
   }
   return timeStr;
 }
 
-// Utility to get end time as HH:mm
+// Utility to get end time as HH:mm - always use Nepal time
 function getEndTime(startTimeStr, dateObj, extraMinutes = 0, isRefunded = false) {
-  if (!startTimeStr || !dateObj) return '';
-  const [hh, mm, ss] = startTimeStr.split(':');
-  const start = new Date(dateObj);
-  start.setHours(+hh, +mm, +((ss || 0)), 0);
+  if (!dateObj) return '';
+  
+  // Get Nepal time from englishDate
+  const nepalTime = getNepalTime(dateObj);
+  if (!nepalTime) return '';
+  
+  const startHours = parseInt(nepalTime.hours);
+  const startMinutes = parseInt(nepalTime.minutes);
+  
   let minsToAdd = isRefunded ? extraMinutes : 60 + (extraMinutes || 0);
-  const end = new Date(start.getTime() + minsToAdd * 60000);
-  return end.toTimeString().substring(0, 5);
+  const totalMinutes = startHours * 60 + startMinutes + minsToAdd;
+  const endHours = Math.floor(totalMinutes / 60) % 24;
+  const endMinutes = totalMinutes % 60;
+  
+  return `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
 }
 
 export default function TicketHistory() {
@@ -230,7 +275,7 @@ export default function TicketHistory() {
                 </div>
                 <div>
                   <p><strong>Date:</strong> <strong>{formatNepaliDate(ticket.date?.nepaliDate)}</strong> ({formatDate(ticket.date?.englishDate)})</p>
-                  <p><strong>Time:</strong> <strong>{formatTime(ticket.time)}</strong>{(() => {
+                  <p><strong>Time:</strong> <strong>{formatTime(ticket.time, ticket.date?.englishDate || ticket.createdAt)}</strong>{(() => {
                     if (!ticket.time) return '';
                     const dateObj = ticket.date?.englishDate ? new Date(ticket.date.englishDate) : null;
                     if (!dateObj) return '';
