@@ -10,6 +10,60 @@ import logo from '/valyntix-logo.png.jpg';
 const EXTRA_TIME_DURATION_MINUTES = 60;
 const EXTRA_TIME_RATE_PER_HOUR = 100;
 
+// Utility to format date without timezone issues
+function formatDate(dateValue) {
+  if (!dateValue) return '—';
+  
+  let date;
+  if (typeof dateValue === 'string') {
+    // If it's an ISO string, parse it and use local timezone
+    const dateStr = dateValue.split('T')[0]; // Get YYYY-MM-DD part
+    const [year, month, day] = dateStr.split('-').map(Number);
+    date = new Date(year, month - 1, day); // Create date in local timezone
+  } else if (dateValue instanceof Date) {
+    date = dateValue;
+  } else {
+    date = new Date(dateValue);
+  }
+  
+  // Format as DD/MM/YYYY or MM/DD/YYYY based on locale
+  return date.toLocaleDateString('en-GB', { 
+    day: '2-digit', 
+    month: '2-digit', 
+    year: 'numeric' 
+  });
+}
+
+// Utility to format date and time without timezone issues
+function formatDateTime(dateValue) {
+  if (!dateValue) return '—';
+  
+  let date;
+  if (typeof dateValue === 'string') {
+    // If it's an ISO string, parse it properly
+    if (dateValue.includes('T')) {
+      date = new Date(dateValue);
+    } else {
+      // Just a date string YYYY-MM-DD
+      const [year, month, day] = dateValue.split('-').map(Number);
+      date = new Date(year, month - 1, day);
+    }
+  } else if (dateValue instanceof Date) {
+    date = dateValue;
+  } else {
+    date = new Date(dateValue);
+  }
+  
+  return date.toLocaleString('en-GB', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  });
+}
+
 // Utility to get end time as HH:mm
 function getEndTime(startTimeStr, dateObj, extraMinutes=0, isRefunded=false) {
   // startTimeStr = 'HH:mm:ss' or 'HH:mm', dateObj is new Date(ticket.date.englishDate)
@@ -845,7 +899,7 @@ const Tickets = () => {
       </td>
       <td>${people}</td>
       <td>${t.totalExtraMinutes || 0} min</td>
-      <td>${t.date?.nepaliDate || ''}<br>${t.date?.englishDate ? new Date(t.date.englishDate).toLocaleDateString() : ''}</td>
+      <td>${t.date?.nepaliDate || ''}<br>${formatDate(t.date?.englishDate || t.createdAt)}</td>
       <td>${(() => {
         if (!t.time) return '—';
         const dateObj = t.date?.englishDate ? new Date(t.date.englishDate) : null;
@@ -1380,7 +1434,7 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
                       </div>
                       <div>
                         <p><strong>Ticket Type:</strong> {refundTicket.ticketType}</p>
-                        <p><strong>Date:</strong> {refundTicket.date?.nepaliDate} ({new Date(refundTicket.date?.englishDate).toLocaleDateString()})</p>
+                        <p><strong>Date:</strong> {refundTicket.date?.nepaliDate} ({formatDate(refundTicket.date?.englishDate)})</p>
                         <p><strong>Time:</strong> {(() => {
                           if (!refundTicket.time) return '—';
                           const dateObj = refundTicket.date?.englishDate ? new Date(refundTicket.date.englishDate) : null;
@@ -1564,7 +1618,7 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
                               <td>
                                 <small>
                                   {ticket.date?.nepaliDate || '—'}<br/>
-                                  {ticket.date?.englishDate ? new Date(ticket.date.englishDate).toLocaleDateString() : '—'}
+                                  {formatDate(ticket.date?.englishDate || ticket.createdAt)}
                                 </small>
                               </td>
                             </tr>
@@ -1791,7 +1845,7 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
                           <td>{entry.minutes}</td>
                           <td>{entry.label}</td>
                           <td>{entry.notes || '—'}</td>
-                          <td>{new Date(entry.addedAt).toLocaleString()}</td>
+                          <td>{formatDateTime(entry.addedAt)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -1903,7 +1957,7 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
                               <td style={{ fontSize: '0.7em', padding: '3px 2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={entry.label}>{entry.label}</td>
                               <td style={{ fontSize: '0.7em', padding: '3px 2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={entry.notes || ''}>{entry.notes || '—'}</td>
                               <td style={{ fontSize: '0.7em', padding: '3px 2px' }}>
-                                <div>{new Date(entry.addedAt).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' })}</div>
+                                <div>{formatDate(entry.addedAt)}</div>
                                 <div style={{ color: '#666', fontSize: '0.65em' }}>{new Date(entry.addedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</div>
                               </td>
                               <td style={{ textAlign: 'center', padding: '2px' }}>
@@ -2189,9 +2243,7 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
                         <td>{ticket.totalExtraMinutes || 0} min</td>
                         <td>
                           <small>
-                            {ticket.date?.englishDate 
-                              ? new Date(ticket.date.englishDate).toLocaleDateString()
-                              : new Date(ticket.createdAt).toLocaleDateString()}
+                            {formatDate(ticket.date?.englishDate || ticket.createdAt)}
                             <br />
                             {ticket.date?.nepaliDate || '—'}
                           </small>
@@ -2534,9 +2586,7 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
                                     <td>{ticket.totalExtraMinutes || 0} min</td>
                                     <td>
                                       <small>
-                                        {ticket.date?.englishDate 
-                                          ? new Date(ticket.date.englishDate).toLocaleDateString()
-                                          : new Date(ticket.createdAt).toLocaleDateString()}
+                                        {formatDate(ticket.date?.englishDate || ticket.createdAt)}
                                         <br />
                                         {ticket.date?.nepaliDate || '—'}
                                       </small>

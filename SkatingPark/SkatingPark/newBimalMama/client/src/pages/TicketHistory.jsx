@@ -4,6 +4,30 @@ import Loader from '../components/Loader';
 import TicketPrint from '../components/TicketPrint';
 import { useApp } from '../context/AppContext';
 
+// Utility to format date without timezone issues
+function formatDate(dateValue) {
+  if (!dateValue) return '—';
+  
+  let date;
+  if (typeof dateValue === 'string') {
+    // If it's an ISO string, parse it and use local timezone
+    const dateStr = dateValue.split('T')[0]; // Get YYYY-MM-DD part
+    const [year, month, day] = dateStr.split('-').map(Number);
+    date = new Date(year, month - 1, day); // Create date in local timezone
+  } else if (dateValue instanceof Date) {
+    date = dateValue;
+  } else {
+    date = new Date(dateValue);
+  }
+  
+  // Format as DD/MM/YYYY or MM/DD/YYYY based on locale
+  return date.toLocaleDateString('en-GB', { 
+    day: '2-digit', 
+    month: '2-digit', 
+    year: 'numeric' 
+  });
+}
+
 // Utility to get end time as HH:mm
 function getEndTime(startTimeStr, dateObj, extraMinutes = 0, isRefunded = false) {
   if (!startTimeStr || !dateObj) return '';
@@ -184,7 +208,7 @@ export default function TicketHistory() {
                   )}
                 </div>
                 <div>
-                  <p><strong>Date:</strong> {ticket.date?.nepaliDate} ({ticket.date?.englishDate ? new Date(ticket.date.englishDate).toLocaleDateString() : '—'})</p>
+                  <p><strong>Date:</strong> {ticket.date?.nepaliDate} ({formatDate(ticket.date?.englishDate)})</p>
                   <p><strong>Time:</strong> {(() => {
                     if (!ticket.time) return '—';
                     const dateObj = ticket.date?.englishDate ? new Date(ticket.date.englishDate) : null;
