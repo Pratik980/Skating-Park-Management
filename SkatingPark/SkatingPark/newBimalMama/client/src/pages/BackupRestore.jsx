@@ -4,6 +4,10 @@ import { backupAPI } from '../api/api';
 import Loader from '../components/Loader';
 import NotificationContainer from '../components/NotificationContainer';
 import logo from '/valyntix-logo.png.jpg';
+import ModernHeader from '../components/ModernHeader';
+import SectionCard from '../components/SectionCard';
+import ModernStat from '../components/ModernStat';
+import GradientButton from '../components/GradientButton';
 
 const BackupRestore = () => {
   const [backups, setBackups] = useState([]);
@@ -145,23 +149,17 @@ const BackupRestore = () => {
   }
 
   return (
-    <div>
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)', padding: '20px' }}>
       <NotificationContainer />
       
-      <div className="d-flex justify-between align-center mb-3">
-        <h1>Backup & Restore</h1>
-        <button 
-          className="btn btn-primary"
-          onClick={createBackup}
-          disabled={creatingBackup || !currentBranch}
-        >
-          {creatingBackup ? 'Creating Backup...' : 'Create Backup'}
-        </button>
-      </div>
+      <ModernHeader 
+        title="Backup & Restore" 
+        subtitle="Manage data backups and restoration"
+        icon="💾"
+      />
 
       {/* Backup Instructions */}
-      <div className="card mb-3">
-        <h3>📋 Backup Instructions</h3>
+      <SectionCard title="Backup Instructions" icon="📋" accentColor="#3498db">
         <div className="grid grid-2">
           <div>
             <h4>Create Backup</h4>
@@ -180,38 +178,51 @@ const BackupRestore = () => {
             </ul>
           </div>
         </div>
-      </div>
+      </SectionCard>
 
       {/* Backups List */}
-      <div className="table-container">
-        <div className="table-header">
-          <h3 className="table-title">Available Backups</h3>
-          <div className="table-actions">
-            <button 
-              className="btn btn-sm btn-secondary"
+      <SectionCard 
+        title="Available Backups" 
+        icon="📦"
+        accentColor="#9b59b6"
+        headerActions={
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <GradientButton 
               onClick={fetchBackups}
+              color="#95a5a6"
+              style={{ fontSize: '0.9rem', padding: '8px 16px' }}
             >
-              Refresh
-            </button>
+              🔄 Refresh
+            </GradientButton>
+            <GradientButton 
+              onClick={createBackup}
+              disabled={creatingBackup || !currentBranch}
+              color="#2ecc71"
+              style={{ fontSize: '0.9rem', padding: '8px 16px' }}
+            >
+              {creatingBackup ? 'Creating...' : '💾 Create Backup'}
+            </GradientButton>
           </div>
-        </div>
+        }
+      >
 
         {backups.length === 0 ? (
-          <div className="empty-state">
-            <p>No backups found</p>
-            <button 
-              className="btn btn-primary"
+          <div style={{ textAlign: 'center', padding: '40px', color: '#7f8c8d' }}>
+            <p style={{ fontSize: '1.1rem', marginBottom: '20px' }}>No backups found</p>
+            <GradientButton 
               onClick={createBackup}
               disabled={!currentBranch}
+              color="#2ecc71"
             >
               Create First Backup
-            </button>
+            </GradientButton>
             {!currentBranch && (
-              <p className="text-warning mt-2">Please select a branch first</p>
+              <p style={{ color: '#f39c12', marginTop: '12px' }}>Please select a branch first</p>
             )}
           </div>
         ) : (
-          <table className="table">
+          <div style={{ overflowX: 'auto' }}>
+            <table className="table" style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr>
                 <th>Backup Name</th>
@@ -274,43 +285,53 @@ const BackupRestore = () => {
               ))}
             </tbody>
           </table>
+          </div>
         )}
-      </div>
+      </SectionCard>
 
       {/* Backup Stats */}
       {backups.length > 0 && (
-        <div className="card">
-          <h3>Backup Statistics</h3>
-          <div className="grid grid-4">
-            <div className="text-center">
-              <div className="stat-number">{backups.length}</div>
-              <div className="stat-label">Total Backups</div>
-            </div>
-            <div className="text-center">
-              <div className="stat-number">
+        <SectionCard title="Backup Statistics" icon="📊" accentColor="#e74c3c">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
+            <ModernStat 
+              value={backups.length} 
+              label="Total Backups" 
+              color="#3498db"
+              icon="💾"
+            />
+            <div style={{
+              padding: '25px 24px 18px 24px',
+              borderRadius: '17px',
+              background: 'linear-gradient(98deg,#9b59b611 0%,#fff 88%)',
+              boxShadow: '0 4px 22px #9b59b612',
+              minWidth: 132,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+            }}>
+              <div style={{ fontSize: '2.22rem', fontWeight: 900, color: '#9b59b6', letterSpacing: '-1px', lineHeight: 1.1 }}>
                 {formatFileSize(backups.reduce((sum, backup) => sum + backup.size, 0))}
               </div>
-              <div className="stat-label">Total Size</div>
+              <div style={{ fontSize: '0.96rem', color: '#555', fontWeight: 500, opacity: 0.89, marginTop: 5 }}>Total Size</div>
             </div>
-            <div className="text-center">
-              <div className="stat-number">
-                {backups.reduce((sum, backup) => sum + backup.dataCount.tickets, 0)}
-              </div>
-              <div className="stat-label">Total Tickets</div>
-            </div>
-            <div className="text-center">
-              <div className="stat-number">
-                {backups.reduce((sum, backup) => sum + backup.dataCount.sales, 0)}
-              </div>
-              <div className="stat-label">Total Sales</div>
-            </div>
+            <ModernStat 
+              value={backups.reduce((sum, backup) => sum + backup.dataCount.tickets, 0)} 
+              label="Total Tickets" 
+              color="#2ecc71"
+              icon="🎟️"
+            />
+            <ModernStat 
+              value={backups.reduce((sum, backup) => sum + backup.dataCount.sales, 0)} 
+              label="Total Sales" 
+              color="#f39c12"
+              icon="🛒"
+            />
           </div>
-        </div>
+        </SectionCard>
       )}
 
       {/* MongoDB Connection Info */}
-      <div className="card">
-        <h3>Database Information</h3>
+      <SectionCard title="Database Information" icon="🗄️" accentColor="#34495e">
         <div className="grid grid-2">
           <div>
             <h4>MongoDB Connection</h4>
@@ -325,11 +346,15 @@ const BackupRestore = () => {
             <p><strong>Auto Backup:</strong> Manual only</p>
           </div>
         </div>
-      </div>
+      </SectionCard>
 
       {user?.role === 'admin' && (
-        <div style={{ border: '2px solid #e74c3c', borderRadius: 10, padding: 24, marginTop: 36, background: '#fff5f5' }}>
-          <h2 style={{ color: '#e74c3c', marginBottom: 6 }}>Erase Branch Data</h2>
+        <SectionCard 
+          title="Erase Branch Data" 
+          icon="⚠️"
+          accentColor="#e74c3c"
+          style={{ border: '2px solid #e74c3c', background: '#fff5f5' }}
+        >
           <div style={{ marginBottom: 12 }}>
             <label>
               <input type="checkbox" checked={eraseTypes.includes('tickets')} onChange={() => handleEraseChange('tickets')} /> Tickets
@@ -341,14 +366,14 @@ const BackupRestore = () => {
               <input type="checkbox" checked={eraseTypes.includes('expenses')} onChange={() => handleEraseChange('expenses')} /> Expenses
             </label>
           </div>
-          <button
-            className="btn btn-danger"
-            style={{ fontWeight: 'bold', fontSize: '1.2em', padding: '10px 32px' }}
+          <GradientButton
             disabled={deleting || eraseTypes.length === 0}
             onClick={startErase}
+            color="#e74c3c"
+            style={{ fontWeight: 'bold', fontSize: '1.1rem', padding: '12px 32px' }}
           >
-            Delete Selected Data
-          </button>
+            🗑️ Delete Selected Data
+          </GradientButton>
           {/* Confirm Modal Inline */}
           {showErase && (
             <div className="modal-overlay">
@@ -380,7 +405,7 @@ const BackupRestore = () => {
               {eraseResult.message}
             </div>
           )}
-        </div>
+        </SectionCard>
       )}
       <footer style={{ textAlign: 'center', margin: '32px 0 12px 0', fontSize: '12px', color: '#708090', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>

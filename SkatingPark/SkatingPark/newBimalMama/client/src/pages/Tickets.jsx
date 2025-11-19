@@ -1,10 +1,15 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { ticketsAPI } from '../api/api';
 import Loader from '../components/Loader';
 import NotificationContainer from '../components/NotificationContainer';
 import TicketPrint from '../components/TicketPrint';
 import logo from '/valyntix-logo.png.jpg';
+import ModernHeader from '../components/ModernHeader';
+import SectionCard from '../components/SectionCard';
+import ModernStat from '../components/ModernStat';
+import GradientButton from '../components/GradientButton';
 
 
 const EXTRA_TIME_DURATION_MINUTES = 60;
@@ -182,8 +187,8 @@ const Tickets = () => {
     playerNames: '',
     contactNumber: '',
     ticketType: 'Adult',
-    fee: '100',
-    discount: '',
+                  fee: '100',
+                  discount: '',
     numberOfPeople: '1',
     remarks: '',
     groupName: '',
@@ -219,8 +224,27 @@ const Tickets = () => {
   const printContentRef = useRef(null);
   const nameInputRef = useRef(null);
   const { currentBranch, user } = useApp();
+  const navigate = useNavigate();
   const todayDate = useMemo(() => new Date().toISOString().split('T')[0], []);
   const [historySearch, setHistorySearch] = useState('');
+  const isAdmin = user?.role === 'admin';
+  const canManageTickets = isAdmin || user?.role === 'staff';
+  const todaysRevenue = useMemo(
+    () => tickets.reduce((sum, ticket) => sum + (ticket.fee || 0), 0),
+    [tickets]
+  );
+  const playingTickets = useMemo(
+    () => tickets.filter(ticket => !ticket.isRefunded).length,
+    [tickets]
+  );
+  const refundedToday = useMemo(
+    () => tickets.filter(ticket => ticket.isRefunded).length,
+    [tickets]
+  );
+  const totalExtraMinutes = useMemo(
+    () => tickets.reduce((sum, ticket) => sum + (ticket.totalExtraMinutes || 0), 0),
+    [tickets]
+  );
 
   useEffect(() => {
     fetchTickets();
@@ -1153,58 +1177,50 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
 
 
   return (
-    <div>
-
-      
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #f5f7ff 0%, #eef2ff 55%, #ffffff 100%)', padding: '20px' }}>
       <NotificationContainer />
-      
-      <div className="d-flex justify-between align-center mb-3">
-        <h1>Ticket Management</h1>
-        <div className="d-flex gap-2 align-center">
-          {(user?.role === 'admin' || user?.role === 'staff') && (
-            <a 
-              href="/sales" 
-              className="btn btn-primary"
-            >
-              💰 Sales
-            </a>
+
+      <ModernHeader
+        title="Ticket Management"
+        subtitle="Create new tickets, extend play time, and process refunds from a single command center"
+        icon="🎟️"
+      />
+
+      <SectionCard title="Control Center" icon="🛠️" accentColor="#f97316">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px' }}>
+          {canManageTickets && (
+            <GradientButton color="#5b21b6" onClick={() => navigate('/sales')}>
+              💰 Go to Sales
+            </GradientButton>
           )}
-          <button 
-            className="btn btn-warning"
-            onClick={() => setShowRefundModal(true)}
-          >
+          <GradientButton color="#f97316" onClick={() => setShowRefundModal(true)}>
             🔁 Ticket Refund
-          </button>
-          <button 
-            className="btn btn-success"
-            onClick={() => setShowExtraTimeModal(true)}
-          >
+          </GradientButton>
+          <GradientButton color="#1d4ed8" onClick={() => setShowExtraTimeModal(true)}>
             ⏳ Extra Time
-          </button>
-          {user?.role === 'admin' && (
-            <button 
-              className="btn btn-info"
-              onClick={() => setShowHistory(true)}
-            >
+          </GradientButton>
+          {isAdmin && (
+            <GradientButton color="#0ea5e9" onClick={() => setShowHistory(true)}>
               📜 Ticket History
-            </button>
+            </GradientButton>
           )}
-          <button 
-            className="btn btn-sm btn-secondary"
-            onClick={fetchTickets}
-            disabled={loading}
-          >
-            {loading ? 'Refreshing...' : 'Refresh'}
-          </button>
+          <GradientButton color="#475569" onClick={fetchTickets} disabled={loading}>
+            {loading ? 'Refreshing...' : '🔄 Refresh'}
+          </GradientButton>
         </div>
+      </SectionCard>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '18px', marginBottom: '26px' }}>
+        <ModernStat value={tickets.length} label="Today's Tickets" color="#8b5cf6" icon="🎟️" />
+        <ModernStat value={playingTickets} label="Active / Playing" color="#10b981" icon="⚡" />
+        <ModernStat value={refundedToday} label="Refunded Today" color="#f43f5e" icon="↺" />
+        <ModernStat value={todaysRevenue} label="Revenue (रु)" color="#f59e0b" icon="₨" />
+        <ModernStat value={totalExtraMinutes} label="Extra Minutes" color="#0ea5e9" icon="⏱️" />
       </div>
 
-      {/* Quick Add Ticket Row */}
       {(user?.role === 'admin' || user?.role === 'staff') && (
-        <div className="card mb-3" style={{ backgroundColor: '#f0f8ff', border: '2px solid #007bff' }}>
-          <div className="card-body">
-            <h5 className="card-title">Quick Ticket Entry</h5>
-            <div className="grid grid-5 gap-2">
+        <SectionCard title="Quick Ticket Entry" icon="⚡" accentColor="#6366f1">
+          <div className="grid grid-5 gap-2">
               <div>
                 <label className="form-label">Customer Name *</label>
                 <input
@@ -1319,7 +1335,7 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
                 />
               </div>
             </div>
-            <div className="grid grid-3 gap-2 mt-3">
+          <div className="grid grid-3 gap-2 mt-3">
               <div>
                 <label className="form-label">Group Name (optional)</label>
                 <input
@@ -1356,39 +1372,39 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
                 />
               </div>
             </div>
-            <div className="d-flex gap-2 mt-3">
-              <button 
-                className="btn btn-success"
-                onClick={handleQuickAddSubmit}
-                disabled={loading}
-              >
-                {loading ? 'Creating...' : 'Add & Auto-Print (Enter)'}
-              </button>
-              <button 
-                className="btn btn-secondary"
-                onClick={() => setQuickAddData({
-                  name: '',
-                  contactNumber: '',
-                  playerNames: '',
-                  ticketType: 'Adult',
-                  fee: '100',
-                  numberOfPeople: '1',
-                  remarks: '',
-                  groupName: '',
-                  groupNumber: '',
-                  groupPrice: ''
-                })}
-              >
-                Clear
-              </button>
-            </div>
-            <div className="mt-2">
-              <small className="text-muted">
-                Press Enter to save and auto-print | Prints exactly as shown
-              </small>
-            </div>
+          <div className="d-flex gap-2 mt-3">
+            <GradientButton 
+              color="#10b981"
+              onClick={handleQuickAddSubmit}
+              disabled={loading}
+            >
+              {loading ? 'Creating...' : 'Add & Auto-Print (Enter)'}
+            </GradientButton>
+            <GradientButton 
+              color="#94a3b8"
+              onClick={() => setQuickAddData({
+                name: '',
+                contactNumber: '',
+                playerNames: '',
+                ticketType: 'Adult',
+                fee: '100',
+                  discount: '',
+                numberOfPeople: '1',
+                remarks: '',
+                groupName: '',
+                groupNumber: '',
+                groupPrice: ''
+              })}
+            >
+              Clear
+            </GradientButton>
           </div>
-        </div>
+          <div className="mt-2">
+            <small className="text-muted">
+              Press Enter to save and auto-print | Prints exactly as shown
+            </small>
+          </div>
+        </SectionCard>
       )}
 
       {/* Hidden print content for auto-print */}
@@ -1435,232 +1451,236 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
       {/* Refund Modal */}
       {showRefundModal && (
         <div className="modal-overlay" style={{ zIndex: 1000 }}>
-          <div className="modal-content" style={{ maxWidth: '95%', width: '1200px', maxHeight: '90vh', overflow: 'auto' }}>
-            <div className="modal-header">
-              <h3 className="modal-title">Ticket Refund</h3>
-              <button 
-                className="close-button"
-                onClick={() => {
-                  setShowRefundModal(false);
-                  resetRefundState();
-                }}
-              >
-                ×
-              </button>
-            </div>
-            <div className="modal-body">
-              <div className="form-group">
-                <label className="form-label">Ticket ID / Number</label>
-                <div className="d-flex gap-2">
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={refundForm.ticketNo}
-                    onChange={(e) => setRefundForm({ ...refundForm, ticketNo: e.target.value })}
-                    placeholder="Enter ticket ID (e.g., 20241114-001)"
-                  />
-                  <button 
-                    className="btn btn-primary"
-                    onClick={lookupRefundTicket}
-                    disabled={refundLoading}
-                  >
-                    {refundLoading ? 'Searching...' : 'Search'}
-                  </button>
-                </div>
-                <small className="text-muted">Ticket details auto-fill as soon as ID is found.</small>
-              </div>
-
-              {refundTicket && (() => {
-                const discount = refundTicket.discount || 0;
-                const amountPaid = refundTicket.fee || 0;
-                const originalPrice = amountPaid + discount;
-                const cancellationFee = parseFloat(refundForm.cancellationFee) || 0;
-                const calculatedRefund = calculateRefundAmount(refundTicket, null, cancellationFee);
-                
-                return (
-                  <div className="card mb-3">
-                    <h4>Ticket Details</h4>
-                    <div className="grid grid-2">
-                      <div>
-                        <p><strong>Name:</strong> {refundTicket.name}</p>
-                        <p><strong>People:</strong> {refundTicket.numberOfPeople || refundTicket.playerStatus?.totalPlayers || 1}</p>
-                        {discount > 0 ? (
-                          <>
-                            <p><strong>Original Price:</strong> रु {originalPrice.toLocaleString()}</p>
-                            <p><strong>Discount:</strong> <span style={{color: '#d32f2f'}}>- रु {discount.toLocaleString()}</span></p>
-                            <p><strong>Amount Paid:</strong> <strong>रु {amountPaid.toLocaleString()}</strong></p>
-                          </>
-                        ) : (
-                          <p><strong>Ticket Amount:</strong> रु {amountPaid.toLocaleString()}</p>
-                        )}
-                        {refundTicket.groupInfo?.groupName && (
-                          <p><strong>Group:</strong> {refundTicket.groupInfo.groupName} {refundTicket.groupInfo.groupNumber && `(${refundTicket.groupInfo.groupNumber})`}</p>
-                        )}
-                      </div>
-                      <div>
-                        <p><strong>Ticket Type:</strong> {refundTicket.ticketType}</p>
-                        <p><strong>Date:</strong> <strong>{formatNepaliDate(refundTicket.date?.nepaliDate)}</strong> ({formatDate(refundTicket.date?.englishDate)})</p>
-                        <p><strong>Time:</strong> {(() => {
-                          if (!refundTicket.time) return '—';
-                          const dateObj = refundTicket.date?.englishDate ? new Date(refundTicket.date.englishDate) : null;
-                          if (!dateObj) return refundTicket.time;
-                          const endTime = getEndTime(refundTicket.time, dateObj, refundTicket.totalExtraMinutes || 0, refundTicket.isRefunded);
-                          return endTime ? `${refundTicket.time} - ${endTime}` : refundTicket.time;
-                        })()}</p>
-                        <p><strong>Extra Time:</strong> {refundTicket.totalExtraMinutes || 0} min</p>
-                      </div>
-                    </div>
-                    <div style={{ marginTop: '15px', padding: '10px', backgroundColor: '#f0f8ff', borderRadius: '4px', border: '1px solid #007bff' }}>
-                      <h5 style={{ marginBottom: '8px' }}>Refund Calculation:</h5>
-                      <p style={{ margin: '4px 0' }}>Amount Paid: <strong>रु {amountPaid.toLocaleString()}</strong></p>
-                      {cancellationFee > 0 && (
-                        <p style={{ margin: '4px 0', color: '#d32f2f' }}>Cancellation Fee: <strong>- रु {cancellationFee.toLocaleString()}</strong></p>
-                      )}
-                      <p style={{ margin: '4px 0', fontSize: '16px', fontWeight: 'bold', color: '#1a7e1a' }}>
-                        Refund Amount: <strong>रु {calculatedRefund.toLocaleString()}</strong>
-                      </p>
-                      <small className="text-muted">Rule: Refund = Amount Actually Paid {cancellationFee > 0 ? '- Cancellation Fee' : ''}</small>
-                    </div>
-                  </div>
-                );
-              })()}
-
-              <div className="grid grid-2 gap-3">
-                <div className="form-group">
-                  <label className="form-label">Refund Name</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={refundForm.refundName}
-                    onChange={(e) => setRefundForm({ ...refundForm, refundName: e.target.value })}
-                    placeholder="Auto-filled from ticket"
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Cancellation Fee (Optional)</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    value={refundForm.cancellationFee}
-                    onChange={(e) => {
-                      const fee = parseFloat(e.target.value) || 0;
-                      const newRefund = calculateRefundAmount(refundTicket, null, fee);
-                      setRefundForm({ ...refundForm, cancellationFee: e.target.value, refundAmount: newRefund.toString() });
-                    }}
-                    min="0"
-                    step="1"
-                    placeholder="0"
-                  />
-                  <small className="text-muted">Deduct this amount from refund (if applicable)</small>
-                </div>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Refund Amount (NPR) - Auto-calculated</label>
-                <input
-                  type="number"
-                  className="form-control"
-                  value={refundForm.refundAmount}
-                  onChange={(e) => setRefundForm({ ...refundForm, refundAmount: e.target.value })}
-                  min="0"
-                  step="0.01"
-                  style={{ backgroundColor: '#f0f8ff', fontWeight: 'bold' }}
-                />
-                <small className="text-muted">This is calculated automatically. You can adjust if needed.</small>
-              </div>
-              <div className="grid grid-2 gap-3">
-                <div className="form-group">
-                  <label className="form-label">Refund Method</label>
-                  <select
-                    className="form-control"
-                    value={refundForm.refundMethod}
-                    onChange={(e) => setRefundForm({ ...refundForm, refundMethod: e.target.value })}
-                  >
-                    <option value="cash">Cash</option>
-                    <option value="online">Online</option>
-                    <option value="bank">Bank</option>
-                    <option value="wallet">Wallet</option>
-                    <option value="other">Other</option>
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Payment Reference</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={refundForm.paymentReference}
-                    onChange={(e) => setRefundForm({ ...refundForm, paymentReference: e.target.value })}
-                    placeholder="Txn ID / Ref no."
-                  />
-                </div>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Refund Reason</label>
-                <textarea
-                  className="form-control"
-                  rows="2"
-                  value={refundForm.refundReason}
-                  onChange={(e) => setRefundForm({ ...refundForm, refundReason: e.target.value })}
-                  placeholder="Reason for refund"
-                />
-              </div>
-              <div className="grid grid-3 gap-2">
-                <div>
-                  <label className="form-label">Group Name</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={refundForm.groupName}
-                    onChange={(e) => setRefundForm({ ...refundForm, groupName: e.target.value })}
-                    placeholder="Manual override"
-                  />
-                </div>
-                <div>
-                  <label className="form-label">Group Number</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={refundForm.groupNumber}
-                    onChange={(e) => setRefundForm({ ...refundForm, groupNumber: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className="form-label">Group Price (NPR)</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    value={refundForm.groupPrice}
-                    onChange={(e) => setRefundForm({ ...refundForm, groupPrice: e.target.value })}
-                    min="0"
-                    step="1"
-                  />
-                </div>
-              </div>
-
-              <div className="mt-4">
-                <div className="d-flex justify-between align-center mb-2">
-                  <h4>Recent Refunds</h4>
-                  <div className="d-flex gap-2">
-                    {recentRefunds.length > 0 && (
-                      <button 
-                        className="btn btn-sm btn-info"
-                        onClick={() => printAllTicketsOneByOne(recentRefunds)}
-                        title="Print All Refunded Tickets"
-                      >
-                        🖨️ Print All
-                      </button>
-                    )}
-                    <button 
-                      className="btn btn-sm btn-secondary"
-                      onClick={fetchRecentRefunds}
+          <div className="modal-content" style={{ maxWidth: '95%', width: '1200px', maxHeight: '90vh', overflow: 'auto', background: 'transparent' }}>
+            <SectionCard
+              title="Ticket Refund"
+              icon="🔁"
+              accentColor="#f97316"
+              style={{ padding: '28px 28px 24px' }}
+              headerActions={
+                <>
+                  {recentRefunds.length > 0 && (
+                    <GradientButton color="#0ea5e9" style={{ fontSize: '0.9rem', padding: '8px 16px' }}
+                      onClick={() => printAllTicketsOneByOne(recentRefunds)}
+                      title="Print All Refunded Tickets"
                     >
-                      {recentRefundsLoading ? 'Loading...' : 'Refresh'}
-                    </button>
+                      🖨️ Print All
+                    </GradientButton>
+                  )}
+                  <GradientButton color="#6366f1" style={{ fontSize: '0.9rem', padding: '8px 16px' }} onClick={fetchRecentRefunds}>
+                    {recentRefundsLoading ? 'Loading...' : 'Refresh'}
+                  </GradientButton>
+                  <GradientButton color="#d32f2f" style={{ minWidth: '50px' }} onClick={() => {
+                    setShowRefundModal(false);
+                    resetRefundState();
+                  }}>Close</GradientButton>
+                </>
+              }
+            >
+              {/* Ticket Search & Details Card */}
+              <SectionCard title="Search & Refund Ticket" icon="🔎" accentColor="#18a6ff" style={{ marginBottom: 18 }}>
+                <div className="form-group">
+                  <label className="form-label">Ticket ID / Number</label>
+                  <div className="d-flex gap-2">
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={refundForm.ticketNo}
+                      onChange={(e) => setRefundForm({ ...refundForm, ticketNo: e.target.value })}
+                      placeholder="Enter ticket ID (e.g., 20241114-001)"
+                    />
+                    <GradientButton color="#1976d2" style={{ minWidth: '120px' }} onClick={lookupRefundTicket} disabled={refundLoading}>{refundLoading ? 'Searching...' : 'Search'}</GradientButton>
                   </div>
+                  <small className="text-muted">Ticket details auto-fill as soon as ID is found.</small>
                 </div>
+                {/* Ticket Details */}
+                {!!refundTicket && (
+                  <SectionCard title="Ticket Details" icon="🎟️" accentColor="#f59e0b" style={{ marginTop: 16 }}>
+                    {(() => {
+                      const discount = refundTicket.discount || 0;
+                      const amountPaid = refundTicket.fee || 0;
+                      const originalPrice = amountPaid + discount;
+                      const cancellationFee = parseFloat(refundForm.cancellationFee) || 0;
+                      const calculatedRefund = calculateRefundAmount(refundTicket, null, cancellationFee);
+
+                      return (
+                        <>
+                          <div className="grid grid-2">
+                            <div>
+                              <p><strong>Name:</strong> {refundTicket.name}</p>
+                              <p><strong>People:</strong> {refundTicket.numberOfPeople || refundTicket.playerStatus?.totalPlayers || 1}</p>
+                              {discount > 0 ? (
+                                <>
+                                  <p><strong>Original Price:</strong> रु {originalPrice.toLocaleString()}</p>
+                                  <p><strong>Discount:</strong> <span style={{ color: '#d32f2f' }}>- रु {discount.toLocaleString()}</span></p>
+                                  <p><strong>Amount Paid:</strong> <strong>रु {amountPaid.toLocaleString()}</strong></p>
+                                </>
+                              ) : (
+                                <p><strong>Ticket Amount:</strong> रु {amountPaid.toLocaleString()}</p>
+                              )}
+                              {refundTicket.groupInfo?.groupName && (
+                                <p><strong>Group:</strong> {refundTicket.groupInfo.groupName} {refundTicket.groupInfo.groupNumber && `(${refundTicket.groupInfo.groupNumber})`}</p>
+                              )}
+                            </div>
+                            <div>
+                              <p><strong>Ticket Type:</strong> {refundTicket.ticketType}</p>
+                              <p><strong>Date:</strong> <strong>{formatNepaliDate(refundTicket.date?.nepaliDate)}</strong> ({formatDate(refundTicket.date?.englishDate)})</p>
+                              <p><strong>Time:</strong> {(() => {
+                                if (!refundTicket.time) return '—';
+                                const dateObj = refundTicket.date?.englishDate ? new Date(refundTicket.date.englishDate) : null;
+                                if (!dateObj) return refundTicket.time;
+                                const endTime = getEndTime(refundTicket.time, dateObj, refundTicket.totalExtraMinutes || 0, refundTicket.isRefunded);
+                                return endTime ? `${refundTicket.time} - ${endTime}` : refundTicket.time;
+                              })()}</p>
+                              <p><strong>Extra Time:</strong> {refundTicket.totalExtraMinutes || 0} min</p>
+                            </div>
+                          </div>
+                          <div style={{ marginTop: '15px', padding: '10px', backgroundColor: '#f0f8ff', borderRadius: '4px', border: '1px solid #007bff' }}>
+                            <h5 style={{ marginBottom: '8px' }}>Refund Calculation:</h5>
+                            <p style={{ margin: '4px 0' }}>Amount Paid: <strong>रु {amountPaid.toLocaleString()}</strong></p>
+                            {cancellationFee > 0 && (
+                              <p style={{ margin: '4px 0', color: '#d32f2f' }}>Cancellation Fee: <strong>- रु {cancellationFee.toLocaleString()}</strong></p>
+                            )}
+                            <p style={{ margin: '4px 0', fontSize: '16px', fontWeight: 'bold', color: '#1a7e1a' }}>
+                              Refund Amount: <strong>रु {calculatedRefund.toLocaleString()}</strong>
+                            </p>
+                            <small className="text-muted">Rule: Refund = Amount Actually Paid {cancellationFee > 0 ? '- Cancellation Fee' : ''}</small>
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </SectionCard>
+                )}
+              </SectionCard>
+              {/* Refund Form Card */}
+              {!!refundTicket && (
+                <SectionCard title="Refund Details" icon="💸" accentColor="#d97706" style={{ marginBottom: 18 }}>
+                  <div className="grid grid-2 gap-3">
+                    <div className="form-group">
+                      <label className="form-label">Refund Name</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={refundForm.refundName}
+                        onChange={(e) => setRefundForm({ ...refundForm, refundName: e.target.value })}
+                        placeholder="Auto-filled from ticket"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Cancellation Fee (Optional)</label>
+                      <input
+                        type="number"
+                        className="form-control"
+                        value={refundForm.cancellationFee}
+                        onChange={(e) => {
+                          const fee = parseFloat(e.target.value) || 0;
+                          const newRefund = calculateRefundAmount(refundTicket, null, fee);
+                          setRefundForm({ ...refundForm, cancellationFee: e.target.value, refundAmount: newRefund.toString() });
+                        }}
+                        min="0"
+                        step="1"
+                        placeholder="0"
+                      />
+                      <small className="text-muted">Deduct this amount from refund (if applicable)</small>
+                    </div>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Refund Amount (NPR) - Auto-calculated</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={refundForm.refundAmount}
+                      onChange={(e) => setRefundForm({ ...refundForm, refundAmount: e.target.value })}
+                      min="0"
+                      step="0.01"
+                      style={{ backgroundColor: '#f0f8ff', fontWeight: 'bold' }}
+                    />
+                    <small className="text-muted">This is calculated automatically. You can adjust if needed.</small>
+                  </div>
+                  <div className="grid grid-2 gap-3">
+                    <div className="form-group">
+                      <label className="form-label">Refund Method</label>
+                      <select
+                        className="form-control"
+                        value={refundForm.refundMethod}
+                        onChange={(e) => setRefundForm({ ...refundForm, refundMethod: e.target.value })}
+                      >
+                        <option value="cash">Cash</option>
+                        <option value="online">Online</option>
+                        <option value="bank">Bank</option>
+                        <option value="wallet">Wallet</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Payment Reference</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={refundForm.paymentReference}
+                        onChange={(e) => setRefundForm({ ...refundForm, paymentReference: e.target.value })}
+                        placeholder="Txn ID / Ref no."
+                      />
+                    </div>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Refund Reason</label>
+                    <textarea
+                      className="form-control"
+                      rows="2"
+                      value={refundForm.refundReason}
+                      onChange={(e) => setRefundForm({ ...refundForm, refundReason: e.target.value })}
+                      placeholder="Reason for refund"
+                    />
+                  </div>
+                  <div className="grid grid-3 gap-2">
+                    <div>
+                      <label className="form-label">Group Name</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={refundForm.groupName}
+                        onChange={(e) => setRefundForm({ ...refundForm, groupName: e.target.value })}
+                        placeholder="Manual override"
+                      />
+                    </div>
+                    <div>
+                      <label className="form-label">Group Number</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={refundForm.groupNumber}
+                        onChange={(e) => setRefundForm({ ...refundForm, groupNumber: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label className="form-label">Group Price (NPR)</label>
+                      <input
+                        type="number"
+                        className="form-control"
+                        value={refundForm.groupPrice}
+                        onChange={(e) => setRefundForm({ ...refundForm, groupPrice: e.target.value })}
+                        min="0"
+                        step="1"
+                      />
+                    </div>
+                  </div>
+                  <GradientButton
+                    color="#f97316"
+                    style={{ marginTop: 16 }}
+                    onClick={handleRefundSubmit}
+                    disabled={refundLoading || !refundTicket}
+                  >
+                    {refundLoading ? 'Processing...' : 'Process Refund'}
+                  </GradientButton>
+                </SectionCard>
+              )}
+              {/* ---- Recent Refunds ---- */}
+              <SectionCard title="Recent Refunds" icon="📋" accentColor="#6366f1">
                 {recentRefunds.length === 0 ? (
                   <p className="text-muted">No refund records yet.</p>
                 ) : (
-                  <div className="table-container" style={{ maxHeight: '300px', overflow: 'auto' }}>
+                  <div style={{ maxHeight: '260px', overflow: 'auto', width: '100%' }}>
                     <table className="table">
                       <thead>
                         <tr>
@@ -1678,6 +1698,7 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
                         {recentRefunds.map((ticket) => {
                           const dateObj = ticket.date?.englishDate ? new Date(ticket.date.englishDate) : null;
                           const endTime = ticket.time && dateObj ? getEndTime(ticket.time, dateObj, ticket.totalExtraMinutes || 0, ticket.isRefunded || false) : null;
+
                           return (
                             <tr key={ticket._id}>
                               <td>{ticket.ticketNo}</td>
@@ -1702,8 +1723,7 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
                               </td>
                               <td>
                                 <div className="d-flex gap-1">
-                                  {/* Preview button */}
-                                  <button 
+                                  <button
                                     className="btn btn-sm btn-outline-primary"
                                     style={{ minWidth: 30 }}
                                     onClick={() => { setSelectedTicket(ticket); setShowPrint(true); setAutoPrint(false); }}
@@ -1711,22 +1731,20 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
                                   >
                                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" stroke="#1976d2" strokeWidth="1.5"/><circle cx="10" cy="10" r="3" stroke="#1976d2" strokeWidth="1.4"/></svg>
                                   </button>
-                                  {/* Print button */}
-                                  <button 
+                                  <button
                                     className="btn btn-sm btn-info"
                                     onClick={() => openTicketPrintWindow(ticket)}
                                     title="Print Ticket"
                                   >
                                     🖨️
                                   </button>
-                                  {/* Delete button - only for admin */}
                                   {user?.role === 'admin' && (
-                                    <button 
+                                    <button
                                       className="btn btn-sm btn-danger"
                                       onClick={async () => {
                                         if (window.confirm(`Are you sure you want to delete ticket ${ticket.ticketNo}?`)) {
                                           await handleDelete(ticket._id);
-                                          fetchRecentRefunds(); // Refresh the refunds list
+                                          fetchRecentRefunds();
                                         }
                                       }}
                                       title="Delete Ticket"
@@ -1743,26 +1761,8 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
                     </table>
                   </div>
                 )}
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button 
-                className="btn btn-secondary"
-                onClick={() => {
-                  setShowRefundModal(false);
-                  resetRefundState();
-                }}
-              >
-                Close
-              </button>
-              <button 
-                className="btn btn-primary"
-                onClick={handleRefundSubmit}
-                disabled={refundLoading || !refundTicket}
-              >
-                {refundLoading ? 'Processing...' : 'Process Refund'}
-              </button>
-            </div>
+              </SectionCard>
+            </SectionCard>
           </div>
         </div>
       )}
@@ -1770,243 +1770,219 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
       {/* Extra Time Modal */}
       {showExtraTimeModal && (
         <div className="modal-overlay" style={{ zIndex: 1000 }}>
-          <div className="modal-content" style={{ maxWidth: '95%', width: '1200px', maxHeight: '90vh', overflow: 'auto' }}>
-            <div className="modal-header">
-              <h3 className="modal-title">Extra Time Ticket</h3>
-              <button 
-                className="close-button"
-                onClick={() => {
-                  setShowExtraTimeModal(false);
-                  resetExtraTimeState();
-                }}
-              >
-                ×
-              </button>
-            </div>
-            <div className="modal-body">
-              <div className="form-group">
-                <label className="form-label">Ticket ID / Contact Number</label>
-                <div className="d-flex gap-2">
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={extraTimeForm.ticketNo}
-                    onChange={(e) => setExtraTimeForm({ ...extraTimeForm, ticketNo: e.target.value })}
-                    placeholder="Enter ticket ID or contact number"
-                  />
-                  <button 
-                    className="btn btn-primary"
-                    onClick={lookupExtraTimeTicket}
-                  >
-                    Search
-                  </button>
-                </div>
-                <small className="text-muted">Search by ticket ID or contact number. If multiple tickets found with same contact number, the most recent one will be selected.</small>
-              </div>
-
-              {extraTimeTicket && (
-                <div className="card mb-3">
-                  <h4>Current Ticket</h4>
-                  <div className="grid grid-2">
-                    <div>
-                      <p><strong>Name:</strong> {extraTimeTicket.name}</p>
-                      <p><strong>Ticket No:</strong> {extraTimeTicket.ticketNo}</p>
-                      <p><strong>People:</strong> {extraTimeTicket.numberOfPeople || extraTimeTicket.playerStatus?.totalPlayers || 1}</p>
-                      <p><strong>Time:</strong> {(() => {
-                        if (!extraTimeTicket.time) return '—';
-                        const dateObj = extraTimeTicket.date?.englishDate ? new Date(extraTimeTicket.date.englishDate) : null;
-                        if (!dateObj) return extraTimeTicket.time;
-                        const endTime = getEndTime(extraTimeTicket.time, dateObj, extraTimeTicket.totalExtraMinutes || 0, extraTimeTicket.isRefunded);
-                        return endTime ? `${extraTimeTicket.time} - ${endTime}` : extraTimeTicket.time;
-                      })()}</p>
-                    </div>
-                    <div>
-                      <p><strong>Ticket Type:</strong> {extraTimeTicket.ticketType}</p>
-                      <p><strong>Total Extra Time:</strong> {extraTimeTicket.totalExtraMinutes || 0} min</p>
-                      <p><strong>Amount:</strong> रु {extraTimeTicket.fee?.toLocaleString()}</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div className="grid grid-2 gap-3">
-                <div>
-                  <label className="form-label">Extra Time (Minutes) *</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    value={extraTimeForm.minutes}
-                    onChange={(e) => {
-                      const minutes = e.target.value;
-                      const minutesNum = parseInt(minutes, 10);
-                      let label = '';
-                      if (minutesNum >= 60) {
-                        const hours = Math.floor(minutesNum / 60);
-                        const remainingMinutes = minutesNum % 60;
-                        if (remainingMinutes === 0) {
-                          label = `${hours} hour${hours > 1 ? 's' : ''}`;
-                        } else {
-                          label = `${hours} hour${hours > 1 ? 's' : ''} ${remainingMinutes} minute${remainingMinutes > 1 ? 's' : ''}`;
-                        }
-                      } else if (minutesNum > 0) {
-                        label = `${minutesNum} minute${minutesNum > 1 ? 's' : ''}`;
-                      }
-                      setExtraTimeForm({ ...extraTimeForm, minutes: minutes, label: label || `${minutes} minutes` });
-                    }}
-                    min="1"
-                    step="1"
-                    required
-                    placeholder="Enter minutes (e.g., 60 for 1 hour)"
-                  />
-                  <small className="text-muted d-block mt-1">
-                    {extraTimeForm.minutes && parseInt(extraTimeForm.minutes, 10) > 0 && (
-                      <span>Duration: {extraTimeForm.label || `${extraTimeForm.minutes} minutes`}</span>
-                    )}
-                  </small>
-                </div>
-                <div>
-                  <label className="form-label">Number of People *</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    value={extraTimeForm.people}
-                    onChange={(e) => setExtraTimeForm({ ...extraTimeForm, people: e.target.value })}
-                    min="1"
-                    step="1"
-                    required
-                    placeholder="1"
-                  />
-                  <small className="text-muted">Enter number of people for extra time</small>
-                </div>
-              </div>
-              <div className="grid grid-2 gap-3">
-                <div>
-                  <label className="form-label">Charge (Rs) *</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    value={extraTimeForm.charge}
-                    onChange={(e) => setExtraTimeForm({ ...extraTimeForm, charge: e.target.value })}
-                    min="0"
-                    step="0.01"
-                    required
-                    placeholder="Enter charge amount"
-                  />
-                  <small className="text-muted">Manually enter the charge amount</small>
-                </div>
-                <div>
-                  <label className="form-label">Discount (Rs)</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    value={extraTimeForm.discount}
-                    onChange={(e) => setExtraTimeForm({ ...extraTimeForm, discount: e.target.value })}
-                    min="0"
-                    step="0.01"
-                    placeholder="0"
-                  />
-                  <small className="text-muted">Optional discount amount</small>
-                </div>
-              </div>
-              {extraTimeForm.charge && (
-                <div className="alert alert-info">
-                  <strong>Total Charge:</strong> रु {Math.max(0, (parseFloat(extraTimeForm.charge) || 0) - (parseFloat(extraTimeForm.discount) || 0)).toLocaleString(undefined, { maximumFractionDigits: 2 })}
-                </div>
-              )}
-              <div className="form-group">
-                <label className="form-label">Notes</label>
-                <textarea
-                  className="form-control"
-                  rows="2"
-                  value={extraTimeForm.notes}
-                  onChange={(e) => setExtraTimeForm({ ...extraTimeForm, notes: e.target.value })}
-                  placeholder="Reason or remarks for extra time"
-                />
-              </div>
-              <button 
-                className="btn btn-success"
-                onClick={handleAddExtraTime}
-                disabled={!extraTimeTicket}
-              >
-                Save Extra Time
-              </button>
-
-              {extraTimeEntries.length > 0 && (
-                <div className="mt-4">
-                  <h4>Extra Time History</h4>
-                  {extraTimeTicket && (
-                    <div className="mb-2">
-                      <strong>Ticket Time:</strong> {(() => {
-                        if (!extraTimeTicket.time) return '—';
-                        const dateObj = extraTimeTicket.date?.englishDate ? new Date(extraTimeTicket.date.englishDate) : null;
-                        if (!dateObj) return extraTimeTicket.time;
-                        const endTime = getEndTime(extraTimeTicket.time, dateObj, extraTimeTicket.totalExtraMinutes || 0, extraTimeTicket.isRefunded);
-                        return endTime ? `${extraTimeTicket.time} - ${endTime}` : extraTimeTicket.time;
-                      })()}
-                    </div>
-                  )}
-                  <table className="table">
-                    <thead>
-                      <tr>
-                        <th>Minutes</th>
-                        <th>Label</th>
-                        <th>Notes</th>
-                        <th>Added At</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {extraTimeEntries.map((entry, idx) => (
-                        <tr key={idx}>
-                          <td>{entry.minutes}</td>
-                          <td>{entry.label}</td>
-                          <td>{entry.notes || '—'}</td>
-                          <td>{formatDateTime(entry.addedAt)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-
-              <div className="mt-4">
-                <div className="d-flex justify-between align-center mb-2">
-                  <h4>Extra Time Report</h4>
-                  <div className="d-flex gap-2">
-                    {extraTimeReport.length > 0 && (
-                      <button 
-                        className="btn btn-sm btn-info"
-                        onClick={async () => {
-                          // Fetch full ticket data for all entries in the report
-                          const ticketsToPrint = [];
-                          for (const entry of extraTimeReport) {
-                            try {
-                              const response = await ticketsAPI.lookup(entry.ticketNo);
-                              if (response.data.ticket) {
-                                ticketsToPrint.push(response.data.ticket);
-                              }
-                            } catch (err) {
-                              console.error(`Error fetching ticket ${entry.ticketNo}:`, err);
+          <div className="modal-content" style={{ maxWidth: '95%', width: '1200px', maxHeight: '90vh', overflow: 'auto', background: 'transparent' }}>
+            <SectionCard
+              title="Extra Time Ticket"
+              icon="⏳"
+              accentColor="#1d4ed8"
+              style={{ padding: '28px 28px 24px' }}
+              headerActions={
+                <>
+                  {extraTimeReport.length > 0 && (
+                    <GradientButton color="#0ea5e9" style={{ fontSize: '0.9rem', padding: '8px 16px' }}
+                      onClick={async () => {
+                        // Fetch full ticket data for all entries in the report
+                        const ticketsToPrint = [];
+                        for (const entry of extraTimeReport) {
+                          try {
+                            const response = await ticketsAPI.lookup(entry.ticketNo);
+                            if (response.data.ticket) {
+                              ticketsToPrint.push(response.data.ticket);
                             }
+                          } catch (err) {
+                            console.error(`Error fetching ticket ${entry.ticketNo}:`, err);
                           }
-                          if (ticketsToPrint.length > 0) {
-                            printAllTicketsOneByOne(ticketsToPrint);
-                          } else {
-                            alert('No tickets found to print');
-                          }
-                        }}
-                        title="Print All Extra Time Tickets"
-                      >
-                        🖨️ Print All
-                      </button>
-                    )}
-                    <button 
-                      className="btn btn-sm btn-secondary"
-                      onClick={fetchExtraTimeReport}
+                        }
+                        if (ticketsToPrint.length > 0) {
+                          printAllTicketsOneByOne(ticketsToPrint);
+                        } else {
+                          alert('No tickets found to print');
+                        }
+                      }}
+                      title="Print All Extra Time Tickets"
                     >
-                      {extraTimeReportLoading ? 'Loading...' : 'Refresh Report'}
-                    </button>
+                      🖨️ Print All
+                    </GradientButton>
+                  )}
+                  <GradientButton color="#64748b" style={{ fontSize: '0.9rem', padding: '8px 16px' }} onClick={fetchExtraTimeReport}>
+                    {extraTimeReportLoading ? 'Loading...' : 'Refresh Report'}
+                  </GradientButton>
+                  <GradientButton color="#d32f2f" style={{ minWidth: '50px' }} onClick={() => {
+                    setShowExtraTimeModal(false);
+                    resetExtraTimeState();
+                  }}>Close</GradientButton>
+                </>
+              }
+            > 
+              {/* Ticket Search & Entry */}
+              <SectionCard title="Search Ticket" icon="🔍" accentColor="#6366f1" style={{ marginBottom: 18 }}>
+                <div className="form-group">
+                  <label className="form-label">Ticket ID / Contact Number</label>
+                  <div className="d-flex gap-2">
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={extraTimeForm.ticketNo}
+                      onChange={(e) => setExtraTimeForm({ ...extraTimeForm, ticketNo: e.target.value })}
+                      placeholder="Enter ticket ID or contact number"
+                    />
+                    <GradientButton color="#1976d2" style={{ minWidth: '120px' }} onClick={lookupExtraTimeTicket}>Search</GradientButton>
+                  </div>
+                  <small className="text-muted">Search by ticket ID or contact number. If multiple tickets found with same contact number, the most recent one will be selected.</small>
+                </div>
+                {extraTimeTicket && (
+                  <SectionCard title="Current Ticket" icon="🎟️" accentColor="#4f8cff" style={{ marginTop: 16 }}>
+                    <div className="grid grid-2">
+                      <div>
+                        <p><strong>Name:</strong> {extraTimeTicket.name}</p>
+                        <p><strong>Ticket No:</strong> {extraTimeTicket.ticketNo}</p>
+                        <p><strong>People:</strong> {extraTimeTicket.numberOfPeople || extraTimeTicket.playerStatus?.totalPlayers || 1}</p>
+                        <p><strong>Time:</strong> {(() => {
+                          if (!extraTimeTicket.time) return '—';
+                          const dateObj = extraTimeTicket.date?.englishDate ? new Date(extraTimeTicket.date.englishDate) : null;
+                          if (!dateObj) return extraTimeTicket.time;
+                          const endTime = getEndTime(extraTimeTicket.time, dateObj, extraTimeTicket.totalExtraMinutes || 0, extraTimeTicket.isRefunded);
+                          return endTime ? `${extraTimeTicket.time} - ${endTime}` : extraTimeTicket.time;
+                        })()}</p>
+                      </div>
+                      <div>
+                        <p><strong>Ticket Type:</strong> {extraTimeTicket.ticketType}</p>
+                        <p><strong>Total Extra Time:</strong> {extraTimeTicket.totalExtraMinutes || 0} min</p>
+                        <p><strong>Amount:</strong> रु {extraTimeTicket.fee?.toLocaleString()}</p>
+                      </div>
+                    </div>
+                  </SectionCard>
+                )}
+              </SectionCard>
+              {/* ---- Add Extra Time ---- */}
+              <SectionCard title="Add Extra Time" icon="⏲️" accentColor="#16a34a" style={{ marginBottom: 18 }}>
+                <div className="grid grid-2 gap-3">
+                  <div>
+                    <label className="form-label">Extra Time (Minutes) *</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={extraTimeForm.minutes}
+                      onChange={(e) => {
+                        const minutes = e.target.value;
+                        const minutesNum = parseInt(minutes, 10);
+                        let label = '';
+                        if (minutesNum >= 60) {
+                          const hours = Math.floor(minutesNum / 60);
+                          const remainingMinutes = minutesNum % 60;
+                          if (remainingMinutes === 0) {
+                            label = `${hours} hour${hours > 1 ? 's' : ''}`;
+                          } else {
+                            label = `${hours} hour${hours > 1 ? 's' : ''} ${remainingMinutes} minute${remainingMinutes > 1 ? 's' : ''}`;
+                          }
+                        } else if (minutesNum > 0) {
+                          label = `${minutesNum} minute${minutesNum > 1 ? 's' : ''}`;
+                        }
+                        setExtraTimeForm({ ...extraTimeForm, minutes: minutes, label: label || `${minutes} minutes` });
+                      }}
+                      min="1"
+                      step="1"
+                      required
+                      placeholder="Enter minutes (e.g., 60 for 1 hour)"
+                    />
+                    <small className="text-muted d-block mt-1">
+                      {extraTimeForm.minutes && parseInt(extraTimeForm.minutes, 10) > 0 && (
+                        <span>Duration: {extraTimeForm.label || `${extraTimeForm.minutes} minutes`}</span>
+                      )}
+                    </small>
+                  </div>
+                  <div>
+                    <label className="form-label">Number of People *</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={extraTimeForm.people}
+                      onChange={(e) => setExtraTimeForm({ ...extraTimeForm, people: e.target.value })}
+                      min="1"
+                      step="1"
+                      required
+                      placeholder="1"
+                    />
+                    <small className="text-muted">Enter number of people for extra time</small>
                   </div>
                 </div>
+                <div className="grid grid-2 gap-3">
+                  <div>
+                    <label className="form-label">Charge (Rs) *</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={extraTimeForm.charge}
+                      onChange={(e) => setExtraTimeForm({ ...extraTimeForm, charge: e.target.value })}
+                      min="0"
+                      step="0.01"
+                      required
+                      placeholder="Enter charge amount"
+                    />
+                    <small className="text-muted">Manually enter the charge amount</small>
+                  </div>
+                  <div>
+                    <label className="form-label">Discount (Rs)</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={extraTimeForm.discount}
+                      onChange={(e) => setExtraTimeForm({ ...extraTimeForm, discount: e.target.value })}
+                      min="0"
+                      step="0.01"
+                      placeholder="0"
+                    />
+                    <small className="text-muted">Optional discount amount</small>
+                  </div>
+                </div>
+                {extraTimeForm.charge && (
+                  <div className="alert alert-info" style={{ marginTop: 12, marginBottom: 12 }}>
+                    <strong>Total Charge:</strong> रु {Math.max(0, (parseFloat(extraTimeForm.charge) || 0) - (parseFloat(extraTimeForm.discount) || 0)).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                  </div>
+                )}
+                <div className="form-group">
+                  <label className="form-label">Notes</label>
+                  <textarea
+                    className="form-control"
+                    rows="2"
+                    value={extraTimeForm.notes}
+                    onChange={(e) => setExtraTimeForm({ ...extraTimeForm, notes: e.target.value })}
+                    placeholder="Reason or remarks for extra time"
+                  />
+                </div>
+                <GradientButton color="#16a34a" style={{ marginTop: 12 }} onClick={handleAddExtraTime} disabled={!extraTimeTicket}>Save Extra Time</GradientButton>
+              </SectionCard>
+              {/* ---- Extra Time History ---- */}
+              <SectionCard title="Extra Time History" icon="📋" accentColor="#6366f1" style={{ marginBottom: 18 }}>
+                {extraTimeEntries.length === 0 ? (
+                  <p className="text-muted">No extra time records for this ticket yet.</p>
+                ) : (
+                  <div style={{ maxHeight: '200px', overflow: 'auto', width: '100%' }}>
+                    <table className="table" style={{ width: '100%', tableLayout: 'fixed', fontSize: '0.98em', margin: 0 }}>
+                      <thead>
+                        <tr>
+                          <th>Minutes</th>
+                          <th>Label</th>
+                          <th>Notes</th>
+                          <th>Added At</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {extraTimeEntries.map((entry, idx) => (
+                          <tr key={idx}>
+                            <td>{entry.minutes}</td>
+                            <td>{entry.label}</td>
+                            <td>{entry.notes || '—'}</td>
+                            <td>{formatDateTime(entry.addedAt)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </SectionCard>
+              {/* ---- Extra Time Report ---- */}
+              <SectionCard title="Extra Time Report" icon="📅" accentColor="#3498db">
                 {extraTimeReport.length === 0 ? (
                   <p className="text-muted">No extra time records yet.</p>
                 ) : (
@@ -2028,18 +2004,15 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
                         {extraTimeReport.map((entry, idx) => {
                           const dateObj = entry.date?.englishDate ? new Date(entry.date.englishDate) : null;
                           const endTime = entry.time && dateObj ? getEndTime(entry.time, dateObj, entry.totalExtraMinutes || 0, entry.isRefunded || false) : null;
-                          
-                          // Function to handle actions
+
                           const handleExtraTimeAction = async (action) => {
                             try {
                               let fullTicket = null;
-                              
-                              // Always fetch full ticket data using ticketNo (most reliable)
+
                               try {
                                 const response = await ticketsAPI.lookup(entry.ticketNo);
                                 fullTicket = response.data.ticket;
                               } catch (err) {
-                                // If lookup fails, try using _id if available
                                 if (entry._id && entry._id !== 'undefined' && entry._id.toString().length === 24) {
                                   try {
                                     const response = await ticketsAPI.getById(entry._id);
@@ -2054,14 +2027,14 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
                                   return;
                                 }
                               }
-                              
+
                               if (!fullTicket || !fullTicket._id) {
                                 alert('Ticket not found or invalid');
                                 return;
                               }
-                              
+
                               const ticketId = fullTicket._id;
-                              
+
                               if (action === 'preview') {
                                 setSelectedTicket(fullTicket);
                                 setShowPrint(true);
@@ -2071,13 +2044,13 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
                               } else if (action === 'delete') {
                                 if (window.confirm(`Are you sure you want to delete ticket ${fullTicket.ticketNo}?`)) {
                                   await handleDelete(ticketId);
-                                  fetchExtraTimeReport(); // Refresh the report
+                                  fetchExtraTimeReport();
                                 }
                               } else if (action === 'refund') {
                                 const reason = prompt('Enter refund reason:');
                                 if (reason) {
                                   await handleRefund(ticketId, reason);
-                                  fetchExtraTimeReport(); // Refresh the report
+                                  fetchExtraTimeReport();
                                 }
                               }
                             } catch (error) {
@@ -2085,7 +2058,7 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
                               alert('Error: ' + (error.response?.data?.message || error.message || 'Unknown error'));
                             }
                           };
-                          
+
                           return (
                             <tr key={`${entry.ticketNo}-${idx}`} style={{ lineHeight: '1.2' }}>
                               <td style={{ fontSize: '0.75em', padding: '3px 2px' }}><strong>{entry.ticketNo}</strong></td>
@@ -2106,8 +2079,7 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
                               </td>
                               <td style={{ textAlign: 'center', padding: '2px' }}>
                                 <div className="d-flex gap-1" style={{ justifyContent: 'center', flexWrap: 'nowrap' }}>
-                                  {/* Preview button */}
-                                  <button 
+                                  <button
                                     className="btn btn-sm btn-outline-primary"
                                     style={{ minWidth: '24px', width: '24px', height: '24px', padding: '1px', fontSize: '10px', lineHeight: '1' }}
                                     onClick={() => handleExtraTimeAction('preview')}
@@ -2115,8 +2087,7 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
                                   >
                                     <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 20 20" fill="none"><path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" stroke="#1976d2" strokeWidth="1.5"/><circle cx="10" cy="10" r="3" stroke="#1976d2" strokeWidth="1.4"/></svg>
                                   </button>
-                                  {/* Print button */}
-                                  <button 
+                                  <button
                                     className="btn btn-sm btn-info"
                                     style={{ minWidth: '24px', width: '24px', height: '24px', padding: '1px', fontSize: '10px', lineHeight: '1' }}
                                     onClick={() => handleExtraTimeAction('print')}
@@ -2124,9 +2095,8 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
                                   >
                                     🖨️
                                   </button>
-                                  {/* Refund button */}
                                   {!entry.isRefunded && (user?.role === 'admin' || user?.role === 'staff') && (
-                                    <button 
+                                    <button
                                       className="btn btn-sm btn-danger"
                                       style={{ minWidth: '24px', width: '24px', height: '24px', padding: '1px', fontSize: '10px', lineHeight: '1' }}
                                       onClick={() => handleExtraTimeAction('refund')}
@@ -2135,9 +2105,8 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
                                       🔄
                                     </button>
                                   )}
-                                  {/* Delete button */}
                                   {user?.role === 'admin' && (
-                                    <button 
+                                    <button
                                       className="btn btn-sm btn-danger"
                                       style={{ minWidth: '24px', width: '24px', height: '24px', padding: '1px', fontSize: '10px', lineHeight: '1' }}
                                       onClick={() => handleExtraTimeAction('delete')}
@@ -2155,19 +2124,8 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
                     </table>
                   </div>
                 )}
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button 
-                className="btn btn-secondary"
-                onClick={() => {
-                  setShowExtraTimeModal(false);
-                  resetExtraTimeState();
-                }}
-              >
-                Close
-              </button>
-            </div>
+              </SectionCard>
+            </SectionCard>
           </div>
         </div>
       )}
@@ -2282,19 +2240,26 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
 
       {/* Tickets List */}
       {user?.role === 'admin' && (
-        <div className="table-container" style={{ minHeight: '200px' }}>
-          <div className="table-header d-flex justify-between align-center">
-            <h3 className="table-title">
-              Recent Tickets ({tickets.length})
-              {tickets.length > 0 && (
-                <small className="text-muted ml-2">Last updated: {new Date().toLocaleTimeString()}</small>
-              )}
-            </h3>
-            {tickets.length > 0 && (
-              <button className="btn btn-info btn-sm" onClick={() => printAllTicketsOneByOne(tickets)} title="Print All Tickets One by One">🖨️ Print All</button>
-            )}
-          </div>
-
+        <SectionCard
+          title={`Recent Tickets (${tickets.length})`}
+          icon="🕒"
+          accentColor="#0f172a"
+          headerActions={
+            tickets.length > 0 && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <small style={{ color: '#64748b' }}>Last updated: {new Date().toLocaleTimeString()}</small>
+                <GradientButton
+                  color="#0ea5e9"
+                  style={{ fontSize: '0.9rem', padding: '8px 16px' }}
+                  onClick={() => printAllTicketsOneByOne(tickets)}
+                  title="Print All Tickets One by One"
+                >
+                  🖨️ Print All
+                </GradientButton>
+              </div>
+            )
+          }
+        >
           {tickets.length === 0 ? (
             <div className="empty-state">
               <p>No tickets found for today</p>
@@ -2303,311 +2268,138 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
               )}
             </div>
           ) : (
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Ticket No</th>
-                  <th>Customer/Players</th>
-                  <th>Type</th>
-                  <th style={{ minWidth: '180px', width: '180px' }}>Fee</th>
-                  <th>People</th>
-                  <th>Extra Time</th>
-                  <th>Date</th>
-                  <th>Time</th>
-                  <th>Status</th>
-                  <th>Refund</th>
-                  <th>Remarks</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {tickets.map(ticket => {
-                  // Compute fee breakdown
-                  const people = ticket.numberOfPeople || ticket.playerStatus?.totalPlayers || 1;
-                  const discountAmount = ticket.discount || 0;
-                  const priceAfterDiscount = ticket.fee || 0; // Final fee after discount
-                  
-                  // Calculate actual price (original price before discount)
-                  // Priority: perPersonFee * people > fee + discount > fee (if no discount info)
-                  let actualPrice;
-                  if (ticket.perPersonFee && ticket.perPersonFee > 0) {
-                    // Use per person fee to calculate original price
-                    actualPrice = ticket.perPersonFee * people;
-                  } else if (discountAmount > 0) {
-                    // If discount exists, original price = final price + discount
-                    actualPrice = priceAfterDiscount + discountAmount;
-                  } else {
-                    // No discount, so actual price = final price
-                    actualPrice = priceAfterDiscount;
-                  }
-                  
-                  const refundAmount = ticket.refundAmount || (ticket.isRefunded ? priceAfterDiscount : 0);
-                  
-                  return (
-                    <React.Fragment key={ticket._id}>
-                      <tr className={ticket.isRefunded ? 'table-danger' : ''}>
-                        <td><strong>{ticket.ticketNo}</strong>{!ticket.printed && <span className="text-warning"> *</span>}</td>
-                        <td>
-                          <div>
-                            <strong>{ticket.name}</strong>
-                            {ticket.playerNames && ticket.playerNames.length > 0 && (
-                              <div>
-                                <small className="text-muted">
-                                  {ticket.playerNames.join(', ')}
-                                </small>
-                              </div>
-                            )}
-                            {ticket.groupInfo?.groupName && (
-                              <div>
-                                <small className="text-muted">
-                                  Group: {ticket.groupInfo.groupName} {ticket.groupInfo.groupNumber ? `(${ticket.groupInfo.groupNumber})` : ''}
-                                </small>
-                              </div>
-                            )}
-                          </div>
-                        </td>
-                        <td>{ticket.ticketType}</td>
-                        <td style={{ minWidth: '180px', width: '180px', padding: '8px' }}>
-                          <div style={{ fontSize: '0.85em', lineHeight: '1.6' }}>
-                            <div style={{ marginBottom: '4px' }}><strong>Actual Price:</strong> रु {actualPrice.toLocaleString()}</div>
-                            {discountAmount > 0 ? (
-                              <div style={{ marginBottom: '4px' }}>
-                                <strong>Discount:</strong> -रु {discountAmount.toLocaleString()}
-                              </div>
-                            ) : (
-                              <div style={{ marginBottom: '4px' }}><strong>Discount:</strong> रु 0</div>
-                            )}
-                            <div className={refundAmount > 0 ? 'text-danger' : ''} style={{ marginBottom: '4px' }}>
-                              <strong>Refund:</strong> रु {refundAmount.toLocaleString()}
+            <div className="table-container" style={{ maxHeight: '60vh', overflowY: 'auto', overflowX: 'hidden' }}>
+              <table
+                className="table"
+                style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.72em', tableLayout: 'fixed' }}>
+                <thead>
+                  <tr>
+                    <th style={{ width: '6%', padding: '4px 3px', whiteSpace: 'nowrap' }}>Ticket</th>
+                    <th style={{ width: '14%', padding: '4px 3px', whiteSpace: 'nowrap' }}>Customer/Players</th>
+                    <th style={{ width: '7%', padding: '4px 3px', whiteSpace: 'nowrap' }}>Type</th>
+                    <th style={{ width: '14%', padding: '4px 3px', whiteSpace: 'nowrap' }}>Fee</th>
+                    <th style={{ width: '6%', padding: '4px 3px', textAlign: 'center', whiteSpace: 'nowrap' }}>People</th>
+                    <th style={{ width: '6%', padding: '4px 3px', textAlign: 'center', whiteSpace: 'nowrap' }}>Extra</th>
+                    <th style={{ width: '9%', padding: '4px 3px', whiteSpace: 'nowrap' }}>Date</th>
+                    <th style={{ width: '9%', padding: '4px 3px', whiteSpace: 'nowrap' }}>Time</th>
+                    <th style={{ width: '7%', padding: '4px 3px', whiteSpace: 'nowrap' }}>Status</th>
+                    <th style={{ width: '9%', padding: '4px 3px', whiteSpace: 'nowrap' }}>Refund</th>
+                    <th style={{ width: '7%', padding: '4px 3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Remarks</th>
+                    <th style={{ width: '6%', padding: '4px 3px', whiteSpace: 'nowrap' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {tickets.map(ticket => (
+                    <tr className={ticket.isRefunded ? 'table-danger' : ''} key={ticket._id}>
+                      <td style={{ padding: '4px 3px', whiteSpace: 'nowrap' }}><strong>{ticket.ticketNo}</strong>{!ticket.printed && <span className="text-warning"> *</span>}</td>
+                      <td style={{ padding: '4px 3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <div>
+                          <strong>{ticket.name}</strong>
+                          {ticket.playerNames && ticket.playerNames.length > 0 && (
+                            <div>
+                              <small className="text-muted" style={{ display: 'inline-block', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis' }}>{ticket.playerNames.join(', ')}</small>
                             </div>
-                            <div style={{ marginBottom: '4px' }}><strong>Total Price:</strong> रु {priceAfterDiscount.toLocaleString()}</div>
+                          )}
+                          {ticket.groupInfo?.groupName && (
+                            <div>
+                              <small className="text-muted">Group: {ticket.groupInfo.groupName} {ticket.groupInfo.groupNumber ? `(${ticket.groupInfo.groupNumber})` : ''}</small>
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td style={{ padding: '4px 3px', whiteSpace: 'nowrap' }}>{ticket.ticketType}</td>
+                      <td style={{ minWidth: '135px', width: '135px', padding: '4px 3px' }}>
+                        <div style={{ fontSize: '0.82em', lineHeight: '1.35' }}>
+                          {/* Actual, Disc, Refund, Total like the compact history table */}
+                          <div style={{ marginBottom: '2px' }}><strong>Actual:</strong> रु {(ticket.perPersonFee && ticket.perPersonFee > 0
+                            ? ticket.perPersonFee * (ticket.numberOfPeople || ticket.playerStatus?.totalPlayers || 1)
+                            : (ticket.discount || 0) > 0
+                              ? (ticket.fee || 0) + (ticket.discount || 0)
+                              : (ticket.fee || 0)).toLocaleString()}</div>
+                          {(ticket.discount || 0) > 0 ? (
+                            <div style={{ marginBottom: '2px' }}><strong>Disc.:</strong> -रु {(ticket.discount || 0).toLocaleString()}</div>
+                          ) : (
+                            <div style={{ marginBottom: '2px' }}><strong>Disc.:</strong> रु 0</div>
+                          )}
+                          <div className={ticket.refundAmount > 0 ? 'text-danger' : ''} style={{ marginBottom: '2px' }}>
+                            <strong>Refund:</strong> रु {(ticket.refundAmount || (ticket.isRefunded ? (ticket.fee || 0) : 0)).toLocaleString()}
                           </div>
-                        </td>
-                        <td>{ticket.numberOfPeople || ticket.playerStatus?.totalPlayers || 1}</td>
-                        <td>{ticket.totalExtraMinutes || 0} min</td>
-                        <td>
-                          <small>
-                            <strong>{formatNepaliDate(ticket.date?.nepaliDate)}</strong>
-                            <br />
-                            <span style={{ color: '#666', fontSize: '0.85em' }}>
-                              {formatDate(ticket.date?.englishDate || ticket.createdAt)}
-                            </span>
-                          </small>
-                        </td>
-                        <td>
-                          <small>
-                            <strong>{formatTime(ticket.time, ticket.date?.englishDate || ticket.createdAt)}</strong>
-                            {(() => {
-                              if (!ticket.time) return '';
-                              const dateObj = ticket.date?.englishDate ? new Date(ticket.date.englishDate) : null;
-                              if (!dateObj) return '';
-                              const endTime = getEndTime(ticket.time, dateObj, ticket.totalExtraMinutes || 0, ticket.isRefunded);
-                              return endTime ? ` - ${endTime}` : '';
-                            })()}
-                          </small>
-                        </td>
-                        <td>
-                          {(() => {
-                            const created = ticket.date?.englishDate ? new Date(ticket.date.englishDate) : new Date(ticket.createdAt);
-                            const now = new Date();
-                            const oneHourPassed = ((now - created) / 36e5) > 1;
-                            if (oneHourPassed && !ticket.isRefunded) {
-                              return <span className="badge badge-secondary">Deactivated</span>;
-                            }
-                            if (ticket.isRefunded) {
-                              return <span className="badge badge-danger">Refunded</span>;
-                            }
-                            return <span className="badge badge-warning">Playing</span>;
-                          })()}
-                        </td>
-                        <td>
-                          {(() => {
-                            const refundAmt = ticket.refundAmount || (ticket.isRefunded ? priceAfterDiscount : 0);
-                            if (refundAmt > 0) {
-                              return (
-                                <div style={{ fontSize: '0.85em' }}>
-                                  <div className="text-danger"><strong>रु {refundAmt.toLocaleString()}</strong></div>
-                                  {ticket.refundReason && (
-                                    <div className="text-muted" style={{ fontSize: '0.75em' }}>{ticket.refundReason}</div>
-                                  )}
-                                  {ticket.refundDetails?.refundMethod && (
-                                    <div className="text-muted" style={{ fontSize: '0.75em' }}>({ticket.refundDetails.refundMethod})</div>
-                                  )}
-                                </div>
-                              );
-                            }
-                            return <span>रु 0</span>;
-                          })()}
-                        </td>
-                        <td>
-                          <small>{ticket.remarks || '—'}</small>
-                        </td>
-                        <td>
-                          <div className="d-flex gap-1">
-                            {/* 👁️ Ticket preview button */}
-                            <button 
-                              className="btn btn-sm btn-outline-primary"
-                              style={{ minWidth: 30 }}
-                              onClick={() => { setSelectedTicket(ticket); setShowPrint(true); setAutoPrint(false); }}
-                              title="Preview Ticket"
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" stroke="#1976d2" strokeWidth="1.5"/><circle cx="10" cy="10" r="3" stroke="#1976d2" strokeWidth="1.4"/></svg>
-                            </button>
-                            {/* 🖨️ Print button (manual window/print) */}
-                            <button 
-                              className="btn btn-sm btn-info"
-                              onClick={() => openTicketPrintWindow(ticket)}
-                              title="Print Ticket"
-                            >
-                              🖨️
-                            </button>
-                            
-                            {!ticket.isRefunded && (user?.role === 'admin' || user?.role === 'staff') && (
-                              <>
-                                <button 
-                                  className="btn btn-sm btn-warning"
-                                  onClick={() => handlePartialRefund(ticket)}
-                                  title="Partial Refund"
-                                  disabled={ticket.playerStatus.playedPlayers >= ticket.playerStatus.totalPlayers}
-                                >
-                                  💰
-                                </button>
-                                
-                                <button 
-                                  className="btn btn-sm btn-danger"
-                                  onClick={() => {
-                                    const reason = prompt('Enter full refund reason:');
-                                    if (reason) handleRefund(ticket._id, reason);
-                                  }}
-                                  title="Full Refund"
-                                >
-                                  🔄
-                                </button>
-                              </>
-                            )}
-                            
-                            {user?.role === 'admin' && (
-                              <button 
-                                className="btn btn-sm btn-danger"
-                                onClick={() => handleDelete(ticket._id)}
-                                title="Delete Ticket"
-                              >
-                                🗑️
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                      {/* hidden print block */}
-                      <div id={`ticket-print-${ticket._id}`} style={{ display: 'none' }}>
-                        <TicketPrint ticket={ticket} />
-                      </div>
-                    </React.Fragment>
-                  );
-                })}
-              </tbody>
-            </table>
+                          <div><strong>Total:</strong> रु {(ticket.fee || 0).toLocaleString()}</div>
+                        </div>
+                      </td>
+                      <td style={{ padding: '4px 3px', textAlign: 'center' }}>{ticket.numberOfPeople || ticket.playerStatus?.totalPlayers || 1}</td>
+                      <td style={{ padding: '4px 3px', textAlign: 'center', whiteSpace: 'nowrap' }}>{ticket.totalExtraMinutes || 0} min</td>
+                      <td style={{ padding: '4px 3px' }}><small><strong>{formatNepaliDate(ticket.date?.nepaliDate)}</strong><br /><span style={{ color: '#666', fontSize: '0.85em' }}>{formatDate(ticket.date?.englishDate || ticket.createdAt)}</span></small></td>
+                      <td style={{ padding: '4px 3px', whiteSpace: 'nowrap' }}><small><strong>{formatTime(ticket.time, ticket.date?.englishDate || ticket.createdAt)}</strong>{(() => {if (!ticket.time) return '';const dateObj = ticket.date?.englishDate ? new Date(ticket.date.englishDate) : null;if (!dateObj) return '';const endTime = getEndTime(ticket.time, dateObj, ticket.totalExtraMinutes || 0, ticket.isRefunded);return endTime ? ` - ${endTime}` : '';})()}</small></td>
+                      <td style={{ padding: '4px 3px' }}>{(() => {const created = ticket.date?.englishDate ? new Date(ticket.date.englishDate) : new Date(ticket.createdAt);const now = new Date();const oneHourPassed = ((now - created) / 36e5) > 1;if (oneHourPassed && !ticket.isRefunded) {return <span className="badge badge-secondary">Deactivated</span>;}if (ticket.isRefunded) {return <span className="badge badge-danger">Refunded</span>;}return <span className="badge badge-warning">Playing</span>;})()}</td>
+                      <td style={{ padding: '4px 3px' }}>{(() => {const refundAmt = ticket.refundAmount || (ticket.isRefunded ? (ticket.fee || 0) : 0);if (refundAmt > 0) {return (<div style={{ fontSize: '0.85em' }}><div className="text-danger"><strong>रु {refundAmt.toLocaleString()}</strong></div>{ticket.refundReason && (<div className="text-muted" style={{ fontSize: '0.75em' }}>{ticket.refundReason}</div>)}{ticket.refundDetails?.refundMethod && (<div className="text-muted" style={{ fontSize: '0.75em' }}>({ticket.refundDetails.refundMethod})</div>)}</div>);}return <span>रु 0</span>;})()}</td>
+                      <td style={{ padding: '4px 3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}><small>{ticket.remarks || '—'}</small></td>
+                      <td style={{ padding: '4px 3px' }}><div className="d-flex gap-1" style={{ flexWrap: 'wrap' }}><button className="btn btn-sm btn-outline-primary" style={{ minWidth: 22, width: 22, height: 22, padding: 0 }} onClick={() => { setSelectedTicket(ticket); setShowPrint(true); setAutoPrint(false); }} title="Preview Ticket"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" stroke="#1976d2" strokeWidth="1.5"/><circle cx="10" cy="10" r="3" stroke="#1976d2" strokeWidth="1.4"/></svg></button><button className="btn btn-sm btn-info" style={{ minWidth: 22, width: 22, height: 22, padding: 0 }} onClick={() => openTicketPrintWindow(ticket)} title="Print Ticket">🖨️</button>{!ticket.isRefunded && (user?.role === 'admin' || user?.role === 'staff') && (<><button className="btn btn-sm btn-warning" style={{ minWidth: 22, width: 22, height: 22, padding: 0 }} onClick={() => handlePartialRefund(ticket)} title="Partial Refund" disabled={ticket.playerStatus.playedPlayers >= ticket.playerStatus.totalPlayers}>💰</button><button className="btn btn-sm btn-danger" style={{ minWidth: 22, width: 22, height: 22, padding: 0 }} onClick={() => { const reason = prompt('Enter full refund reason:'); if (reason) handleRefund(ticket._id, reason); }} title="Full Refund">🔄</button></>)}{user?.role === 'admin' && (<button className="btn btn-sm btn-danger" style={{ minWidth: 22, width: 22, height: 22, padding: 0 }} onClick={() => handleDelete(ticket._id)} title="Delete Ticket">🗑️</button>)}</div></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
-        </div>
-      )}
-
-      {/* Summary Stats */}
-      {tickets.length > 0 && (
-        <div className="card mt-3">
-          <h3>Today's Summary</h3>
-          <div className="grid grid-5">
-            <div className="text-center">
-              <div className="stat-number">{tickets.length}</div>
-              <div className="stat-label">Total Tickets</div>
-            </div>
-            <div className="text-center">
-              <div className="stat-number text-success">
-                रु {tickets.reduce((sum, ticket) => sum + ticket.fee, 0).toLocaleString()}
-              </div>
-              <div className="stat-label">Total Revenue</div>
-            </div>
-            <div className="text-center">
-              <div className="stat-number">
-                {tickets.reduce((sum, ticket) => sum + (ticket.playerStatus.playedPlayers || 0), 0)}
-              </div>
-              <div className="stat-label">Players Played</div>
-            </div>
-            <div className="text-center">
-              <div className="stat-number text-warning">
-                {tickets.reduce((sum, ticket) => sum + (ticket.playerStatus.waitingPlayers || 0), 0)}
-              </div>
-              <div className="stat-label">Waiting Players</div>
-            </div>
-            <div className="text-center">
-              <div className="stat-number text-info">
-                {tickets.reduce((sum, ticket) => sum + (ticket.totalExtraMinutes || 0), 0)} min
-              </div>
-              <div className="stat-label">Extra Time Added</div>
-            </div>
-          </div>
-        </div>
+        </SectionCard>
       )}
 
       {/* Ticket History Modal */}
       {showHistory && user?.role === 'admin' && (
         <div className="modal-overlay" style={{ zIndex: 1000 }}>
-          <div className="modal-content" style={{ maxWidth: '95%', width: '1400px', maxHeight: '90vh', overflow: 'auto' }}>
-            <div className="modal-header">
-              <h3 className="modal-title">📜 Ticket History - All Records</h3>
-              <button 
-                className="close-button"
-                onClick={closeHistoryModal}
-              >
-                ×
-              </button>
-            </div>
-            <div className="modal-body">
+          <div className="modal-content" style={{ maxWidth: '95%', width: '1400px', maxHeight: '90vh', overflow: 'auto', background: 'transparent' }}>
+            <SectionCard
+              title="Ticket History"
+              icon="📜"
+              accentColor="#6366f1"
+              style={{ padding: '28px 28px 24px' }}
+              headerActions={
+                <>
+                  <GradientButton color="#2ecc71" style={{ fontSize: '0.9rem', padding: '8px 16px' }} onClick={() => fetchTicketHistory(1, false)} disabled={historyLoading}>
+                    {historyLoading ? 'Refreshing...' : '🔄 Refresh'}
+                  </GradientButton>
+                  <GradientButton
+                    color="#0ea5e9"
+                    style={{ fontSize: '0.9rem', padding: '8px 16px' }}
+                    onClick={() => printTicketsTableReport(historyTickets, historySearch ? `Ticket History Report - Search: ${historySearch}` : 'Ticket History Report')}
+                    disabled={!historyTickets.length}
+                  >
+                    🖨️ Print All
+                  </GradientButton>
+                  <input
+                    type="text"
+                    placeholder="Search history..."
+                    className="form-control form-control-sm d-inline-block"
+                    style={{ width: 200 }}
+                    value={historySearch ?? ''}
+                    onChange={e => setHistorySearch(e.target.value)}
+                  />
+                  <GradientButton color="#d32f2f" style={{ marginLeft: 15, minWidth: 50 }} onClick={() => setShowHistory(false)}>
+                    Close
+                  </GradientButton>
+                </>
+              }
+            >
+              <div style={{ display: 'flex', gap: '18px', justifyContent: 'flex-start', flexWrap: 'wrap', marginBottom: '10px', marginTop: 0 }}>
+                <ModernStat value={historyTickets.length} label="Tickets" color="#6366f1" icon="🎟️" />
+                <ModernStat value={historyTickets.filter(t => t.isRefunded).length} label="Refunded" color="#ef4444" icon="↩️" />
+                <ModernStat value={historyTotalCount} label="Total Records" color="#14b8a6" icon="📚" />
+              </div>
+
               {historyLoading && historyTickets.length === 0 ? (
                 <Loader text="Loading ticket history..." />
               ) : (
                 <>
-                  <div className="d-flex justify-between align-center mb-3">
-                    <div>
-                      <strong>Total Tickets: {historyTotalCount}</strong>
-                      {historyTickets.length > 0 && (
-                        <small className="text-muted ml-2">
-                          Showing {historyTickets.length} of {historyTotalCount}
-                        </small>
-                      )}
-                    </div>
-                    <div>
-                      <button className="btn btn-sm btn-info mr-2" onClick={() => {
-                        const searchTerm = (historySearch || '').toLowerCase().trim();
-                        const ticketsToPrint = searchTerm
-                          ? historyTickets.filter(ticket => {
-                              const ticketNo = (ticket.ticketNo || '').toLowerCase();
-                              const name = (ticket.name || '').toLowerCase();
-                              const contactNumber = (ticket.contactNumber || '').toLowerCase();
-                              const playerNames = (ticket.playerNames || []).join(' ').toLowerCase();
-                              const remarks = (ticket.remarks || '').toLowerCase();
-                              const refundReason = (ticket.refundReason || '').toLowerCase();
-                              const ticketType = (ticket.ticketType || '').toLowerCase();
-                              const nepaliDate = (ticket.date?.nepaliDate || '').toLowerCase();
-                              
-                              return ticketNo.includes(searchTerm) ||
-                                     name.includes(searchTerm) ||
-                                     contactNumber.includes(searchTerm) ||
-                                     playerNames.includes(searchTerm) ||
-                                     remarks.includes(searchTerm) ||
-                                     refundReason.includes(searchTerm) ||
-                                     ticketType.includes(searchTerm) ||
-                                     nepaliDate.includes(searchTerm);
-                            })
-                          : historyTickets;
-                        printTicketsTableReport(ticketsToPrint, searchTerm ? `Ticket History Report - Search: ${historySearch}` : 'Ticket History Report');
-                      }} disabled={!historyTickets.length}>🖨️ Print All</button>
-                      <input type="text" placeholder="Search history..." className="form-control form-control-sm d-inline-block" style={{width:200}} value={historySearch??''} onChange={e => setHistorySearch(e.target.value)} />
-                      <button className="btn btn-sm btn-secondary ml-2" onClick={() => fetchTicketHistory(1, false)} disabled={historyLoading}>{historyLoading ? 'Refreshing...' : '🔄 Refresh'}</button>
-                    </div>
+                  <div style={{ marginBottom: 12 }}>
+                    <strong>Total Tickets: {historyTotalCount}</strong>
+                    {historyTickets.length > 0 && (
+                      <small className="text-muted" style={{ marginLeft: 8 }}>
+                        Showing {historyTickets.length} of {historyTotalCount}
+                      </small>
+                    )}
                   </div>
 
                   {(() => {
-                    // Filter tickets based on search term
                     const searchTerm = (historySearch || '').toLowerCase().trim();
                     const filteredTickets = searchTerm
                       ? historyTickets.filter(ticket => {
@@ -2619,7 +2411,7 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
                           const refundReason = (ticket.refundReason || '').toLowerCase();
                           const ticketType = (ticket.ticketType || '').toLowerCase();
                           const nepaliDate = (ticket.date?.nepaliDate || '').toLowerCase();
-                          
+
                           return ticketNo.includes(searchTerm) ||
                                  name.includes(searchTerm) ||
                                  contactNumber.includes(searchTerm) ||
@@ -2631,254 +2423,220 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
                         })
                       : historyTickets;
 
-                    return filteredTickets.length === 0 ? (
-                      <div className="empty-state">
-                        <p>{searchTerm ? `No tickets found matching "${historySearch}"` : 'No ticket history found'}</p>
-                      </div>
-                    ) : (
+                    if (filteredTickets.length === 0) {
+                      return (
+                        <div className="empty-state">
+                          <p>{searchTerm ? `No tickets found matching \"${historySearch}\"` : 'No ticket history found'}</p>
+                        </div>
+                      );
+                    }
+
+                    return (
                       <>
                         {searchTerm && (
                           <div className="alert alert-info mb-2">
                             Showing {filteredTickets.length} of {historyTickets.length} tickets matching "{historySearch}"
                           </div>
                         )}
-                        <div className="table-container" style={{ maxHeight: '60vh', overflow: 'auto' }}>
-                          <table className="table">
+                        <div className="table-container" style={{ maxHeight: '60vh', overflowY: 'auto', overflowX: 'hidden' }}>
+                          <table
+                            className="table"
+                            style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.72em', tableLayout: 'fixed' }}
+                          >
                             <thead>
                               <tr>
-                                <th>Ticket No</th>
-                                <th>Customer/Players</th>
-                                <th>Type</th>
-                                <th style={{ minWidth: '180px', width: '180px' }}>Fee</th>
-                                <th>People</th>
-                                <th>Extra Time</th>
-                                <th>Date</th>
-                                <th>Time</th>
-                                <th>Status</th>
-                                <th>Refund</th>
-                                <th>Remarks</th>
-                                <th>Actions</th>
+                                <th style={{ width: '6%', padding: '4px 3px', whiteSpace: 'nowrap' }}>Ticket</th>
+                                <th style={{ width: '14%', padding: '4px 3px', whiteSpace: 'nowrap' }}>Customer/Players</th>
+                                <th style={{ width: '7%', padding: '4px 3px', whiteSpace: 'nowrap' }}>Type</th>
+                                <th style={{ width: '14%', padding: '4px 3px', whiteSpace: 'nowrap' }}>Fee</th>
+                                <th style={{ width: '6%', padding: '4px 3px', textAlign: 'center', whiteSpace: 'nowrap' }}>People</th>
+                                <th style={{ width: '6%', padding: '4px 3px', textAlign: 'center', whiteSpace: 'nowrap' }}>Extra</th>
+                                <th style={{ width: '9%', padding: '4px 3px', whiteSpace: 'nowrap' }}>Date</th>
+                                <th style={{ width: '9%', padding: '4px 3px', whiteSpace: 'nowrap' }}>Time</th>
+                                <th style={{ width: '7%', padding: '4px 3px', whiteSpace: 'nowrap' }}>Status</th>
+                                <th style={{ width: '9%', padding: '4px 3px', whiteSpace: 'nowrap' }}>Refund</th>
+                                <th style={{ width: '7%', padding: '4px 3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Remarks</th>
+                                <th style={{ width: '6%', padding: '4px 3px', whiteSpace: 'nowrap' }}>Actions</th>
                               </tr>
                             </thead>
                             <tbody>
                               {filteredTickets.map(ticket => {
-                              // Compute fee breakdown
-                              const people = ticket.numberOfPeople || ticket.playerStatus?.totalPlayers || 1;
-                              const discountAmount = ticket.discount || 0;
-                              const priceAfterDiscount = ticket.fee || 0; // Final fee after discount
-                              
-                              // Calculate actual price (original price before discount)
-                              // Priority: perPersonFee * people > fee + discount > fee (if no discount info)
-                              let actualPrice;
-                              if (ticket.perPersonFee && ticket.perPersonFee > 0) {
-                                // Use per person fee to calculate original price
-                                actualPrice = ticket.perPersonFee * people;
-                              } else if (discountAmount > 0) {
-                                // If discount exists, original price = final price + discount
-                                actualPrice = priceAfterDiscount + discountAmount;
-                              } else {
-                                // No discount, so actual price = final price
-                                actualPrice = priceAfterDiscount;
-                              }
-                              
-                              const refundAmount = ticket.refundAmount || (ticket.isRefunded ? priceAfterDiscount : 0);
-                              
-                              return (
-                                <React.Fragment key={ticket._id}>
-                                  <tr className={ticket.isRefunded ? 'table-danger' : ''}>
-                                    <td><strong>{ticket.ticketNo}</strong></td>
-                                    <td>
-                                      <div>
-                                        <strong>{ticket.name}</strong>
-                                        {ticket.playerNames && ticket.playerNames.length > 0 && (
-                                          <div>
-                                            <small className="text-muted">
-                                              {ticket.playerNames.join(', ')}
-                                            </small>
-                                          </div>
-                                        )}
-                                        <div>
-                                          <small className="text-muted">
-                                            People: {ticket.numberOfPeople || ticket.playerStatus?.totalPlayers || 1}
-                                          </small>
-                                        </div>
-                                        {ticket.groupInfo?.groupName && (
-                                          <div>
-                                            <small className="text-muted">
-                                              Group: {ticket.groupInfo.groupName} {ticket.groupInfo.groupNumber ? `(${ticket.groupInfo.groupNumber})` : ''}
-                                            </small>
-                                          </div>
-                                        )}
-                                      </div>
-                                    </td>
-                                    <td>{ticket.ticketType}</td>
-                                    <td style={{ minWidth: '180px', width: '180px', padding: '8px' }}>
-                                      <div style={{ fontSize: '0.85em', lineHeight: '1.6' }}>
-                                        <div style={{ marginBottom: '4px' }}><strong>Actual Price:</strong> रु {actualPrice.toLocaleString()}</div>
-                                        {discountAmount > 0 ? (
-                                          <div style={{ marginBottom: '4px' }}>
-                                            <strong>Discount:</strong> -रु {discountAmount.toLocaleString()}
-                                          </div>
-                                        ) : (
-                                          <div style={{ marginBottom: '4px' }}><strong>Discount:</strong> रु 0</div>
-                                        )}
-                                        <div className={refundAmount > 0 ? 'text-danger' : ''} style={{ marginBottom: '4px' }}>
-                                          <strong>Refund:</strong> रु {refundAmount.toLocaleString()}
-                                        </div>
-                                        <div style={{ marginBottom: '4px' }}><strong>Total Price:</strong> रु {priceAfterDiscount.toLocaleString()}</div>
-                                      </div>
-                                    </td>
-                                    <td>{ticket.numberOfPeople || ticket.playerStatus?.totalPlayers || 1}</td>
-                                    <td>{ticket.totalExtraMinutes || 0} min</td>
-                                    <td>
-                                      <small>
-                                        <strong>{formatNepaliDate(ticket.date?.nepaliDate)}</strong>
-                                        <br />
-                                        <span style={{ color: '#666', fontSize: '0.85em' }}>
-                                          {formatDate(ticket.date?.englishDate || ticket.createdAt)}
-                                        </span>
-                                      </small>
-                                    </td>
-                                    <td>
-                                      <small>
-                                        <strong>{formatTime(ticket.time, ticket.date?.englishDate || ticket.createdAt)}</strong>
-                                        {(() => {
-                                          if (!ticket.time) return '';
-                                          const dateObj = ticket.date?.englishDate ? new Date(ticket.date.englishDate) : null;
-                                          if (!dateObj) return '';
-                                          const endTime = getEndTime(ticket.time, dateObj, ticket.totalExtraMinutes || 0, ticket.isRefunded);
-                                          return endTime ? ` - ${endTime}` : '';
-                                        })()}
-                                      </small>
-                                    </td>
-                                    <td>
-                                      {(() => {
-                                        const created = ticket.date?.englishDate ? new Date(ticket.date.englishDate) : new Date(ticket.createdAt);
-                                        const now = new Date();
-                                        const oneHourPassed = ((now - created) / 36e5) > 1;
-                                        if (oneHourPassed && !ticket.isRefunded) {
-                                          return <span className="badge badge-secondary">Deactivated</span>;
-                                        }
-                                        if (ticket.isRefunded) {
-                                          return <span className="badge badge-danger">Refunded</span>;
-                                        }
-                                        return <span className="badge badge-warning">Playing</span>;
-                                      })()}
-                                    </td>
-                                    <td>
-                                      {(() => {
-                                        const people = ticket.numberOfPeople || ticket.playerStatus?.totalPlayers || 1;
-                                        const discountAmount = ticket.discount || 0;
-                                        const priceAfterDiscount = ticket.fee || 0;
-                                        const refundAmt = ticket.refundAmount || (ticket.isRefunded ? priceAfterDiscount : 0);
-                                        if (refundAmt > 0) {
-                                          return (
-                                            <div style={{ fontSize: '0.85em' }}>
-                                              <div className="text-danger"><strong>रु {refundAmt.toLocaleString()}</strong></div>
-                                              {ticket.refundReason && (
-                                                <div className="text-muted" style={{ fontSize: '0.75em' }}>{ticket.refundReason}</div>
-                                              )}
-                                              {ticket.refundDetails?.refundMethod && (
-                                                <div className="text-muted" style={{ fontSize: '0.75em' }}>({ticket.refundDetails.refundMethod})</div>
-                                              )}
-                                            </div>
-                                          );
-                                        }
-                                        return <span>रु 0</span>;
-                                      })()}
-                                    </td>
-                                    <td>
-                                      <small>{ticket.remarks || '—'}</small>
-                                    </td>
-                                    <td>
-                                      <div className="d-flex gap-1">
-                                        {/* Preview button */}
-                                        <button 
-                                          className="btn btn-sm btn-outline-primary"
-                                          style={{ minWidth: 30 }}
-                                          onClick={() => { setSelectedTicket(ticket); setShowPrint(true); setAutoPrint(false); }}
-                                          title="Preview Ticket"
-                                        >
-                                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" stroke="#1976d2" strokeWidth="1.5"/><circle cx="10" cy="10" r="3" stroke="#1976d2" strokeWidth="1.4"/></svg>
-                                        </button>
-                                        {/* Print button */}
-                                        <button 
-                                          className="btn btn-sm btn-info"
-                                          onClick={() => openTicketPrintWindow(ticket)}
-                                          title="Print Ticket"
-                                        >
-                                          🖨️
-                                        </button>
-                                        {/* Refund button */}
-                                        {!ticket.isRefunded && (user?.role === 'admin' || user?.role === 'staff') && (
-                                          <button 
-                                            className="btn btn-sm btn-warning"
-                                            onClick={async () => {
-                                              const reason = prompt('Enter refund reason:');
-                                              if (reason) {
-                                                await handleRefund(ticket._id, reason);
-                                                // Refresh history after refund
-                                                fetchTicketHistory(1, false);
-                                              }
-                                            }}
-                                            title="Refund Ticket"
-                                          >
-                                            🔄
-                                          </button>
-                                        )}
-                                        {/* Delete button - only for admin */}
-                                        {user?.role === 'admin' && (
-                                          <button 
-                                            className="btn btn-sm btn-danger"
-                                            onClick={async () => {
-                                              await handleDelete(ticket._id);
-                                              // Refresh history after delete
-                                              fetchTicketHistory(1, false);
-                                            }}
-                                            title="Delete Ticket"
-                                          >
-                                            🗑️
-                                          </button>
-                                        )}
-                                      </div>
-                                    </td>
-                                  </tr>
-                                  {/* hidden print block */}
-                                  <div id={`ticket-print-${ticket._id}`} style={{ display: 'none' }}>
-                                    <TicketPrint ticket={ticket} />
-                                  </div>
-                                </React.Fragment>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
+                                const people = ticket.numberOfPeople || ticket.playerStatus?.totalPlayers || 1;
+                                const discountAmount = ticket.discount || 0;
+                                const priceAfterDiscount = ticket.fee || 0;
 
-                      {historyPage < historyTotalPages && (
-                        <div className="text-center mt-3">
-                          <button 
-                            className="btn btn-primary"
-                            onClick={handleLoadMoreHistory}
-                            disabled={historyLoading}
-                          >
-                            {historyLoading ? 'Loading...' : `Load More (${historyTotalPages - historyPage} pages remaining)`}
-                          </button>
+                                let actualPrice;
+                                if (ticket.perPersonFee && ticket.perPersonFee > 0) {
+                                  actualPrice = ticket.perPersonFee * people;
+                                } else if (discountAmount > 0) {
+                                  actualPrice = priceAfterDiscount + discountAmount;
+                                } else {
+                                  actualPrice = priceAfterDiscount;
+                                }
+
+                                const refundAmount = ticket.refundAmount || (ticket.isRefunded ? priceAfterDiscount : 0);
+
+                                return (
+                                  <React.Fragment key={ticket._id}>
+                                    <tr className={ticket.isRefunded ? 'table-danger' : ''}>
+                                      <td style={{ padding: '4px 3px', whiteSpace: 'nowrap' }}><strong>{ticket.ticketNo}</strong></td>
+                                      <td style={{ padding: '4px 3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                        <div>
+                                          <strong>{ticket.name}</strong>
+                                          {ticket.playerNames && ticket.playerNames.length > 0 && (
+                                            <div>
+                                              <small className="text-muted" style={{ display: 'inline-block', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                {ticket.playerNames.join(', ')}
+                                              </small>
+                                            </div>
+                                          )}
+                                        </div>
+                                      </td>
+                                      <td style={{ padding: '4px 3px', whiteSpace: 'nowrap' }}>{ticket.ticketType}</td>
+                                      <td style={{ minWidth: '135px', width: '135px', padding: '4px 3px' }}>
+                                        <div style={{ fontSize: '0.82em', lineHeight: '1.35' }}>
+                                          <div style={{ marginBottom: '2px' }}><strong>Actual:</strong> रु {actualPrice.toLocaleString()}</div>
+                                          {discountAmount > 0 ? (
+                                            <div style={{ marginBottom: '2px' }}>
+                                              <strong>Disc.:</strong> -रु {discountAmount.toLocaleString()}
+                                            </div>
+                                          ) : (
+                                            <div style={{ marginBottom: '2px' }}><strong>Disc.:</strong> रु 0</div>
+                                          )}
+                                          <div className={refundAmount > 0 ? 'text-danger' : ''} style={{ marginBottom: '2px' }}>
+                                            <strong>Refund:</strong> रु {refundAmount.toLocaleString()}
+                                          </div>
+                                          <div><strong>Total:</strong> रु {priceAfterDiscount.toLocaleString()}</div>
+                                        </div>
+                                      </td>
+                                      <td style={{ padding: '4px 3px', textAlign: 'center' }}>{people}</td>
+                                      <td style={{ padding: '4px 3px', textAlign: 'center', whiteSpace: 'nowrap' }}>{ticket.totalExtraMinutes || 0} min</td>
+                                      <td style={{ padding: '4px 3px' }}>
+                                        <small>
+                                          <strong>{formatNepaliDate(ticket.date?.nepaliDate)}</strong>
+                                          <br />
+                                          <span style={{ color: '#666', fontSize: '0.85em' }}>
+                                            {formatDate(ticket.date?.englishDate || ticket.createdAt)}
+                                          </span>
+                                        </small>
+                                      </td>
+                                      <td style={{ padding: '4px 3px', whiteSpace: 'nowrap' }}>
+                                        <small>
+                                          <strong>{formatTime(ticket.time, ticket.date?.englishDate || ticket.createdAt)}</strong>
+                                          {(() => {
+                                            if (!ticket.time) return '';
+                                            const dateObj = ticket.date?.englishDate ? new Date(ticket.date.englishDate) : null;
+                                            if (!dateObj) return '';
+                                            const endTime = getEndTime(ticket.time, dateObj, ticket.totalExtraMinutes || 0, ticket.isRefunded);
+                                            return endTime ? ` - ${endTime}` : '';
+                                          })()}
+                                        </small>
+                                      </td>
+                                      <td style={{ padding: '4px 3px' }}>
+                                        {(() => {
+                                          const created = ticket.date?.englishDate ? new Date(ticket.date.englishDate) : new Date(ticket.createdAt);
+                                          const now = new Date();
+                                          const oneHourPassed = ((now - created) / 36e5) > 1;
+                                          if (oneHourPassed && !ticket.isRefunded) {
+                                            return <span className="badge badge-secondary">Deactivated</span>;
+                                          }
+                                          if (ticket.isRefunded) {
+                                            return <span className="badge badge-danger">Refunded</span>;
+                                          }
+                                          return <span className="badge badge-warning">Playing</span>;
+                                        })()}
+                                      </td>
+                                      <td style={{ padding: '4px 3px' }}>
+                                        {(() => {
+                                          const refundAmt = ticket.refundAmount || (ticket.isRefunded ? priceAfterDiscount : 0);
+                                          if (refundAmt > 0) {
+                                            return (
+                                              <div style={{ fontSize: '0.85em' }}>
+                                                <div className="text-danger"><strong>रु {refundAmt.toLocaleString()}</strong></div>
+                                                {ticket.refundReason && (
+                                                  <div className="text-muted" style={{ fontSize: '0.75em' }}>{ticket.refundReason}</div>
+                                                )}
+                                                {ticket.refundDetails?.refundMethod && (
+                                                  <div className="text-muted" style={{ fontSize: '0.75em' }}>({ticket.refundDetails.refundMethod})</div>
+                                                )}
+                                              </div>
+                                            );
+                                          }
+                                          return <span>रु 0</span>;
+                                        })()}
+                                      </td>
+                                      <td style={{ padding: '4px 3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                        <small>{ticket.remarks || '—'}</small>
+                                      </td>
+                                      <td style={{ padding: '4px 3px' }}>
+                                        <div className="d-flex gap-1" style={{ flexWrap: 'wrap' }}>
+                                          <button
+                                            className="btn btn-sm btn-outline-primary"
+                                            style={{ minWidth: 22, width: 22, height: 22, padding: 0 }}
+                                            onClick={() => { setSelectedTicket(ticket); setShowPrint(true); setAutoPrint(false); }}
+                                            title="Preview Ticket"
+                                          >
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" stroke="#1976d2" strokeWidth="1.5"/><circle cx="10" cy="10" r="3" stroke="#1976d2" strokeWidth="1.4"/></svg>
+                                          </button>
+                                          <button
+                                            className="btn btn-sm btn-info"
+                                            style={{ minWidth: 22, width: 22, height: 22, padding: 0 }}
+                                            onClick={() => openTicketPrintWindow(ticket)}
+                                            title="Print Ticket"
+                                          >
+                                            🖨️
+                                          </button>
+                                          {!ticket.isRefunded && (user?.role === 'admin' || user?.role === 'staff') && (
+                                            <>
+                                              <button
+                                                className="btn btn-sm btn-warning"
+                                                style={{ minWidth: 22, width: 22, height: 22, padding: 0 }}
+                                                onClick={() => handlePartialRefund(ticket)}
+                                                title="Partial Refund"
+                                                disabled={ticket.playerStatus.playedPlayers >= ticket.playerStatus.totalPlayers}
+                                              >
+                                                💰
+                                              </button>
+
+                                              <button
+                                                className="btn btn-sm btn-danger"
+                                                style={{ minWidth: 22, width: 22, height: 22, padding: 0 }}
+                                                onClick={() => {
+                                                  const reason = prompt('Enter full refund reason:');
+                                                  if (reason) handleRefund(ticket._id, reason);
+                                                }}
+                                                title="Full Refund"
+                                              >
+                                                🔄
+                                              </button>
+                                            </>
+                                          )}
+
+                                          {user?.role === 'admin' && (
+                                            <button
+                                              className="btn btn-sm btn-danger"
+                                              style={{ minWidth: 22, width: 22, height: 22, padding: 0 }}
+                                              onClick={() => handleDelete(ticket._id)}
+                                              title="Delete Ticket"
+                                            >
+                                              🗑️
+                                            </button>
+                                          )}
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  </React.Fragment>
+                                );
+                              })}
+                            </tbody>
+                          </table>
                         </div>
-                      )}
-                    </>
+                      </>
                     );
                   })()}
                 </>
               )}
-            </div>
-            <div className="modal-footer">
-              <button 
-                className="btn btn-secondary"
-                onClick={closeHistoryModal}
-              >
-                Close
-              </button>
-            </div>
+            </SectionCard>
           </div>
         </div>
       )}

@@ -7,6 +7,10 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import Modal from 'react-modal';
 import logo from '/valyntix-logo.png.jpg';
+import ModernHeader from '../components/ModernHeader';
+import SectionCard from '../components/SectionCard';
+import ModernStat from '../components/ModernStat';
+import GradientButton from '../components/GradientButton';
 
 const createEmptyItem = () => ({
   itemName: '',
@@ -307,42 +311,38 @@ const Sales = () => {
   };
 
   return (
-    <div>
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)', padding: '20px' }}>
       <NotificationContainer />
       
-      <div className="d-flex justify-between align-center mb-3">
-        <h1>Sales Management</h1>
-        <small className="text-muted">Record and review sales for this branch.</small>
-      </div>
+      <ModernHeader 
+        title="Sales Management" 
+        subtitle="Record and review sales for this branch"
+        icon="💰"
+      />
 
       {(user?.role === 'admin' || user?.role === 'staff') && (
-        <div className="card mb-4">
-          <div className="card-header d-flex justify-between align-start">
-            <div>
-              <h3 className="card-title mb-1">Record New Sale</h3>
-              <small className="text-muted">
-                Capture walk-in purchases and keep branch revenue up to date.
-              </small>
-            </div>
-            <div className="text-right">
-              <div className="stat-number text-success" style={{ fontSize: '1.5rem' }}>
+        <SectionCard 
+          title="Record New Sale" 
+          icon="🛒"
+          accentColor="#2ecc71"
+          headerActions={
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: '1.8rem', fontWeight: 700, color: '#2ecc71', marginBottom: '4px' }}>
                 {formattedTotalAmount}
               </div>
-              <div className="stat-label text-muted">Current Total</div>
+              <div style={{ fontSize: '0.9rem', color: '#7f8c8d' }}>Current Total</div>
             </div>
-          </div>
-          <div className="card-body">
-            <form onSubmit={handleSubmit}>
-              <div className="grid grid-2 gap-3 align-start">
-                <div
-                  className="card p-3"
-                  style={{
-                    background: '#f8fbff',
-                    border: '1px solid #e1ecff',
-                    boxShadow: 'none'
-                  }}
-                >
-                  <h4 className="mb-3">Customer & Items</h4>
+          }
+        >
+          <form onSubmit={handleSubmit}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
+              <div style={{
+                background: 'rgba(46, 204, 113, 0.05)',
+                border: '1px solid rgba(46, 204, 113, 0.2)',
+                borderRadius: '16px',
+                padding: '24px'
+              }}>
+                <h4 style={{ marginTop: 0, marginBottom: '20px', color: '#2ecc71', fontWeight: 700 }}>Customer & Items</h4>
 
                   <div className="form-group">
                     <label className="form-label">Customer Name (optional)</label>
@@ -430,16 +430,14 @@ const Sales = () => {
                         </div>
                       </div>
                     ))}
-                    <button
+                    <GradientButton
                       type="button"
-                      className="btn btn-sm"
                       onClick={addItem}
-                      style={{ marginTop: 7, background: '#24365c', color: '#fff', fontWeight: 600, border: 'none', borderRadius: 7, padding: '7px 26px', textShadow: '0 1px 4px #0002', fontSize: '1rem', boxShadow: '0 2px 14px #24365c11', transition: 'background 0.15s' }}
-                      onMouseOver={e => e.currentTarget.style.background = '#375192'}
-                      onMouseOut={e => e.currentTarget.style.background = '#24365c'}
+                      color="#2ecc71"
+                      style={{ marginTop: '12px' }}
                     >
                       + Add Item
-                    </button>
+                    </GradientButton>
                   </div>
                   <div className="form-group mt-3">
                     <label className="form-label">Discount</label>
@@ -454,11 +452,13 @@ const Sales = () => {
                   </div>
                 </div>
 
-                <div
-                  className="card p-3"
-                  style={{ border: '1px solid #efefef', boxShadow: 'none' }}
-                >
-                  <h4 className="mb-3">Billing Summary</h4>
+              <div style={{
+                background: 'rgba(255, 255, 255, 0.8)',
+                border: '1px solid rgba(0, 0, 0, 0.08)',
+                borderRadius: '16px',
+                padding: '24px'
+              }}>
+                <h4 style={{ marginTop: 0, marginBottom: '20px', color: '#667eea', fontWeight: 700 }}>Billing Summary</h4>
                   <div className="d-flex justify-between align-center mb-2">
                     <span className="text-muted">Customer</span>
                     <strong>{formData.customerName || '—'}</strong>
@@ -502,10 +502,17 @@ const Sales = () => {
                     </select>
                   </div>
 
-                  <div className="p-3 rounded mb-3" style={{ background: '#1e90ff', color: 'white' }}>
-                    <div className="d-flex justify-between align-center">
-                      <span>Total Due</span>
-                      <strong style={{ fontSize: '1.5rem' }}>
+                  <div style={{ 
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', 
+                    color: 'white', 
+                    borderRadius: '12px',
+                    padding: '20px',
+                    marginBottom: '20px',
+                    boxShadow: '0 4px 20px rgba(102, 126, 234, 0.3)'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '1.1rem', fontWeight: 600 }}>Total Due</span>
+                      <strong style={{ fontSize: '1.8rem', fontWeight: 800 }}>
                         {formatCurrency(finalAmount)}
                       </strong>
                     </div>
@@ -522,77 +529,88 @@ const Sales = () => {
                     />
                   </div>
 
-                  <div className="form-actions mt-3">
-                    <button
+                  <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
+                    <GradientButton
                       type="button"
-                      className="btn btn-light"
                       onClick={resetForm}
                       disabled={loading}
+                      color="#95a5a6"
                     >
                       Clear
-                    </button>
-                    <button 
+                    </GradientButton>
+                    <GradientButton 
                       type="submit" 
-                      className="btn btn-primary"
                       disabled={loading || !isFormValid}
+                      color="#2ecc71"
                     >
                       {loading ? 'Saving...' : 'Record Sale'}
-                    </button>
-                    <button type="button" className="btn btn-info" style={{marginLeft:8}} disabled={!isFormValid} onClick={() => printSaleReceipt({...formData, date:{}, totalAmount:finalAmount, discount:discountAmount, staff:user, items:formData.items})}>Print</button>
+                    </GradientButton>
+                    <GradientButton 
+                      type="button" 
+                      disabled={!isFormValid} 
+                      onClick={() => printSaleReceipt({...formData, date:{}, totalAmount:finalAmount, discount:discountAmount, staff:user, items:formData.items})}
+                      color="#3498db"
+                    >
+                      🖨️ Print
+                    </GradientButton>
                   </div>
                 </div>
               </div>
             </form>
-          </div>
-        </div>
+          </SectionCard>
       )}
 
       {/* Sales List */}
       {user?.role === 'admin' && (
-        <div className="table-container">
-          <div className="table-header">
-            <h3 className="table-title">Sales Records</h3>
-            <div className="table-actions">
+        <SectionCard 
+          title="Sales Records" 
+          icon="📋"
+          accentColor="#3498db"
+          headerActions={
+            <div style={{ display: 'flex', gap: '8px' }}>
               {sales.length > 0 && (
-                <button
-                  className="btn btn-sm btn-info"
+                <GradientButton
                   onClick={() => printAllSales(sales)}
-                  style={{ marginRight: 8 }}
+                  color="#3498db"
+                  style={{ fontSize: '0.9rem', padding: '8px 16px' }}
                   title="Print All Sales Receipts"
                 >
                   🖨️ Print All
-                </button>
+                </GradientButton>
               )}
-              <button 
-                className="btn btn-sm btn-secondary"
+              <GradientButton 
                 onClick={fetchSales}
+                color="#95a5a6"
+                style={{ fontSize: '0.9rem', padding: '8px 16px' }}
               >
-                Refresh
-              </button>
-              <button
-                className="btn btn-sm btn-info"
+                🔄 Refresh
+              </GradientButton>
+              <GradientButton
                 onClick={exportSalesToPDF}
-                style={{ marginLeft: 8 }}
+                color="#9b59b6"
+                style={{ fontSize: '0.9rem', padding: '8px 16px' }}
               >
-                Export Transactions PDF
-              </button>
+                📄 Export PDF
+              </GradientButton>
             </div>
-          </div>
+          }
+        >
 
           {sales.length === 0 ? (
-            <div className="empty-state">
-              <p>No sales records found</p>
+            <div style={{ textAlign: 'center', padding: '40px', color: '#7f8c8d' }}>
+              <p style={{ fontSize: '1.1rem', marginBottom: '20px' }}>No sales records found</p>
               {user?.role === 'admin' && (
-                <button 
-                  className="btn btn-primary"
+                <GradientButton 
                   onClick={resetForm}
+                  color="#2ecc71"
                 >
                   Record First Sale
-                </button>
+                </GradientButton>
               )}
             </div>
           ) : (
-            <table className="table">
+            <div style={{ overflowX: 'auto' }}>
+              <table className="table" style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr>
                   <th>Sale No</th>
@@ -658,33 +676,35 @@ const Sales = () => {
                 ))}
               </tbody>
             </table>
+            </div>
           )}
-        </div>
+        </SectionCard>
       )}
 
       {/* Summary Stats */}
       {sales.length > 0 && (
-        <div className="card">
-          <h3>Sales Summary</h3>
-          <div className="grid grid-3">
-            <div className="text-center">
-              <div className="stat-number">{sales.length}</div>
-              <div className="stat-label">Total Sales</div>
-            </div>
-            <div className="text-center">
-              <div className="stat-number text-success">
-                रु {sales.reduce((sum, sale) => sum + (sale && sale.totalAmount != null ? sale.totalAmount : 0), 0).toLocaleString()}
-              </div>
-              <div className="stat-label">Total Revenue</div>
-            </div>
-            <div className="text-center">
-              <div className="stat-number">
-                {sales.filter(s => s && s.paymentMethod === 'Cash').length}
-              </div>
-              <div className="stat-label">Cash Payments</div>
-            </div>
+        <SectionCard title="Sales Summary" icon="📊" accentColor="#e74c3c">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
+            <ModernStat 
+              value={sales.length} 
+              label="Total Sales" 
+              color="#3498db"
+              icon="🛒"
+            />
+            <ModernStat 
+              value={sales.reduce((sum, sale) => sum + (sale && sale.totalAmount != null ? sale.totalAmount : 0), 0)} 
+              label="Total Revenue" 
+              color="#2ecc71"
+              icon="💰"
+            />
+            <ModernStat 
+              value={sales.filter(s => s && s.paymentMethod === 'Cash').length} 
+              label="Cash Payments" 
+              color="#f39c12"
+              icon="💵"
+            />
           </div>
-        </div>
+        </SectionCard>
       )}
       <Modal isOpen={!!previewSale} onRequestClose={() => setPreviewSale(null)} ariaHideApp={false} style={{ content: { maxWidth: 470, margin: '25px auto', borderRadius: 13, padding: '0 0 13px 0', minHeight: 330, boxShadow: '0 2px 20px #0003', border:'none' }, overlay: { background: 'rgba(70,90,120,0.17)' } }}> <div dangerouslySetInnerHTML={{__html: renderSaleBillHtml(previewSale)}} /> <div style={{ textAlign: 'center', marginTop: 15 }}><button className="btn btn-secondary" onClick={()=>setPreviewSale(null)}>Close</button></div> </Modal>
       <footer style={{ textAlign: 'center', margin: '32px 0 12px 0', fontSize: '12px', color: '#708090', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>

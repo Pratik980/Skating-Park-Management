@@ -4,6 +4,10 @@ import { branchesAPI } from '../api/api';
 import Loader from '../components/Loader';
 import NotificationContainer from '../components/NotificationContainer';
 import logo from '/valyntix-logo.png.jpg';
+import ModernHeader from '../components/ModernHeader';
+import SectionCard from '../components/SectionCard';
+import ModernStat from '../components/ModernStat';
+import GradientButton from '../components/GradientButton';
 
 const Branches = () => {
   const { user } = useApp();
@@ -169,20 +173,14 @@ const Branches = () => {
   }
 
   return (
-    <div>
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)', padding: '20px' }}>
       <NotificationContainer />
       
-      <div className="d-flex justify-between align-center mb-3">
-        <h1>Branch Management</h1>
-        {(isGlobalAdmin) && (
-          <button 
-            className="btn btn-primary"
-            onClick={() => setShowForm(true)}
-          >
-            + Add Branch
-          </button>
-        )}
-      </div>
+      <ModernHeader 
+        title="Branch Management" 
+        subtitle="Manage branches and locations"
+        icon="🏢"
+      />
 
       {/* Branch Form Modal */}
       {showForm && user?.role === 'admin' && (
@@ -306,33 +304,47 @@ const Branches = () => {
       )}
 
       {/* Branches List */}
-      <div className="table-container">
-        <div className="table-header">
-          <h3 className="table-title">Branches</h3>
-          <div className="table-actions">
-            <button 
-              className="btn btn-sm btn-secondary"
+      <SectionCard 
+        title="Branches" 
+        icon="📋"
+        accentColor="#3498db"
+        headerActions={
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <GradientButton 
               onClick={fetchBranches}
+              color="#95a5a6"
+              style={{ fontSize: '0.9rem', padding: '8px 16px' }}
             >
-              Refresh
-            </button>
+              🔄 Refresh
+            </GradientButton>
+            {(isGlobalAdmin) && (
+              <GradientButton 
+                onClick={() => setShowForm(true)}
+                color="#2ecc71"
+                style={{ fontSize: '0.9rem', padding: '8px 16px' }}
+              >
+                + Add Branch
+              </GradientButton>
+            )}
           </div>
-        </div>
+        }
+      >
 
         {branches.length === 0 ? (
-          <div className="empty-state">
-            <p>No branches found</p>
+          <div style={{ textAlign: 'center', padding: '40px', color: '#7f8c8d' }}>
+            <p style={{ fontSize: '1.1rem', marginBottom: '20px' }}>No branches found</p>
             {isGlobalAdmin && (
-              <button 
-                className="btn btn-primary"
+              <GradientButton 
                 onClick={() => setShowForm(true)}
+                color="#2ecc71"
               >
                 Add First Branch
-              </button>
+              </GradientButton>
             )}
           </div>
         ) : (
-          <table className="table">
+          <div style={{ overflowX: 'auto' }}>
+            <table className="table" style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr>
                 <th>Branch Name</th>
@@ -413,32 +425,34 @@ const Branches = () => {
               ))}
             </tbody>
           </table>
+          </div>
         )}
-      </div>
+      </SectionCard>
 
       {/* Summary Stats */}
       {branches.length > 0 && (
-        <div className="card">
-          <h3>Branch Summary</h3>
-          <div className="grid grid-3">
-            <div className="text-center">
-              <div className="stat-number">{branches.length}</div>
-              <div className="stat-label">Total Branches</div>
-            </div>
-            <div className="text-center">
-              <div className="stat-number text-success">
-                {branches.filter(b => b.isActive).length}
-              </div>
-              <div className="stat-label">Active</div>
-            </div>
-            <div className="text-center">
-              <div className="stat-number text-warning">
-                {branches.filter(b => !b.isActive).length}
-              </div>
-              <div className="stat-label">Inactive</div>
-            </div>
+        <SectionCard title="Branch Summary" icon="📊" accentColor="#9b59b6">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
+            <ModernStat 
+              value={branches.length} 
+              label="Total Branches" 
+              color="#3498db"
+              icon="🏢"
+            />
+            <ModernStat 
+              value={branches.filter(b => b.isActive).length} 
+              label="Active" 
+              color="#2ecc71"
+              icon="✅"
+            />
+            <ModernStat 
+              value={branches.filter(b => !b.isActive).length} 
+              label="Inactive" 
+              color="#f39c12"
+              icon="⏸️"
+            />
           </div>
-        </div>
+        </SectionCard>
       )}
       <footer style={{ textAlign: 'center', margin: '32px 0 12px 0', fontSize: '12px', color: '#708090', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>

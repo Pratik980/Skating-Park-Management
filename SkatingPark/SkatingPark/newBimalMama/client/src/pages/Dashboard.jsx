@@ -4,6 +4,7 @@ import { summaryAPI, settingsAPI, usersAPI, pdfAPI, downloadFile } from '../api/
 import Loader from '../components/Loader';
 import NotificationContainer from '../components/NotificationContainer';
 import logo from '/valyntix-logo.png.jpg';
+import ChartsDashboard from '../components/ChartsDashboard';
 
 const Dashboard = () => {
   const [stats, setStats] = useState(null);
@@ -233,7 +234,6 @@ const Dashboard = () => {
             animation: 'float 8s ease-in-out infinite reverse'
           }}></div>
         </div>
-
         {/* Today's Overview - Modern Cards */}
         <div className="stats-grid" style={{ marginBottom: '30px' }}>
           <div style={{
@@ -496,6 +496,8 @@ const Dashboard = () => {
           </div>
         </div>
 
+        {/* --- Visual Dashboard Charts Section below summary cards --- */}
+        <ChartsDashboard />
         {/* Quick Actions - Enhanced */}
         <div style={{
           background: theme.cardBg,

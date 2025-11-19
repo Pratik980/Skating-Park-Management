@@ -4,6 +4,9 @@ import { ticketsAPI } from '../api/api';
 import Loader from '../components/Loader';
 import NotificationContainer from '../components/NotificationContainer';
 import logo from '/valyntix-logo.png.jpg';
+import ModernHeader from '../components/ModernHeader';
+import SectionCard from '../components/SectionCard';
+import GradientButton from '../components/GradientButton';
 
 const CustomerDetails = () => {
   const [tickets, setTickets] = useState([]);
@@ -91,54 +94,58 @@ const CustomerDetails = () => {
   }
 
   return (
-    <div>
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)', padding: '20px' }}>
       <NotificationContainer />
       
-      <div className="d-flex justify-between align-center mb-3">
-        <div>
-          <h1>Customer Details</h1>
-          <p className="text-muted mb-0">View customer information and ticket history</p>
-        </div>
-        <button 
-          className="btn btn-sm btn-secondary"
-          onClick={fetchTickets}
-          disabled={loading}
-        >
-          {loading ? 'Refreshing...' : '🔄 Refresh'}
-        </button>
-      </div>
+      <ModernHeader 
+        title="Customer Details" 
+        subtitle="View customer information and ticket history"
+        icon="👥"
+      />
 
       {/* Search */}
-      <div className="card mb-4">
-        <div className="card-body">
-          <div className="form-group">
-            <label className="form-label">Search Customers</label>
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Search by name, contact number, or ticket number..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
+      <SectionCard title="Search Customers" icon="🔍" accentColor="#3498db">
+        <div className="form-group">
+          <label className="form-label">Search Customers</label>
+          <input
+            type="text"
+            className="form-control"
+            placeholder="Search by name, contact number, or ticket number..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{ 
+              padding: '12px 16px',
+              borderRadius: '10px',
+              border: '1px solid rgba(52, 152, 219, 0.2)',
+              fontSize: '1rem'
+            }}
+          />
         </div>
-      </div>
+      </SectionCard>
 
       {/* Customer List */}
-      <div className="card">
-        <div className="card-header">
-          <h3 className="card-title">
-            Customers ({filteredCustomers.length})
-          </h3>
-        </div>
-        <div className="card-body">
-          {filteredCustomers.length === 0 ? (
-            <div className="empty-state">
-              <p>No customers found</p>
-            </div>
-          ) : (
-            <div className="table-container">
-              <table className="table">
+      <SectionCard 
+        title={`Customers (${filteredCustomers.length})`}
+        icon="📋"
+        accentColor="#9b59b6"
+        headerActions={
+          <GradientButton 
+            onClick={fetchTickets}
+            disabled={loading}
+            color="#95a5a6"
+            style={{ fontSize: '0.9rem', padding: '8px 16px' }}
+          >
+            {loading ? 'Refreshing...' : '🔄 Refresh'}
+          </GradientButton>
+        }
+      >
+        {filteredCustomers.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '40px', color: '#7f8c8d' }}>
+            <p style={{ fontSize: '1.1rem' }}>No customers found</p>
+          </div>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table className="table" style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr>
                     <th>Customer Name</th>
@@ -193,8 +200,7 @@ const CustomerDetails = () => {
               </table>
             </div>
           )}
-        </div>
-      </div>
+      </SectionCard>
       <footer style={{ textAlign: 'center', margin: '32px 0 12px 0', fontSize: '12px', color: '#708090', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
           <img src={logo} alt="Valyntix Logo" style={{ width: 24, height: 24, verticalAlign: 'middle', borderRadius: 4, objectFit: 'contain' }} />

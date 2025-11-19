@@ -4,6 +4,9 @@ import { settingsAPI } from '../api/api';
 import Loader from '../components/Loader';
 import NotificationContainer from '../components/NotificationContainer';
 import logo from '/valyntix-logo.png.jpg';
+import ModernHeader from '../components/ModernHeader';
+import SectionCard from '../components/SectionCard';
+import GradientButton from '../components/GradientButton';
 
 const Settings = () => {
   const [settings, setSettings] = useState(null);
@@ -180,25 +183,19 @@ const Settings = () => {
   }
 
   return (
-    <div>
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)', padding: '20px' }}>
       <NotificationContainer />
       
-      <div className="d-flex justify-between align-center mb-3">
-        <h1>System Settings</h1>
-        <button 
-          className="btn btn-primary"
-          onClick={handleSubmit}
-          disabled={saving}
-        >
-          {saving ? 'Saving...' : 'Save Settings'}
-        </button>
-      </div>
+      <ModernHeader 
+        title="System Settings" 
+        subtitle="Configure system preferences and company information"
+        icon="⚙️"
+      />
 
       <form onSubmit={handleSubmit}>
-        <div className="grid grid-2">
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
           {/* Company Information */}
-          <div className="card">
-            <h3>Company Information</h3>
+          <SectionCard title="Company Information" icon="🏢" accentColor="#3498db">
             
             {/* Logo Upload Section */}
             <div className="form-group">
@@ -355,11 +352,10 @@ const Settings = () => {
                 This appears on PDF exports and official documents.
               </small>
             </div>
-          </div>
+          </SectionCard>
 
           {/* System Settings */}
-          <div className="card">
-            <h3>System Configuration</h3>
+          <SectionCard title="System Configuration" icon="🔧" accentColor="#9b59b6">
             
             <div className="form-group">
               <label className="form-label">Default Currency</label>
@@ -417,13 +413,11 @@ const Settings = () => {
                 placeholder="e.g., 2082-07-24"
               />
             </div>
-          </div>
+          </SectionCard>
         </div>
 
         {/* Ticket Rules */}
-        <div className="card">
-          <h3>Ticket Rules & Terms</h3>
-          
+        <SectionCard title="Ticket Rules & Terms" icon="📋" accentColor="#e74c3c">
           <div className="form-group">
             <label className="form-label">Ticket Rules (will appear on printed tickets)</label>
             {formData.ticketRules.map((rule, index) => (
@@ -454,12 +448,11 @@ const Settings = () => {
               + Add Rule
             </button>
           </div>
-        </div>
+        </SectionCard>
 
         {/* Current Settings Preview */}
         {settings && (
-          <div className="card">
-            <h3>Current Settings Preview</h3>
+          <SectionCard title="Current Settings Preview" icon="👁️" accentColor="#f39c12">
             <div className="grid grid-2">
               <div>
                 <h4>Company Info</h4>
@@ -477,8 +470,17 @@ const Settings = () => {
                 <p><strong>Nepali Date:</strong> {settings.nepaliDateFormat}</p>
               </div>
             </div>
-          </div>
+          </SectionCard>
         )}
+        <div style={{ marginTop: '24px', textAlign: 'right' }}>
+          <GradientButton 
+            onClick={handleSubmit}
+            disabled={saving}
+            color="#2ecc71"
+          >
+            {saving ? 'Saving...' : '💾 Save Settings'}
+          </GradientButton>
+        </div>
       </form>
       <footer style={{ textAlign: 'center', margin: '32px 0 12px 0', fontSize: '12px', color: '#708090', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>

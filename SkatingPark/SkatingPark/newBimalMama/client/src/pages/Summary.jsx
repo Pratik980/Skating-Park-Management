@@ -7,6 +7,10 @@ import { formatCurrency } from '../utils/currencyConverter';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import logo from '/valyntix-logo.png.jpg';
+import ModernHeader from '../components/ModernHeader';
+import SectionCard from '../components/SectionCard';
+import ModernStat from '../components/ModernStat';
+import GradientButton from '../components/GradientButton';
 
 const Summary = () => {
   const defaultDate = new Date().toISOString().split('T')[0];
@@ -414,31 +418,38 @@ const Summary = () => {
   }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)', padding: '20px' }}>
       <NotificationContainer />
-      <div style={{ flex: 1 }}>
-        <div className="d-flex justify-between align-center mb-3">
-          <h1>Reports & Summary</h1>
-          <button className="btn btn-info" onClick={exportToPDF}>
-            📄 Export PDF
-          </button>
-        </div>
+      <ModernHeader 
+        title="Reports & Summary" 
+        subtitle="View daily and date range reports"
+        icon="📊"
+      />
 
         {/* Date Range Selector */}
-        <div className="card mb-3">
-          <div className="d-flex gap-2 align-center flex-wrap">
-            <button
-              className={`btn btn-sm ${activeTab === 'daily' ? 'btn-primary' : 'btn-secondary'}`}
+        <SectionCard title="Report Type" icon="📅" accentColor="#9b59b6">
+          <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
+            <GradientButton
               onClick={() => setActiveTab('daily')}
+              color={activeTab === 'daily' ? '#9b59b6' : '#95a5a6'}
+              style={{ fontSize: '0.95rem', padding: '10px 20px' }}
             >
               Daily Summary
-            </button>
-            <button
-              className={`btn btn-sm ${activeTab === 'range' ? 'btn-primary' : 'btn-secondary'}`}
+            </GradientButton>
+            <GradientButton
               onClick={() => setActiveTab('range')}
+              color={activeTab === 'range' ? '#9b59b6' : '#95a5a6'}
+              style={{ fontSize: '0.95rem', padding: '10px 20px' }}
             >
               Date Range
-            </button>
+            </GradientButton>
+            <GradientButton
+              onClick={exportToPDF}
+              color="#3498db"
+              style={{ fontSize: '0.95rem', padding: '10px 20px', marginLeft: 'auto' }}
+            >
+              📄 Export PDF
+            </GradientButton>
           </div>
 
           {activeTab === 'daily' && (
@@ -451,13 +462,14 @@ const Summary = () => {
                 onChange={(e) => setSelectedDate(e.target.value || defaultDate)}
                 style={{ width: '170px' }}
               />
-              <button 
-                className="btn btn-primary btn-sm"
+              <GradientButton
                 onClick={handleDailyRefresh}
                 disabled={summaryLoading || dailyDetailsLoading}
+                color="#2ecc71"
+                style={{ fontSize: '0.9rem', padding: '8px 16px' }}
               >
-                {(summaryLoading || dailyDetailsLoading) ? 'Loading...' : 'Reload'}
-              </button>
+                {(summaryLoading || dailyDetailsLoading) ? 'Loading...' : '🔄 Reload'}
+              </GradientButton>
             </div>
           )}
 
@@ -478,60 +490,59 @@ const Summary = () => {
                 onChange={(e) => setDateRange({ ...dateRange, endDate: e.target.value })}
                 style={{ width: '170px' }}
               />
-              <button 
-                className="btn btn-primary btn-sm"
+              <GradientButton
                 onClick={fetchRangeSummary}
                 disabled={rangeLoading}
+                color="#2ecc71"
+                style={{ fontSize: '0.9rem', padding: '8px 16px' }}
               >
                 {rangeLoading ? 'Loading...' : 'Generate'}
-              </button>
+              </GradientButton>
             </div>
           )}
-        </div>
+        </SectionCard>
 
         <div id="report-content">
           {/* Daily Summary */}
           {activeTab === 'daily' && summary && (
             <>
-              <div className="grid grid-2">
-                <div className="card">
-                  <h3>Daily Financial Summary</h3>
-                  <div className="stats-grid" style={{ gridTemplateColumns: '1fr' }}>
-                    <div className="text-center">
-                      <div className="stat-number">{summary.totalTickets}</div>
-                      <div className="stat-label">Tickets Sold</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="stat-number text-success">
-                        {formatCurrency(summary.totalTicketSales)}
-                      </div>
-                      <div className="stat-label">Ticket Revenue</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="stat-number text-info">
-                        {formatCurrency(summary.totalOtherSales)}
-                      </div>
-                      <div className="stat-label">Other Sales</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="stat-number text-danger">
-                        {formatCurrency(summary.totalExpenses)}
-                      </div>
-                      <div className="stat-label">Total Expenses</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="stat-number" style={{ 
-                        color: summary.profitLoss >= 0 ? '#27ae60' : '#e74c3c' 
-                      }}>
-                        {formatCurrency(summary.profitLoss)}
-                      </div>
-                      <div className="stat-label">Net Profit/Loss</div>
-                    </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
+                <SectionCard title="Daily Financial Summary" icon="💰" accentColor="#2ecc71">
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px' }}>
+                    <ModernStat 
+                      value={summary.totalTickets} 
+                      label="Tickets Sold" 
+                      color="#3498db"
+                      icon="🎟️"
+                    />
+                    <ModernStat 
+                      value={summary.totalTicketSales} 
+                      label="Ticket Revenue" 
+                      color="#2ecc71"
+                      icon="💵"
+                    />
+                    <ModernStat 
+                      value={summary.totalOtherSales} 
+                      label="Other Sales" 
+                      color="#3498db"
+                      icon="🛒"
+                    />
+                    <ModernStat 
+                      value={summary.totalExpenses} 
+                      label="Total Expenses" 
+                      color="#e74c3c"
+                      icon="📉"
+                    />
+                    <ModernStat 
+                      value={summary.profitLoss} 
+                      label="Net Profit/Loss" 
+                      color={summary.profitLoss >= 0 ? '#27ae60' : '#e74c3c'}
+                      icon={summary.profitLoss >= 0 ? '📈' : '📉'}
+                    />
                   </div>
-                </div>
+                </SectionCard>
 
-                <div className="card">
-                  <h3>Transaction Details</h3>
+                <SectionCard title="Transaction Details" icon="📋" accentColor="#9b59b6">
                   <div className="d-flex justify-between mb-2">
                     <span>Total Revenue:</span>
                     <strong className="text-success">
@@ -565,15 +576,20 @@ const Summary = () => {
                     <span>Expenses:</span>
                     <span>{summary.expenses?.length || 0}</span>
                   </div>
-                </div>
+                </SectionCard>
               </div>
 
-              <div className="grid grid-3 mt-3">
-                <div className="card">
-                  <div className="d-flex justify-between align-center mb-2">
-                    <h3>Daily Tickets</h3>
-                    <span className="text-success">{formatCurrency(totalTicketRevenue)}</span>
-                  </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginTop: '24px' }}>
+                <SectionCard 
+                  title="Daily Tickets" 
+                  icon="🎟️"
+                  accentColor="#3498db"
+                  headerActions={
+                    <span style={{ color: '#2ecc71', fontWeight: 700, fontSize: '1.1rem' }}>
+                      {formatCurrency(totalTicketRevenue)}
+                    </span>
+                  }
+                >
                   {dailyDetailsLoading ? (
                     <p className="text-center text-muted">Loading tickets...</p>
                   ) : dailyTickets.length === 0 ? (
@@ -607,13 +623,18 @@ const Summary = () => {
                       Total: {dailyTickets.length} tickets
                     </div>
                   )}
-                </div>
+                </SectionCard>
 
-                <div className="card">
-                  <div className="d-flex justify-between align-center mb-2">
-                    <h3>Daily Sales</h3>
-                    <span className="text-info">{formatCurrency(totalSalesAmount)}</span>
-                  </div>
+                <SectionCard 
+                  title="Daily Sales" 
+                  icon="🛒"
+                  accentColor="#2ecc71"
+                  headerActions={
+                    <span style={{ color: '#3498db', fontWeight: 700, fontSize: '1.1rem' }}>
+                      {formatCurrency(totalSalesAmount)}
+                    </span>
+                  }
+                >
                   {dailyDetailsLoading ? (
                     <p className="text-center text-muted">Loading sales...</p>
                   ) : dailySales.length === 0 ? (
@@ -645,13 +666,18 @@ const Summary = () => {
                       Total: {dailySales.length} sales
                     </div>
                   )}
-                </div>
+                </SectionCard>
 
-                <div className="card">
-                  <div className="d-flex justify-between align-center mb-2">
-                    <h3>Daily Expenses</h3>
-                    <span className="text-danger">{formatCurrency(totalExpenseAmount)}</span>
-                  </div>
+                <SectionCard 
+                  title="Daily Expenses" 
+                  icon="📉"
+                  accentColor="#e74c3c"
+                  headerActions={
+                    <span style={{ color: '#e74c3c', fontWeight: 700, fontSize: '1.1rem' }}>
+                      {formatCurrency(totalExpenseAmount)}
+                    </span>
+                  }
+                >
                   {dailyDetailsLoading ? (
                     <p className="text-center text-muted">Loading expenses...</p>
                   ) : dailyExpenses.length === 0 ? (
@@ -683,47 +709,49 @@ const Summary = () => {
                       Total: {dailyExpenses.length} expenses
                     </div>
                   )}
-                </div>
+                </SectionCard>
               </div>
             </>
           )}
 
           {/* Range Summary */}
           {activeTab === 'range' && rangeSummary && (
-            <div>
-              <div className="card mb-3">
-                <h3>Date Range Summary: {dateRange.startDate} to {dateRange.endDate}</h3>
-                <div className="grid grid-4">
-                  <div className="text-center">
-                    <div className="stat-number">{rangeSummary.totals.totalTickets}</div>
-                    <div className="stat-label">Total Tickets</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="stat-number text-success">
-                      {formatCurrency(rangeSummary.totals.totalRevenue)}
-                    </div>
-                    <div className="stat-label">Total Revenue</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="stat-number text-danger">
-                      {formatCurrency(rangeSummary.totals.totalExpenses)}
-                    </div>
-                    <div className="stat-label">Total Expenses</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="stat-number" style={{ 
-                      color: rangeSummary.totals.totalProfitLoss >= 0 ? '#27ae60' : '#e74c3c' 
-                    }}>
-                      {formatCurrency(rangeSummary.totals.totalProfitLoss)}
-                    </div>
-                    <div className="stat-label">Net Profit/Loss</div>
-                  </div>
+            <>
+              <SectionCard 
+                title={`Date Range Summary: ${dateRange.startDate} to ${dateRange.endDate}`}
+                icon="📊"
+                accentColor="#9b59b6"
+              >
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
+                  <ModernStat 
+                    value={rangeSummary.totals.totalTickets} 
+                    label="Total Tickets" 
+                    color="#3498db"
+                    icon="🎟️"
+                  />
+                  <ModernStat 
+                    value={rangeSummary.totals.totalRevenue} 
+                    label="Total Revenue" 
+                    color="#2ecc71"
+                    icon="💰"
+                  />
+                  <ModernStat 
+                    value={rangeSummary.totals.totalExpenses} 
+                    label="Total Expenses" 
+                    color="#e74c3c"
+                    icon="📉"
+                  />
+                  <ModernStat 
+                    value={rangeSummary.totals.totalProfitLoss} 
+                    label="Net Profit/Loss" 
+                    color={rangeSummary.totals.totalProfitLoss >= 0 ? '#27ae60' : '#e74c3c'}
+                    icon={rangeSummary.totals.totalProfitLoss >= 0 ? '📈' : '📉'}
+                  />
                 </div>
-              </div>
+              </SectionCard>
 
               {/* Daily Breakdown */}
-              <div className="card">
-                <h3>Daily Breakdown</h3>
+              <SectionCard title="Daily Breakdown" icon="📅" accentColor="#34495e">
                 <table className="table">
                   <thead>
                     <tr>
@@ -756,62 +784,58 @@ const Summary = () => {
                     ))}
                   </tbody>
                 </table>
-              </div>
-            </div>
+              </SectionCard>
+            </>
           )}
 
           {/* Quick Stats */}
-          <div className="grid grid-3 mt-3">
-            <div className="card">
-              <h4>Ticket Types</h4>
-              <div className="text-center">
-                <div className="stat-number" style={{ color: '#e74c3c' }}>
-                  {summary?.tickets?.length || 0}
-                </div>
-                <div className="stat-label">Today's Tickets</div>
+          {summary && (
+            <SectionCard title="Quick Stats" icon="⚡" accentColor="#f39c12">
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
+                <ModernStat 
+                  value={summary.tickets?.length || 0} 
+                  label="Today's Tickets" 
+                  color="#e74c3c"
+                  icon="🎟️"
+                />
+                <ModernStat 
+                  value={summary.sales?.length || 0} 
+                  label="Today's Sales" 
+                  color="#27ae60"
+                  icon="🛒"
+                />
+                <ModernStat 
+                  value={summary.expenses?.length || 0} 
+                  label="Today's Expenses" 
+                  color="#f39c12"
+                  icon="📉"
+                />
               </div>
-            </div>
-            
-            <div className="card">
-              <h4>Sales Performance</h4>
-              <div className="text-center">
-                <div className="stat-number" style={{ color: '#27ae60' }}>
-                  {summary?.sales?.length || 0}
-                </div>
-                <div className="stat-label">Today's Sales</div>
-              </div>
-            </div>
-            
-            <div className="card">
-              <h4>Expense Control</h4>
-              <div className="text-center">
-                <div className="stat-number" style={{ color: '#f39c12' }}>
-                  {summary?.expenses?.length || 0}
-                </div>
-                <div className="stat-label">Today's Expenses</div>
-              </div>
-            </div>
-          </div>
+            </SectionCard>
+          )}
         </div>
 
         {!summary && activeTab === 'daily' && (
-          <div className="empty-state">
-            <p>No summary data available</p>
-            <button 
-              className="btn btn-primary"
-              onClick={fetchDailySummary}
-            >
-              Load Summary
-            </button>
-          </div>
+          <SectionCard title="No Data" icon="📭" accentColor="#95a5a6">
+            <div style={{ textAlign: 'center', padding: '40px' }}>
+              <p style={{ fontSize: '1.1rem', color: '#7f8c8d', marginBottom: '20px' }}>No summary data available</p>
+              <GradientButton 
+                onClick={fetchDailySummary}
+                color="#2ecc71"
+              >
+                Load Summary
+              </GradientButton>
+            </div>
+          </SectionCard>
         )}
 
         {activeTab === 'range' && !rangeSummary && (
-          <div className="empty-state">
-            <p>Select a date range and generate report</p>
-          </div>
+          <SectionCard title="No Data" icon="📭" accentColor="#95a5a6">
+            <div style={{ textAlign: 'center', padding: '40px' }}>
+              <p style={{ fontSize: '1.1rem', color: '#7f8c8d' }}>Select a date range and generate report</p>
+            </div>
+          </SectionCard>
         )}
-      </div>
       <footer style={{ textAlign: 'center', margin: '32px 0 12px 0', fontSize: '12px', color: '#708090', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
           <img src={logo} alt="Valyntix Logo" style={{ width: 24, height: 24, verticalAlign: 'middle', borderRadius: 4, objectFit: 'contain' }} />

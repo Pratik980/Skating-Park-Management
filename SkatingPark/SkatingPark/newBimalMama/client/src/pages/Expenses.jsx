@@ -5,6 +5,10 @@ import Loader from '../components/Loader';
 import NotificationContainer from '../components/NotificationContainer';
 import logo from '/valyntix-logo.png.jpg';
 import Modal from 'react-modal';
+import ModernHeader from '../components/ModernHeader';
+import SectionCard from '../components/SectionCard';
+import ModernStat from '../components/ModernStat';
+import GradientButton from '../components/GradientButton';
 
 const Expenses = () => {
   const [expenses, setExpenses] = useState([]);
@@ -199,20 +203,18 @@ const fetchCategories = async () => {
   }
 
   return (
-    <div>
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)', padding: '20px' }}>
       <NotificationContainer />
       
-      <div className="d-flex justify-between align-center mb-3">
-        <h1>Expense Management</h1>
-      </div>
+      <ModernHeader 
+        title="Expense Management" 
+        subtitle="Track and manage branch expenses"
+        icon="🧾"
+      />
 
       {/* Expense Form - Always Visible */}
       {(user?.role === 'admin' || user?.role === 'staff') && (
-        <div className="card mb-4">
-          <div className="card-header">
-            <h3 className="card-title">Add New Expense</h3>
-          </div>
-          <div className="card-body">
+        <SectionCard title="Add New Expense" icon="➕" accentColor="#f39c12">
             <form onSubmit={handleSubmit}>
               <div className="form-grid">
                 <div className="form-group">
@@ -310,52 +312,55 @@ const fetchCategories = async () => {
                 </div>
               </div>
 
-              <div className="form-actions">
-                <button 
+              <div style={{ marginTop: '24px' }}>
+                <GradientButton 
                   type="submit" 
-                  className="btn btn-primary"
                   disabled={loading || !formData.category || !formData.amount}
+                  color="#f39c12"
                 >
                   {loading ? 'Processing...' : 'Add Expense'}
-                </button>
+                </GradientButton>
               </div>
             </form>
-          </div>
-        </div>
+        </SectionCard>
       )}
 
       {/* Expenses List */}
-      <div className="table-container">
-        <div className="table-header">
-          <h3 className="table-title">Expense Records</h3>
-          <div className="table-actions">
+      <SectionCard 
+        title="Expense Records" 
+        icon="📋"
+        accentColor="#e74c3c"
+        headerActions={
+          <div style={{ display: 'flex', gap: '8px' }}>
             {expenses.length > 0 && (
-              <button
-                className="btn btn-sm btn-info"
+              <GradientButton
                 onClick={() => printAllExpenses(expenses)}
-                style={{ marginRight: 8 }}
+                color="#3498db"
+                style={{ fontSize: '0.9rem', padding: '8px 16px' }}
                 title="Print All Expense Receipts"
               >
                 🖨️ Print All
-              </button>
+              </GradientButton>
             )}
-            <button 
-              className="btn btn-sm btn-secondary"
+            <GradientButton 
               onClick={fetchExpenses}
               disabled={loading}
+              color="#95a5a6"
+              style={{ fontSize: '0.9rem', padding: '8px 16px' }}
             >
-              {loading ? 'Refreshing...' : 'Refresh'}
-            </button>
+              {loading ? 'Refreshing...' : '🔄 Refresh'}
+            </GradientButton>
           </div>
-        </div>
+        }
+      >
 
         {expenses.length === 0 ? (
-          <div className="empty-state">
-            <p>No expense records found</p>
+          <div style={{ textAlign: 'center', padding: '40px', color: '#7f8c8d' }}>
+            <p style={{ fontSize: '1.1rem' }}>No expense records found</p>
           </div>
         ) : (
-          <div className="responsive-table">
-            <table className="table">
+          <div style={{ overflowX: 'auto' }}>
+            <table className="table" style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr>
                   <th>Expense No</th>
@@ -429,53 +434,63 @@ const fetchCategories = async () => {
             </table>
           </div>
         )}
-      </div>
+      </SectionCard>
 
       {/* Summary Stats */}
       {expenses.length > 0 && (
-        <div className="card mt-4">
-          <h3>Expense Summary</h3>
-          <div className="stats-grid">
-            <div className="stat-item text-center">
-              <div className="stat-number">{expenses.length}</div>
-              <div className="stat-label">Total Expenses</div>
-            </div>
-            <div className="stat-item text-center">
-              <div className="stat-number text-danger">
-                रु {expenses.reduce((sum, expense) => sum + expense.amount, 0).toLocaleString()}
-              </div>
-              <div className="stat-label">Total Amount</div>
-            </div>
-            <div className="stat-item text-center">
-              <div className="stat-number">
-                {expenses.filter(e => e.category === 'Maintenance').length}
-              </div>
-              <div className="stat-label">Maintenance</div>
-            </div>
-            <div className="stat-item text-center">
-              <div className="stat-number">
-                {expenses.filter(e => e.category === 'Salary').length}
-              </div>
-              <div className="stat-label">Salary</div>
-            </div>
+        <SectionCard title="Expense Summary" icon="📊" accentColor="#e74c3c">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '24px' }}>
+            <ModernStat 
+              value={expenses.length} 
+              label="Total Expenses" 
+              color="#e74c3c"
+              icon="📝"
+            />
+            <ModernStat 
+              value={expenses.reduce((sum, expense) => sum + expense.amount, 0)} 
+              label="Total Amount" 
+              color="#c0392b"
+              icon="💰"
+            />
+            <ModernStat 
+              value={expenses.filter(e => e.category === 'Maintenance').length} 
+              label="Maintenance" 
+              color="#f39c12"
+              icon="🔧"
+            />
+            <ModernStat 
+              value={expenses.filter(e => e.category === 'Salary').length} 
+              label="Salary" 
+              color="#3498db"
+              icon="💼"
+            />
           </div>
 
           {/* Category Breakdown */}
-          <div className="mt-3">
-            <h4>Category Breakdown</h4>
+          <div style={{ marginTop: '24px' }}>
+            <h4 style={{ color: '#2c3e50', marginBottom: '16px', fontWeight: 700 }}>Category Breakdown</h4>
             {Array.from(new Set(expenses.map(e => e.category))).map(category => {
               const categoryExpenses = expenses.filter(e => e.category === category);
               const total = categoryExpenses.reduce((sum, e) => sum + e.amount, 0);
               
               return (
-                <div key={category} className="category-breakdown-item">
-                  <span>{category}</span>
-                  <span className="text-danger">रु {total.toLocaleString()}</span>
+                <div key={category} style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '12px 16px',
+                  marginBottom: '8px',
+                  background: 'rgba(231, 76, 60, 0.05)',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(231, 76, 60, 0.1)'
+                }}>
+                  <span style={{ fontWeight: 600, color: '#2c3e50' }}>{category}</span>
+                  <span style={{ color: '#e74c3c', fontWeight: 700 }}>रु {total.toLocaleString()}</span>
                 </div>
               );
             })}
           </div>
-        </div>
+        </SectionCard>
       )}
 
       <style jsx>{`

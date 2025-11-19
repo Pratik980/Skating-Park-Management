@@ -182,60 +182,79 @@ router.get('/range/:branchId', protect, async (req, res) => {
 // @access  Private
 router.get('/dashboard/:branchId', protect, async (req, res) => {
   try {
-    const branchId = req.user.branch; // force to user branch
+    const branchId = req.user.branch;
     const today = new Date();
     const startOfToday = new Date(today.setHours(0, 0, 0, 0));
     const endOfToday = new Date(today.setHours(23, 59, 59, 999));
 
+    // Timeline: Group tickets by day for the last 10 days
+    const tenDaysAgo = new Date();
+    tenDaysAgo.setDate(tenDaysAgo.getDate() - 9);
+    tenDaysAgo.setHours(0,0,0,0);
+    const timelineAgg = await Ticket.aggregate([
+      { $match: { branch: new mongoose.Types.ObjectId(branchId), 'date.englishDate': { $gte: tenDaysAgo } } },
+      { $group: {
+        _id: { $dateToString: { format: "%Y-%m-%d", date: "$date.englishDate" } },
+        tickets: { $sum: 1 },
+        revenue: { $sum: "$fee" },
+        refundedAmount: { $sum: "$refundAmount" }
+      }},
+      { $sort: { _id: 1 } }
+    ]);
+    const timeline = timelineAgg.map(e => ({
+      label: e._id,
+      tickets: e.tickets,
+      revenue: e.revenue,
+      refundedAmount: e.refundedAmount,
+    }));
+
+    // Type breakdown (from today only)
+    const typeCountsAgg = await Ticket.aggregate([
+      { $match: { branch: new mongoose.Types.ObjectId(branchId), 'date.englishDate': { $gte: startOfToday, $lte: endOfToday } } },
+      { $group: { _id: "$ticketType", count: { $sum: 1 } } }
+    ]);
+    const typeCounts = {};
+    typeCountsAgg.forEach(t => { typeCounts[t._id] = t.count; });
+
+    // Top customers (last 30 days, group by name)
+    const thirtyAgo = new Date();
+    thirtyAgo.setDate(thirtyAgo.getDate() - 29);
+    thirtyAgo.setHours(0,0,0,0);
+    const customersAgg = await Ticket.aggregate([
+      { $match: { branch: new mongoose.Types.ObjectId(branchId), 'date.englishDate': { $gte: thirtyAgo } } },
+      { $group: {
+        _id: "$name",
+        tickets: { $sum: 1 }
+      }},
+      { $sort: { tickets: -1 } },
+      { $limit: 10 }
+    ]);
+    const customers = customersAgg.map(c => ({ name: c._id, tickets: c.tickets }));
+
+    // Checked-in: tickets with status 'playing'
+    const checkedIn = await Ticket.countDocuments({ branch: branchId, status: 'playing' });
+
     // Today's stats
-    const todayTickets = await Ticket.countDocuments({
-      branch: branchId,
-      'date.englishDate': {
-        $gte: startOfToday,
-        $lte: endOfToday
-      }
-    });
+    const todayTickets = await Ticket.countDocuments({ branch: branchId, 'date.englishDate': { $gte: startOfToday, $lte: endOfToday } });
+    const todaySales = await Sales.countDocuments({ branch: branchId, isSale: true, 'date.englishDate': { $gte: startOfToday, $lte: endOfToday } });
+    const todayExpenses = await Expense.countDocuments({ branch: branchId, 'date.englishDate': { $gte: startOfToday, $lte: endOfToday } });
 
-    // Only count actual sales (not other Sales documents like stock/other types)
-    const todaySales = await Sales.countDocuments({
-      branch: branchId,
-      isSale: true,
-      'date.englishDate': {
-        $gte: startOfToday,
-        $lte: endOfToday
-      }
-    });
-
-    const todayExpenses = await Expense.countDocuments({
-      branch: branchId,
-      'date.englishDate': {
-        $gte: startOfToday,
-        $lte: endOfToday
-      }
-    });
-
-    // Total stats
+    // Totals
     const totalTickets = await Ticket.countDocuments({ branch: branchId });
-    // Total number of actual sales
     const totalSales = await Sales.countDocuments({ branch: branchId, isSale: true });
     const totalExpenses = await Expense.countDocuments({ branch: branchId });
-
-    // Revenue calculations
     const ticketRevenue = await Ticket.aggregate([
       { $match: { branch: new mongoose.Types.ObjectId(branchId) } },
       { $group: { _id: null, total: { $sum: '$fee' } } }
     ]);
-
     const salesRevenue = await Sales.aggregate([
       { $match: { branch: new mongoose.Types.ObjectId(branchId), isSale: true } },
       { $group: { _id: null, total: { $sum: '$totalAmount' } } }
     ]);
-
     const expensesTotal = await Expense.aggregate([
       { $match: { branch: new mongoose.Types.ObjectId(branchId) } },
       { $group: { _id: null, total: { $sum: '$amount' } } }
     ]);
-
     const totalRevenue = (ticketRevenue[0]?.total || 0) + (salesRevenue[0]?.total || 0);
     const totalExpensesAmount = expensesTotal[0]?.total || 0;
     const netProfit = totalRevenue - totalExpensesAmount;
@@ -255,7 +274,11 @@ router.get('/dashboard/:branchId', protect, async (req, res) => {
           revenue: totalRevenue,
           expensesAmount: totalExpensesAmount,
           netProfit: netProfit
-        }
+        },
+        timeline,
+        typeCounts,
+        customers,
+        checkedIn
       }
     });
   } catch (error) {

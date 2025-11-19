@@ -4,6 +4,10 @@ import { usersAPI } from '../api/api';
 import Loader from '../components/Loader';
 import NotificationContainer from '../components/NotificationContainer';
 import logo from '/valyntix-logo.png.jpg';
+import ModernHeader from '../components/ModernHeader';
+import SectionCard from '../components/SectionCard';
+import ModernStat from '../components/ModernStat';
+import GradientButton from '../components/GradientButton';
 
 const Users = () => {
   const [users, setUsers] = useState([]);
@@ -105,18 +109,14 @@ const Users = () => {
   }
 
   return (
-    <div>
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)', padding: '20px' }}>
       <NotificationContainer />
       
-      <div className="d-flex justify-between align-center mb-3">
-        <h1>Staff Management</h1>
-        <button 
-          className="btn btn-primary"
-          onClick={() => setShowForm(true)}
-        >
-          + Add Staff
-        </button>
-      </div>
+      <ModernHeader 
+        title="Staff Management" 
+        subtitle="Manage staff members and permissions"
+        icon="👥"
+      />
 
       {/* Staff Form Modal */}
       {showForm && (
@@ -215,31 +215,43 @@ const Users = () => {
       )}
 
       {/* Users List */}
-      <div className="table-container">
-        <div className="table-header">
-          <h3 className="table-title">Staff Members</h3>
-          <div className="table-actions">
-            <button 
-              className="btn btn-sm btn-secondary"
+      <SectionCard 
+        title="Staff Members" 
+        icon="📋"
+        accentColor="#3498db"
+        headerActions={
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <GradientButton 
               onClick={fetchUsers}
+              color="#95a5a6"
+              style={{ fontSize: '0.9rem', padding: '8px 16px' }}
             >
-              Refresh
-            </button>
+              🔄 Refresh
+            </GradientButton>
+            <GradientButton 
+              onClick={() => setShowForm(true)}
+              color="#2ecc71"
+              style={{ fontSize: '0.9rem', padding: '8px 16px' }}
+            >
+              + Add Staff
+            </GradientButton>
           </div>
-        </div>
+        }
+      >
 
         {users.length === 0 ? (
-          <div className="empty-state">
-            <p>No staff members found</p>
-            <button 
-              className="btn btn-primary"
+          <div style={{ textAlign: 'center', padding: '40px', color: '#7f8c8d' }}>
+            <p style={{ fontSize: '1.1rem', marginBottom: '20px' }}>No staff members found</p>
+            <GradientButton 
               onClick={() => setShowForm(true)}
+              color="#2ecc71"
             >
               Add First Staff Member
-            </button>
+            </GradientButton>
           </div>
         ) : (
-          <table className="table">
+          <div style={{ overflowX: 'auto' }}>
+            <table className="table" style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr>
                 <th>Name</th>
@@ -309,26 +321,28 @@ const Users = () => {
               ))}
             </tbody>
           </table>
+          </div>
         )}
-      </div>
+      </SectionCard>
 
       {/* Summary Stats */}
       {users.length > 0 && (
-        <div className="card">
-          <h3>Staff Summary</h3>
-          <div className="grid grid-2">
-            <div className="text-center">
-              <div className="stat-number">{users.length}</div>
-              <div className="stat-label">Total Staff</div>
-            </div>
-            <div className="text-center">
-              <div className="stat-number text-success">
-                {users.filter(u => u.isActive).length}
-              </div>
-              <div className="stat-label">Active</div>
-            </div>
+        <SectionCard title="Staff Summary" icon="📊" accentColor="#9b59b6">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
+            <ModernStat 
+              value={users.length} 
+              label="Total Staff" 
+              color="#3498db"
+              icon="👥"
+            />
+            <ModernStat 
+              value={users.filter(u => u.isActive).length} 
+              label="Active" 
+              color="#2ecc71"
+              icon="✅"
+            />
           </div>
-        </div>
+        </SectionCard>
       )}
 
       <footer style={{ textAlign: 'center', margin: '32px 0 12px 0', fontSize: '12px', color: '#708090', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
