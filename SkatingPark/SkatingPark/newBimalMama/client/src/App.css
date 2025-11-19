@@ -486,3 +486,289 @@
     margin-bottom: 30px !important;
   }
 }
+
+/* ============================================
+   GLOBAL DARK MODE STYLES
+   ============================================ */
+
+:root {
+  --bg-primary: #f8f9fa;
+  --bg-secondary: #ffffff;
+  --text-primary: #2c3e50;
+  --text-secondary: #7f8c8d;
+  --border-color: #e0e0e0;
+  --shadow: rgba(0, 0, 0, 0.1);
+  --navbar-bg: #ffffff;
+  --sidebar-bg: #2c3e50;
+  --card-bg: #ffffff;
+}
+
+.dark-mode {
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --border-color: rgba(255, 255, 255, 0.1);
+  --shadow: rgba(0, 0, 0, 0.5);
+  --navbar-bg: #1e293b;
+  --sidebar-bg: #0f172a;
+  --card-bg: #1e293b;
+}
+
+/* Apply dark mode to body and app */
+.dark-mode body,
+.dark-mode .App {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Navbar dark mode */
+.dark-mode .navbar {
+  background: var(--navbar-bg);
+  border-bottom-color: var(--border-color);
+  box-shadow: 0 2px 4px var(--shadow);
+}
+
+.dark-mode .user-name {
+  color: var(--text-primary);
+}
+
+.dark-mode .user-role {
+  color: var(--text-secondary);
+}
+
+.dark-mode .sidebar-toggle-btn {
+  color: var(--text-primary);
+}
+
+.dark-mode .sidebar-toggle-btn:hover {
+  color: #3498db;
+}
+
+/* Sidebar dark mode */
+.dark-mode .sidebar {
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--border-color);
+}
+
+.dark-mode .sidebar-header {
+  border-bottom-color: var(--border-color);
+}
+
+.dark-mode .sidebar-menu li {
+  border-bottom-color: var(--border-color);
+}
+
+.dark-mode .sidebar-menu a {
+  color: var(--text-secondary);
+}
+
+.dark-mode .sidebar-menu a:hover,
+.dark-mode .sidebar-menu a.active {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+}
+
+/* Content area dark mode */
+.dark-mode .content-area {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+/* Cards dark mode */
+.dark-mode .card {
+  background: var(--card-bg);
+  color: var(--text-primary);
+  box-shadow: 0 2px 10px var(--shadow);
+  border: 1px solid var(--border-color);
+}
+
+/* Tables dark mode */
+.dark-mode .table-container {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+}
+
+.dark-mode .table-header {
+  border-bottom-color: var(--border-color);
+}
+
+.dark-mode .table-title {
+  color: var(--text-primary);
+}
+
+.dark-mode .table {
+  color: var(--text-primary);
+}
+
+.dark-mode .table th {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  border-bottom-color: var(--border-color);
+}
+
+.dark-mode .table td {
+  border-bottom-color: var(--border-color);
+}
+
+.dark-mode .table tr:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Forms dark mode */
+.dark-mode .form-container {
+  background: var(--card-bg);
+  color: var(--text-primary);
+}
+
+.dark-mode .form-title {
+  color: var(--text-primary);
+}
+
+.dark-mode .form-label {
+  color: var(--text-primary);
+}
+
+.dark-mode .form-control {
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.dark-mode .form-control:focus {
+  border-color: #3498db;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.dark-mode .form-control::placeholder {
+  color: var(--text-secondary);
+}
+
+/* Modals dark mode */
+.dark-mode .modal-overlay {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.dark-mode .modal-content {
+  background: var(--card-bg);
+  color: var(--text-primary);
+  box-shadow: 0 10px 30px var(--shadow);
+}
+
+.dark-mode .modal-title {
+  color: var(--text-primary);
+}
+
+.dark-mode .close-button {
+  color: var(--text-secondary);
+}
+
+.dark-mode .close-button:hover {
+  color: var(--text-primary);
+}
+
+/* Buttons dark mode */
+.dark-mode .btn-primary {
+  background-color: #3498db;
+}
+
+.dark-mode .btn-primary:hover {
+  background-color: #2980b9;
+}
+
+.dark-mode .btn-secondary {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.dark-mode .btn-secondary:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Text utilities dark mode */
+.dark-mode .text-muted {
+  color: var(--text-secondary) !important;
+}
+
+.dark-mode h1,
+.dark-mode h2,
+.dark-mode h3,
+.dark-mode h4,
+.dark-mode h5,
+.dark-mode h6 {
+  color: var(--text-primary);
+}
+
+/* Stats and cards dark mode */
+.dark-mode .stat-card {
+  background: var(--card-bg);
+  color: var(--text-primary);
+  border-left-color: #3498db;
+}
+
+.dark-mode .stat-number {
+  color: var(--text-primary);
+}
+
+.dark-mode .stat-label {
+  color: var(--text-secondary);
+}
+
+/* Empty and error states dark mode */
+.dark-mode .empty-state {
+  color: var(--text-secondary);
+}
+
+.dark-mode .error-state {
+  color: #e74c3c;
+}
+
+/* Badges dark mode */
+.dark-mode .badge {
+  color: white;
+}
+
+/* Select dropdowns dark mode */
+.dark-mode select.form-control,
+.dark-mode select {
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+/* Inputs dark mode */
+.dark-mode input[type="text"],
+.dark-mode input[type="number"],
+.dark-mode input[type="email"],
+.dark-mode input[type="password"],
+.dark-mode input[type="date"],
+.dark-mode input[type="time"],
+.dark-mode textarea {
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.dark-mode input[type="text"]:focus,
+.dark-mode input[type="number"]:focus,
+.dark-mode input[type="email"]:focus,
+.dark-mode input[type="password"]:focus,
+.dark-mode input[type="date"]:focus,
+.dark-mode input[type="time"]:focus,
+.dark-mode textarea:focus {
+  background: var(--bg-secondary);
+  border-color: #3498db;
+  color: var(--text-primary);
+}
+
+/* Links dark mode */
+.dark-mode a {
+  color: #3498db;
+}
+
+.dark-mode a:hover {
+  color: #2980b9;
+}

@@ -10,18 +10,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [settings, setSettings] = useState(null);
   const [users, setUsers] = useState([]);
-  const [darkMode, setDarkMode] = useState(() => {
-    const saved = localStorage.getItem('dashboardDarkMode');
-    return saved ? JSON.parse(saved) : false;
-  });
-  const { currentBranch, user } = useApp();
-
-  // Toggle dark mode
-  const toggleDarkMode = () => {
-    const newMode = !darkMode;
-    setDarkMode(newMode);
-    localStorage.setItem('dashboardDarkMode', JSON.stringify(newMode));
-  };
+  const { currentBranch, user, darkMode } = useApp();
 
   // Memoize quick actions to prevent recalculation (must be before conditional returns)
   const quickActionItems = useMemo(() => [
@@ -179,40 +168,9 @@ const Dashboard = () => {
           <div style={{ position: 'relative', zIndex: 1 }}>
             <div className="d-flex justify-between align-center flex-wrap gap-2">
               <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '10px' }}>
-                  <h1 style={{ margin: 0, fontSize: '2.8rem', fontWeight: 800, color: 'white', textShadow: '0 2px 20px rgba(0,0,0,0.3)', letterSpacing: '-0.5px' }}>
-                    Dashboard
-                  </h1>
-                  <button
-                    onClick={toggleDarkMode}
-                    style={{
-                      background: 'rgba(255, 255, 255, 0.15)',
-                      border: '2px solid rgba(255, 255, 255, 0.2)',
-                      borderRadius: '12px',
-                      padding: '10px 15px',
-                      cursor: 'pointer',
-                      fontSize: '1.5rem',
-                      backdropFilter: 'blur(10px)',
-                      transition: 'all 0.3s ease',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      width: '48px',
-                      height: '48px'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.25)';
-                      e.currentTarget.style.transform = 'scale(1.1)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
-                      e.currentTarget.style.transform = 'scale(1)';
-                    }}
-                    title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-                  >
-                    {darkMode ? '☀️' : '🌙'}
-                  </button>
-                </div>
+                <h1 style={{ margin: 0, fontSize: '2.8rem', fontWeight: 800, color: 'white', textShadow: '0 2px 20px rgba(0,0,0,0.3)', letterSpacing: '-0.5px' }}>
+                  Dashboard
+                </h1>
                 <p style={{ margin: 0, fontSize: '1.15rem', opacity: 0.95, fontWeight: 400 }}>
                   Welcome back, <strong style={{ fontWeight: 600 }}>{user?.name}</strong>! 👋
                 </p>
