@@ -163,8 +163,8 @@ const getBrowser = async () => {
       headless: true, // legacy headless mode
       args: puppeteerArgs,
       executablePath: executablePath || undefined,
-      timeout: 60000,          // allow more time for Chrome to start
-      protocolTimeout: 60000,  // allow more time for DevTools commands like Network.enable
+      timeout: 120000,          // allow more time for Chrome to start
+      protocolTimeout: 120000,  // allow more time for DevTools commands like Network.enable
       ignoreHTTPSErrors: true,
       ignoreDefaultArgs: ['--disable-extensions']
     });
