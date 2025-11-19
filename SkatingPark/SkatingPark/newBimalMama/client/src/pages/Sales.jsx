@@ -287,6 +287,25 @@ const Sales = () => {
     win.document.close();
   };
 
+  // Print all sales receipts one by one
+  const printAllSales = async (salesToPrint) => {
+    if (!salesToPrint || salesToPrint.length === 0) {
+      alert('No sales to print');
+      return;
+    }
+
+    // Print each sale with a delay to allow print dialog to appear
+    for (let i = 0; i < salesToPrint.length; i++) {
+      const sale = salesToPrint[i];
+      printSaleReceipt(sale, `Sale Bill - ${sale.saleNo || i + 1}`);
+      
+      // Wait before printing next (except for last one)
+      if (i < salesToPrint.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    }
+  };
+
   return (
     <div>
       <NotificationContainer />
@@ -534,6 +553,16 @@ const Sales = () => {
           <div className="table-header">
             <h3 className="table-title">Sales Records</h3>
             <div className="table-actions">
+              {sales.length > 0 && (
+                <button
+                  className="btn btn-sm btn-info"
+                  onClick={() => printAllSales(sales)}
+                  style={{ marginRight: 8 }}
+                  title="Print All Sales Receipts"
+                >
+                  🖨️ Print All
+                </button>
+              )}
               <button 
                 className="btn btn-sm btn-secondary"
                 onClick={fetchSales}
