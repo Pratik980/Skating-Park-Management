@@ -229,7 +229,7 @@ export const AppProvider = ({ children }) => {
     dispatch({ type: 'TOGGLE_DARK_MODE' });
   };
 
-  // Apply dark mode class to document root
+  // Apply dark mode class to document root on mount and when it changes
   useEffect(() => {
     if (state.darkMode) {
       document.documentElement.classList.add('dark-mode');
@@ -237,6 +237,13 @@ export const AppProvider = ({ children }) => {
       document.documentElement.classList.remove('dark-mode');
     }
   }, [state.darkMode]);
+
+  // Apply dark mode on initial load
+  useEffect(() => {
+    if (state.darkMode) {
+      document.documentElement.classList.add('dark-mode');
+    }
+  }, []);
 
   const value = {
     ...state,
