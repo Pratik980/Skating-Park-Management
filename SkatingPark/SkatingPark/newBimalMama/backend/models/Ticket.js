@@ -214,22 +214,17 @@ ticketSchema.pre('validate', async function(next) {
 ticketSchema.pre('save', function(next) {
   // Only set date/time for new tickets (not updates)
   if (this.isNew) {
-    const now = new Date();
-    
-    // Always use real current date and time for new tickets
+    // Get current time in Nepal, not server/UTC
+    const kathmanduNow = moment().tz("Asia/Kathmandu");
+    // Always set both englishDate and time to Nepal time
     if (!this.date) {
       this.date = {};
     }
-    // Set to current real date/time
-    this.date.englishDate = now;
-    
+    this.date.englishDate = kathmanduNow.toDate();
     // Always convert English date to Nepali date (ensures accuracy)
     this.date.nepaliDate = convertToNepaliDate(this.date.englishDate);
-    
-    // Always set time to current real time for new tickets
     if (!this.time) {
-      const kathmanduTime = moment().tz("Asia/Kathmandu");
-      this.time = kathmanduTime.format("HH:mm:ss");
+      this.time = kathmanduNow.format("HH:mm:ss");
     }
   } else {
     // For updates, ensure Nepali date is synced with English date if English date changed
@@ -237,7 +232,6 @@ ticketSchema.pre('save', function(next) {
       this.date.nepaliDate = convertToNepaliDate(this.date.englishDate);
     }
   }
-  
   next();
 });
 
