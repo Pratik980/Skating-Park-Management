@@ -15,12 +15,16 @@ import { protect } from '../middleware/auth.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Local Devanagari font (use the same font as frontend, stored in client/public/fonts)
-// This ensures Nepali text renders correctly in PDFs even if Google Fonts fails.
-const localDevanagariFontPath = path
-  .join(__dirname, '../../client/public/fonts/NotoSansDevanagari-Regular.ttf')
-  .replace(/\\/g, '/');
+// Local assets (font + logo) live under client/public so Puppeteer can load them offline
+const publicDir = path.join(__dirname, '../../client/public');
+
+const localDevanagariFontPath = path.join(publicDir, 'fonts/NotoSansDevanagari-Regular.ttf').replace(/\\/g, '/');
 const localDevanagariFontUrl = `file://${localDevanagariFontPath}`;
+
+const localLogoPath = path.join(publicDir, 'valyntix-logo.png.jpg').replace(/\\/g, '/');
+const valyntixLogoUrl = fs.existsSync(localLogoPath)
+  ? `file://${localLogoPath}`
+  : 'https://skatingpark.netlify.app/valyntix-logo.png.jpg';
 
 
 const router = express.Router();
