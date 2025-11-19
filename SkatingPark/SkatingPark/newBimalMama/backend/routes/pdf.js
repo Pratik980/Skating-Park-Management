@@ -20,6 +20,19 @@ const publicDir = path.join(__dirname, '../../client/public');
 
 const localDevanagariFontPath = path.join(publicDir, 'fonts/NotoSansDevanagari-Regular.ttf').replace(/\\/g, '/');
 const localDevanagariFontUrl = `file://${localDevanagariFontPath}`;
+let localDevanagariFontDataUri = null;
+
+try {
+  if (fs.existsSync(localDevanagariFontPath)) {
+    const fontBuffer = fs.readFileSync(localDevanagariFontPath);
+    localDevanagariFontDataUri = `data:font/ttf;base64,${fontBuffer.toString('base64')}`;
+    console.log('✅ Loaded local Devanagari font, bytes:', fontBuffer.length);
+  } else {
+    console.warn('⚠️ Local Devanagari font file not found at', localDevanagariFontPath);
+  }
+} catch (fontError) {
+  console.warn('⚠️ Failed to read local Devanagari font:', fontError);
+}
 
 const localLogoPath = path.join(publicDir, 'valyntix-logo.png.jpg').replace(/\\/g, '/');
 const valyntixLogoUrl = fs.existsSync(localLogoPath)
@@ -293,7 +306,7 @@ const buildDashboardHtml = ({ stats, settings, branch, generatedAt, user }) => {
         /* Embed local Devanagari font so Nepali text shows even if Google Fonts fails */
         @font-face {
           font-family: 'Noto Sans Devanagari Local';
-          src: url('${localDevanagariFontUrl}') format('truetype');
+          src: url('${localDevanagariFontDataUri || localDevanagariFontUrl}') format('truetype');
           font-weight: 400;
           font-style: normal;
         }
