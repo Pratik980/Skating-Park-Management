@@ -7,6 +7,7 @@ import logo from '/valyntix-logo.png.jpg';
 import ModernHeader from '../components/ModernHeader';
 import SectionCard from '../components/SectionCard';
 import GradientButton from '../components/GradientButton';
+import * as XLSX from 'xlsx';
 
 const CustomerDetails = () => {
   const [tickets, setTickets] = useState([]);
@@ -89,6 +90,22 @@ const CustomerDetails = () => {
     );
   }, [customerGroups, searchTerm]);
 
+  // Add CSV/XLSX export handler
+  const exportToExcel = () => {
+    const data = filteredCustomers.map((c) => ({
+      Name: c.name,
+      Contact: Array.isArray(c.contactNumber) ? c.contactNumber.join(', ') : '',
+      'Total Tickets': c.totalTickets,
+      'Total Spent': c.totalSpent,
+      'Last Visit': c.lastVisit ? c.lastVisit.toLocaleDateString() : '',
+      'Ticket Numbers': c.tickets.map(t => t.ticketNo).join(', ')
+    }));
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Customers');
+    XLSX.writeFile(workbook, 'customer_details.xlsx');
+  };
+
   if (loading && tickets.length === 0) {
     return <Loader text="Loading customer details..." />;
   }
@@ -129,14 +146,23 @@ const CustomerDetails = () => {
         icon="📋"
         accentColor="#9b59b6"
         headerActions={
-          <GradientButton 
-            onClick={fetchTickets}
-            disabled={loading}
-            color="#95a5a6"
-            style={{ fontSize: '0.9rem', padding: '8px 16px' }}
-          >
-            {loading ? 'Refreshing...' : '🔄 Refresh'}
-          </GradientButton>
+          <>
+            <GradientButton 
+              onClick={fetchTickets}
+              disabled={loading}
+              color="#95a5a6"
+              style={{ fontSize: '0.9rem', padding: '8px 16px', marginRight: 8 }}
+            >
+              {loading ? 'Refreshing...' : '🔄 Refresh'}
+            </GradientButton>
+            <GradientButton 
+              onClick={exportToExcel}
+              color="#27ae60"
+              style={{ fontSize: '0.9rem', padding: '8px 16px' }}
+            >
+              ⬇️ Export to Excel
+            </GradientButton>
+          </>
         }
       >
         {filteredCustomers.length === 0 ? (
