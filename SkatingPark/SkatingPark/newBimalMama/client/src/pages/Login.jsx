@@ -9,6 +9,7 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [validationError, setValidationError] = useState('');
   
   const { login, token, loading, error, clearError } = useApp();
   const navigate = useNavigate();
@@ -19,10 +20,46 @@ const Login = () => {
     }
   }, [token, navigate]);
 
+  const validateInputs = () => {
+    // Email Regex (simple)
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const specialCharRegex = /[!@#$%^&*(),.?":{}|<>_\-+=~`\[\]\\\/]/;
+    const uppercaseRegex = /[A-Z]/;
+    const lowercaseRegex = /[a-z]/;
+    
+    if (!emailRegex.test(email)) {
+      setValidationError('Invalid email address');
+      return false;
+    }
+    if (password.length < 6) {
+      setValidationError('Password must be at least 6 characters long');
+      return false;
+    }
+    if (!specialCharRegex.test(password)) {
+      setValidationError('Password must contain at least one special character');
+      return false;
+    }
+    if (!uppercaseRegex.test(password)) {
+      setValidationError('Password must contain at least one uppercase letter');
+      return false;
+    }
+    if (!lowercaseRegex.test(password)) {
+      setValidationError('Password must contain at least one lowercase letter');
+      return false;
+    }
+    setValidationError('');
+    return true;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     clearError(); // Clear any previous errors
+
+    if (!validateInputs()) {
+      setIsLoading(false);
+      return;
+    }
 
     const result = await login(email, password);
     
@@ -43,6 +80,9 @@ const Login = () => {
   return (
     <div className="container" style={{ maxWidth: '400px', marginTop: '100px' }}>
       <NotificationContainer />
+      {validationError && (
+        <div className="alert alert-error" style={{ marginBottom: '12px' }}>{validationError}</div>
+      )}
       
       <div className="form-container">
         <h1 className="form-title">🏒 Skating Park</h1>

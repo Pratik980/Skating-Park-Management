@@ -26,6 +26,7 @@ const Signup = () => {
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [validationError, setValidationError] = useState('');
   
   const { register, token } = useApp();
   const navigate = useNavigate();
@@ -66,35 +67,71 @@ const Signup = () => {
     }
   };
 
+  const validateInputs = () => {
+    // Email Regex (simple)
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const specialCharRegex = /[!@#$%^&*(),.?":{}|<>_\-+=~`\[\]\\\/]/;
+    const uppercaseRegex = /[A-Z]/;
+    const lowercaseRegex = /[a-z]/;
+    
+    if (!formData.name.trim()) {
+      setValidationError('Full name is required');
+      return false;
+    }
+    if (!emailRegex.test(formData.email)) {
+      setValidationError('Invalid email address');
+      return false;
+    }
+    if (!/^\d{7,15}$/.test(formData.phone.trim())) {
+      setValidationError('Phone number must be 7-15 digits');
+      return false;
+    }
+    if (formData.password.length < 6) {
+      setValidationError('Password must be at least 6 characters long');
+      return false;
+    }
+    if (!specialCharRegex.test(formData.password)) {
+      setValidationError('Password must contain at least one special character');
+      return false;
+    }
+    if (!uppercaseRegex.test(formData.password)) {
+      setValidationError('Password must contain at least one uppercase letter');
+      return false;
+    }
+    if (!lowercaseRegex.test(formData.password)) {
+      setValidationError('Password must contain at least one lowercase letter');
+      return false;
+    }
+    if (formData.password !== formData.confirmPassword) {
+      setValidationError('Passwords do not match!');
+      return false;
+    }
+    // Branch fields validation if creating new branch
+    if (formData.createNewBranch) {
+      if (!formData.newBranchName.trim()) {
+        setValidationError('Please enter branch name');
+        return false;
+      }
+      if (!formData.newBranchLocation.trim()) {
+        setValidationError('Please enter branch location');
+        return false;
+      }
+      if (!formData.newBranchContact.trim()) {
+        setValidationError('Please enter branch contact number');
+        return false;
+      }
+    }
+    setValidationError('');
+    return true;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    if (!validateInputs()) {
+      return;
+    }
     
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match!');
-      return;
-    }
-
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters long!');
-      return;
-    }
-
-    if (formData.createNewBranch) {
-      if (!formData.newBranchName.trim()) {
-        setError('Please enter branch name');
-        return;
-      }
-      if (!formData.newBranchLocation.trim()) {
-        setError('Please enter branch location');
-        return;
-      }
-      if (!formData.newBranchContact.trim()) {
-        setError('Please enter branch contact number');
-        return;
-      }
-    }
-
     setIsLoading(true);
 
     const userData = {
@@ -155,10 +192,9 @@ const Signup = () => {
   return (
     <div className="container" style={{ maxWidth: '600px', marginTop: '30px' }}>
       <NotificationContainer />
-      
-      {error && (
+      {(error || validationError) && (
         <div className="alert alert-error">
-          {error}
+          {error || validationError}
         </div>
       )}
       
