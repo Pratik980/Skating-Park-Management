@@ -160,11 +160,16 @@ const getBrowser = async () => {
     }
     console.log('🔧 Launch args:', puppeteerArgs.join(' '));
     const browser = await puppeteer.launch({
-      headless: true, // legacy headless mode
-      args: puppeteerArgs,
-      executablePath: executablePath || undefined,
-      timeout: 120000,          // allow more time for Chrome to start
-      protocolTimeout: 120000,  // allow more time for DevTools commands like Network.enable
+      headless: "new",
+      args: [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+        "--disable-gpu"
+      ],
+      executablePath: executablePath || puppeteer.executablePath(),
+      timeout: 0,
+      protocolTimeout: 0,
       ignoreHTTPSErrors: true,
       ignoreDefaultArgs: ['--disable-extensions']
     });

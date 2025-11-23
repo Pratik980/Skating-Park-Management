@@ -23,13 +23,13 @@ const Navbar = ({ onToggleSidebar, isSidebarCollapsed }) => {
             >
             {isSidebarCollapsed ? '☰' : '⮜'}
           </button>
-        </div> 
+        </div> 1
         
         <div className="user-info">
           {/* Dark mode toggle removed */}
           <div className="user-details">
             <div className="user-name">{user?.name}</div>
-            <div className="user-role">
+            <div className="user-role">  
               {user?.role === 'admin' ? 'Administrator' : 'Staff'}
             </div>
           </div>
