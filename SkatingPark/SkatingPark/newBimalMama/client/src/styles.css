@@ -172,6 +172,20 @@ body {
   .navbar { padding: 8px 10px; }
   .navbar-title { font-size: 1.05rem !important; }
 
+  /* Mobile navbar layout: center title, place user-info to the right */
+  .navbar .navbar-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .navbar-left { display: flex; align-items: center; gap: 8px; }
+  .navbar-title { flex: 1; text-align: center; margin: 0 6px; }
+  .user-info { display: flex; align-items: center; gap: 8px; }
+  .user-details { display: flex; flex-direction: column; align-items: flex-end; font-size: 0.9rem; }
+  .user-info .btn { padding: 6px 8px; font-size: 0.85rem; }
+
   /* Reduce spacing in quick ticket grids */
   .quick-ticket-grid { gap: 8px 10px; }
   .quick-ticket-extra-grid { gap: 8px 10px; }

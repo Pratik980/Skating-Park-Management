@@ -192,12 +192,17 @@ const Dashboard = () => {
             border-radius: 10px !important;
             box-shadow: 0 2px 10px rgba(0,0,0,0.08) !important;
           }
+
+          /* Shrink hero header on mobile */
+          .dashboard-hero { padding: 16px !important; border-radius: 14px !important; }
+          .dashboard-hero h1 { font-size: 1.4rem !important; margin-bottom: 6px !important; }
+          .dashboard-hero p { font-size: 0.95rem !important; }
         }
       `}</style>
       <NotificationContainer />
       <div style={{ flex: 1, padding: '20px' }}>
         {/* Modern Header with Dark Mode Toggle */}
-        <div style={{
+        <div className="dashboard-hero" style={{
           background: theme.headerGradient,
           borderRadius: '24px',
           padding: '35px',
