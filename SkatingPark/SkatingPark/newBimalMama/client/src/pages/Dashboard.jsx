@@ -281,7 +281,7 @@ const Dashboard = () => {
           }}></div>
         </div>
         {/* Today's Overview - Modern Cards */}
-        <div className="stats-grid" style={{ marginBottom: '30px' }}>
+        <div className="stats-grid dashboard-cards small-stats" style={{ marginBottom: '30px' }}>
           <div style={{
             background: 'linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%)',
             borderRadius: '20px',

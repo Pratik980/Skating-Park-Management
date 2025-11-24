@@ -140,6 +140,22 @@ body {
     gap: 10px;
   }
 
+  /* If page uses inline .stats-grid, make those cards compact on mobile */
+  .stats-grid > div {
+    padding: 14px !important;
+    border-radius: 14px !important;
+  }
+  .stats-grid > div div[style*="fontSize: '3.5rem'"] {
+    font-size: 2rem !important;
+    font-weight: 700 !important;
+  }
+  .stats-grid > div small {
+    font-size: 0.78rem !important;
+  }
+  .stats-grid > div div[style*="fontSize: '0.9rem'"] {
+    font-size: 0.85rem !important;
+  }
+
   /* Compact stat cards and values on mobile */
   .modern-stat, .ModernStatValue, .modern-stat .value, .modern-stat .label {
     padding: 8px !important;
