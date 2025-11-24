@@ -140,6 +140,13 @@ body {
     gap: 10px;
   }
 
+  /* Compact stat cards and values on mobile */
+  .modern-stat, .ModernStatValue, .modern-stat .value, .modern-stat .label {
+    padding: 8px !important;
+  }
+  .modern-stat .value, .ModernStatValue { font-size: 1.25rem !important; }
+  .modern-stat .label { font-size: 0.85rem !important; color: #4b5563; }
+
   /* Buttons smaller */
   button {
     padding: 8px 12px;
@@ -236,6 +243,12 @@ body {
     cursor: pointer;
   }
 
+  /* Make stats grid even smaller on narrow phones */
+  .dashboard-cards.small-stats {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 8px;
+  }
+
   /* Show a close button inside sliding sidebar */
   .mobile-close-wrap {
     display: flex;
@@ -292,6 +305,16 @@ body {
   /* Reduce Quick Ticket grids further */
   .quick-ticket-grid { gap: 6px 8px; }
   .quick-ticket-extra-grid { gap: 6px 8px; }
+
+  /* Extra compact stats on very small devices */
+  .dashboard-cards, .dashboard-cards.small-stats { grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 6px; }
+  .modern-stat .value, .ModernStatValue { font-size: 1.05rem !important; }
+  .modern-stat .label { font-size: 0.78rem !important; }
+}
+
+/* Hide dashboard hero on larger screens if mobile-only hero desired */
+@media (min-width: 901px) {
+  .dashboard-hero { display: none !important; }
 }
 
 h1 {
