@@ -83,23 +83,27 @@ body {
     z-index: 1200;
     width: 260px;
     padding: 18px;
-    transition: left 240ms ease-in-out;
+    transition: left 240ms ease-in-out, transform 240ms ease-in-out;
     box-shadow: 2px 0 12px rgba(0,0,0,0.12);
+    /* don't reserve flex space on mobile */
+    flex: 0 0 0;
   }
 
   .sidebar.mobile-open {
     left: 0; /* slide in */
   }
 
-  /* Add a slight overlay when sidebar is open (using pseudo element on body could be done, keep minimal here) */
-  .main-content::before {
-    content: '';
+  /* Mobile overlay placed between sidebar and main content */
+  .mobile-overlay {
+    display: none;
+  }
+
+  .mobile-overlay.show {
     display: block;
     position: fixed;
-    inset: 0 0 0 0;
-    background: rgba(0,0,0,0.0);
-    pointer-events: none;
-    z-index: 1100;
+    inset: 0;
+    background: rgba(0,0,0,0.36);
+    z-index: 1150; /* below sidebar (1200) */
   }
 
   /* Make main-content flow normally under mobile (no left offset) */

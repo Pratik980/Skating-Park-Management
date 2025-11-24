@@ -9,6 +9,13 @@ const Layout = () => {
   return (
     <div className="main-layout">
       <Sidebar mobileOpen={isMobileSidebarOpen} onClose={() => setMobileSidebarOpen(false)} />
+      {/* Overlay shown on mobile when sidebar is open; clicking it closes the sidebar */}
+      <div
+        className={`mobile-overlay ${isMobileSidebarOpen ? 'show' : ''}`}
+        onClick={() => setMobileSidebarOpen(false)}
+        role="button"
+        aria-label="Close navigation"
+      />
       <div className={`main-content`}>
         <Navbar 
           onToggleSidebar={() => setMobileSidebarOpen(open => !open)} 
