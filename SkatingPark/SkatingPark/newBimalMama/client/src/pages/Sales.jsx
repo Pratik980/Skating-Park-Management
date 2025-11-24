@@ -379,6 +379,7 @@ const Sales = () => {
                     {formData.items.map((item, index) => (
                       <div
                         key={index}
+                        className="sale-item-row"
                         style={{
                           display: 'grid',
                           gridTemplateColumns: '2.3fr 0.9fr 1fr 1.2fr 38px',

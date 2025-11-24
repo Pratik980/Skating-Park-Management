@@ -279,6 +279,32 @@ body {
     width: 100% !important;
   }
 
+  /* Compact sale item rows: stack fields vertically on small screens */
+  .sales-page-wrapper .sale-item-row {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+    align-items: start !important;
+  }
+
+  .sales-page-wrapper .sale-item-row > div {
+    padding: 0 !important;
+  }
+
+  .sales-page-wrapper .sale-item-row input,
+  .sales-page-wrapper .sale-item-row .form-control {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    padding: 8px 10px !important;
+    font-size: 0.95rem !important;
+  }
+
+  /* Make the small remove button less tall and aligned right */
+  .sales-page-wrapper .sale-item-row button[title="Remove item"] {
+    font-size: 1.2rem !important;
+    padding: 4px 6px !important;
+    line-height: 1 !important;
+  }
+
   /* Show mobile toggle button in navbar */
   .mobile-toggle {
     display: inline-flex;
