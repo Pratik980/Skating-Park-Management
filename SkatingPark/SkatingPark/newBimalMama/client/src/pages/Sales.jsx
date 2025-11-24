@@ -352,7 +352,7 @@ const Sales = () => {
           }
         >
           <form onSubmit={handleSubmit}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
+            <div className="sales-form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
               <div style={{
                 background: 'rgba(39, 174, 96, 0.05)',
                 border: '1px solid rgba(39, 174, 96, 0.2)',

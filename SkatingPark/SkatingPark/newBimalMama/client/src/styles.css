@@ -247,6 +247,38 @@ body {
     box-shadow: 0 2px 10px rgba(0,0,0,0.08) !important;
   }
 
+  /* Sales form: make left/right columns stack and compact on mobile */
+  .sales-page-wrapper .sales-form-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .sales-page-wrapper .sales-form-grid > div {
+    padding: 12px !important;
+  }
+
+  /* Reduce inner control paddings for compact mobile layout */
+  .sales-page-wrapper .form-control {
+    padding: 8px 10px !important;
+    font-size: 0.95rem !important;
+  }
+
+  .sales-page-wrapper .form-grid input[type="number"],
+  .sales-page-wrapper .form-grid input[type="text"],
+  .sales-page-wrapper .form-grid textarea,
+  .sales-page-wrapper .form-grid select {
+    padding: 8px 10px !important;
+  }
+
+  /* Make action buttons smaller and wrap on mobile */
+  .sales-page-wrapper .form-actions {
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+  .sales-page-wrapper .form-actions .btn, .sales-page-wrapper .form-actions .GradientButton {
+    width: 100% !important;
+  }
+
   /* Show mobile toggle button in navbar */
   .mobile-toggle {
     display: inline-flex;
