@@ -531,6 +531,37 @@
   .page-offset {
     padding-top: 24px;
   }
+  .SectionCard, .section-card, .section-card, .section {
+    padding: 12px !important;
+  }
+  .SectionCard h3, .section-card h3, .section h3, .SectionCard .card-title  {
+    font-size: 1.05rem !important;
+    margin-bottom: 10px !important;
+  }
+  .table-container {
+    overflow-x: auto !important;
+    margin-bottom: 26px !important;
+  }
+  .table-container table {
+    min-width: 540px !important;
+  }
+  .form-container, .modal-content {
+    padding: 14px !important;
+  }
+  input.form-control, select.form-control, textarea.form-control, button.btn,
+  .GradientButton, .modal-content button, .modal-content input.form-control {
+    min-height: 38px !important;
+    font-size: 1rem !important;
+  }
+  .headerActions, .header-actions, .section [class*='headerActions'], .section [class*='header-actions'] {
+    flex-direction: column !important;
+    gap: 10px !important;
+    margin-top: 14px !important;
+    margin-bottom: 18px !important;
+  }
+  .SectionCard, .section-card, .form-container {
+    margin-bottom: 24px !important;
+  }
 }
 
 @media (max-width: 600px) {
