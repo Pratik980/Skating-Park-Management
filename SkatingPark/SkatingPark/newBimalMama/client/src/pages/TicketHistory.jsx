@@ -156,24 +156,30 @@ export default function TicketHistory() {
             };
           </script>
         </body>
-      </html>
-    `;
+      <style>{`
+        .ticket-history-wrapper {
+          width: 100% !important;
+          max-width: 100% !important;
+        }
+        .main-content {
+          margin-left: 250px !important;
+          width: calc(100% - 250px) !important;
+        }
+        .main-content .content-area {
+          max-width: 100% !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          background-color: transparent !important;
+          border-radius: 0 !important;
+          box-shadow: none !important;
+        }
 
-    const printWindow = window.open('', '_blank', 'width=400,height=600');
-    printWindow.document.open();
-    printWindow.document.write(printHtml);
-    printWindow.document.close();
-  };
-
-  // Handle delete ticket
-  const handleDelete = async (ticketId) => {
-    if (window.confirm('Are you sure you want to delete this ticket? This action cannot be undone.')) {
-      try {
-        await ticketsAPI.delete(ticketId);
-        setTicket(null);
-        setSearchValue('');
-        alert('Ticket deleted successfully');
-      } catch (error) {
+        /* Mobile override */
+        @media (max-width: 900px) {
+          .main-content { margin-left: 0 !important; width: 100% !important; }
+          .main-content .content-area { max-width: 720px !important; margin: 12px auto !important; padding: 18px !important; background-color: white !important; border-radius: 10px !important; box-shadow: 0 2px 10px rgba(0,0,0,0.08) !important; }
+        }
+      `}</style>
         console.error('Error deleting ticket:', error);
         alert(error.response?.data?.message || 'Error deleting ticket');
       }

@@ -98,7 +98,7 @@ function QRScanner() {
   return (
     <div className="qr-scanner-page-wrapper" style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #ffffff 0%, #f0f9f4 100%)', padding: '15px 20px', width: '100%', maxWidth: '100%', margin: 0 }}>
       <style>{`
-        .qr-scanner-page-wrapper {
+        .qrscanner-wrapper {
           width: 100% !important;
           max-width: 100% !important;
         }
@@ -113,6 +113,12 @@ function QRScanner() {
           background-color: transparent !important;
           border-radius: 0 !important;
           box-shadow: none !important;
+        }
+
+        /* Mobile override */
+        @media (max-width: 900px) {
+          .main-content { margin-left: 0 !important; width: 100% !important; }
+          .main-content .content-area { max-width: 720px !important; margin: 12px auto !important; padding: 18px !important; background-color: white !important; border-radius: 10px !important; box-shadow: 0 2px 10px rgba(0,0,0,0.08) !important; }
         }
       `}</style>
       <div className="page-header">

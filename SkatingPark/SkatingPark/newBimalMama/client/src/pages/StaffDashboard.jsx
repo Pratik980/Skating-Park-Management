@@ -93,24 +93,30 @@ const StaffDashboard = () => {
               };
             </script>
           </body>
-        </html>
-      `);
-      printWindow.document.close();
-      setAutoPrint(false);
-      setShowPrint(false);
-    }
-  }, [autoPrint, selectedTicket]);
+        <style>{`
+          .staff-dashboard-wrapper {
+            width: 100% !important;
+            max-width: 100% !important;
+          }
+          .main-content {
+            margin-left: 250px !important;
+            width: calc(100% - 250px) !important;
+          }
+          .main-content .content-area {
+            max-width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background-color: transparent !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+          }
 
-  const fetchDashboardData = async () => {
-    if (!currentBranch) return;
-    try {
-      setLoading(true);
-      const response = await summaryAPI.getDashboard(currentBranch._id);
-      setStats(response.data.dashboard);
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-    } finally {
-      setLoading(false);
+          /* Mobile override */
+          @media (max-width: 900px) {
+            .main-content { margin-left: 0 !important; width: 100% !important; }
+            .main-content .content-area { max-width: 720px !important; margin: 12px auto !important; padding: 18px !important; background-color: white !important; border-radius: 10px !important; box-shadow: 0 2px 10px rgba(0,0,0,0.08) !important; }
+          }
+        `}</style>
     }
   };
 

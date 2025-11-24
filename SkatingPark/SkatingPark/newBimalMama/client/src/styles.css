@@ -119,6 +119,81 @@ body {
     border-radius: 8px;
   }
 
+  /* Compact typography and spacing for mobile */
+  html, body {
+    font-size: 14px; /* base font slightly smaller on mobile */
+  }
+
+  h1 { font-size: 1.4rem; }
+  h2 { font-size: 1.1rem; }
+  h3 { font-size: 1rem; }
+  p, label, input, select, textarea, button { font-size: 0.95rem; }
+
+  /* Reduce paddings on common containers */
+  .card, .section, .summary-card {
+    padding: 12px;
+  }
+
+  /* Make dashboard cards tighter */
+  .dashboard-cards {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 10px;
+  }
+
+  /* Buttons smaller */
+  button {
+    padding: 8px 12px;
+    font-size: 0.95rem;
+    border-radius: 8px;
+  }
+
+  /* Sidebar: make it narrower on mobile */
+  .sidebar {
+    width: 200px;
+    padding: 12px;
+  }
+
+  .sidebar.mobile-open {
+    width: 200px;
+  }
+
+  .sidebar-logo-container img {
+    max-width: 90px;
+    max-height: 60px;
+  }
+
+  .sidebar h2 {
+    font-size: 1rem;
+  }
+
+  .sidebar .label { font-size: 0.95rem; }
+
+  /* Navbar adjustments */
+  .navbar { padding: 8px 10px; }
+  .navbar-title { font-size: 1.05rem !important; }
+
+  /* Reduce spacing in quick ticket grids */
+  .quick-ticket-grid { gap: 8px 10px; }
+  .quick-ticket-extra-grid { gap: 8px 10px; }
+
+  /* Compact forms */
+  input, select, textarea { padding: 8px; font-size: 0.95rem; }
+
+  /* Reduce modal sizes / margins */
+  .modal-content { padding: 12px; }
+
+  /* Make small utility components denser */
+  .user-info .user-name { font-size: 0.95rem; }
+  .user-info .user-role { font-size: 0.85rem; }
+
+  /* Ensure ticket quick actions and stats fit */
+  .modern-stat, .card, .summary-card { padding: 10px; }
+  .ModernStatValue, .modern-stat .value { font-size: 1.25rem; }
+
+  /* Tweak control-menu and hamburger sizing */
+  .hamburger-btn { padding: 6px 8px; font-size: 0.85rem; }
+
+
   /* Strong mobile overrides to prevent page-level styles from forcing desktop offsets */
   .main-content {
     margin-left: 0 !important;
