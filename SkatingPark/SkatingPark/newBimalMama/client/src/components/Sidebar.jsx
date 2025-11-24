@@ -3,7 +3,7 @@ import { NavLink } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { settingsAPI } from '../api/api';
 
-const Sidebar = () => {
+const Sidebar = ({ mobileOpen, onClose }) => {
   const { user, currentBranch } = useApp();
   const [settings, setSettings] = useState(null);
 
@@ -62,7 +62,13 @@ const Sidebar = () => {
   const logoUrl = settings?.logo;
 
   return (
-    <div className={`sidebar`}>
+    <div className={`sidebar ${mobileOpen ? 'mobile-open' : ''}`}>
+      {/* Mobile close button - visible only on small screens */}
+      {mobileOpen && (
+        <div className="mobile-close-wrap">
+          <button className="mobile-close" onClick={onClose} aria-label="Close navigation">✕</button>
+        </div>
+      )}
       <div className="sidebar-header">
         <div className="sidebar-logo-section">
           <div className="sidebar-logo-container">

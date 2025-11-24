@@ -73,6 +73,81 @@ body {
   box-shadow: 0 2px 10px rgba(0,0,0,0.08);
 }
 
+/* Mobile responsiveness: keep desktop unchanged; only apply below 900px */
+@media (max-width: 900px) {
+  .sidebar {
+    position: fixed;
+    left: -280px; /* hidden off-canvas */
+    top: 0;
+    bottom: 0;
+    z-index: 1200;
+    width: 260px;
+    padding: 18px;
+    transition: left 240ms ease-in-out;
+    box-shadow: 2px 0 12px rgba(0,0,0,0.12);
+  }
+
+  .sidebar.mobile-open {
+    left: 0; /* slide in */
+  }
+
+  /* Add a slight overlay when sidebar is open (using pseudo element on body could be done, keep minimal here) */
+  .main-content::before {
+    content: '';
+    display: block;
+    position: fixed;
+    inset: 0 0 0 0;
+    background: rgba(0,0,0,0.0);
+    pointer-events: none;
+    z-index: 1100;
+  }
+
+  /* Make main-content flow normally under mobile (no left offset) */
+  .main-content {
+    padding: 12px;
+  }
+
+  .content-area {
+    width: 100%;
+    margin: 12px 0;
+    padding: 18px;
+    border-radius: 8px;
+  }
+
+  /* Show mobile toggle button in navbar */
+  .mobile-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    padding: 6px;
+    margin-right: 6px;
+    cursor: pointer;
+  }
+
+  /* Show a close button inside sliding sidebar */
+  .mobile-close-wrap {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 6px;
+  }
+
+  .mobile-close {
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 1.25rem;
+    padding: 6px 8px;
+    cursor: pointer;
+  }
+}
+
+/* Hide mobile toggle on larger screens */
+@media (min-width: 901px) {
+  .mobile-toggle { display: none; }
+}
+
 /* No collapsed sidebar behavior - content always centered by .content-area */
 
 h1 {

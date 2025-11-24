@@ -1,15 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
 
 const Layout = () => {
+  const [isMobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+
   return (
     <div className="main-layout">
-      <Sidebar />
+      <Sidebar mobileOpen={isMobileSidebarOpen} onClose={() => setMobileSidebarOpen(false)} />
       <div className={`main-content`}>
         <Navbar 
-          onToggleSidebar={() => {}} 
+          onToggleSidebar={() => setMobileSidebarOpen(open => !open)} 
           isSidebarCollapsed={false} 
         />
         <div className="content-area">
