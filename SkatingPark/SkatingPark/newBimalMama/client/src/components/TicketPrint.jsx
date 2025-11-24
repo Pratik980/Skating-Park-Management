@@ -120,7 +120,10 @@ const TicketPrint = ({ ticket }) => {
               const minsToAdd = isRefunded ? extraMinutes : 60 + extraMinutes;
               const end = new Date(start.getTime() + minsToAdd * 60000);
               const endTimeStr = end.toTimeString().substring(0, 5);
-              return `${ticket.time} - ${endTimeStr}`;
+              // Sanitize any stray characters (e.g. accidental '$') before showing
+              const cleanStart = String(ticket.time || '').replace(/[^0-9:\s]/g, '').trim();
+              const cleanEnd = String(endTimeStr || '').replace(/[^0-9:\s]/g, '').trim();
+              return `${cleanStart} - ${cleanEnd}`;
             })()}
           </span>
         </div>

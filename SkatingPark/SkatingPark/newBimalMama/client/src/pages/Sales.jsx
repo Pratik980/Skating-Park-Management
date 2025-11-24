@@ -352,7 +352,7 @@ const Sales = () => {
           }
         >
           <form onSubmit={handleSubmit}>
-            <div className="sales-form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
               <div style={{
                 background: 'rgba(39, 174, 96, 0.05)',
                 border: '1px solid rgba(39, 174, 96, 0.2)',
@@ -379,7 +379,6 @@ const Sales = () => {
                     {formData.items.map((item, index) => (
                       <div
                         key={index}
-                        className="sale-item-row"
                         style={{
                           display: 'grid',
                           gridTemplateColumns: '2.3fr 0.9fr 1fr 1.2fr 38px',

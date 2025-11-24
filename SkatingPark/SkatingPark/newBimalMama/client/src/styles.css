@@ -386,10 +386,7 @@ body {
   .modern-stat .label { font-size: 0.78rem !important; }
 }
 
-/* Hide dashboard hero on larger screens if mobile-only hero desired */
-@media (min-width: 901px) {
-  .dashboard-hero { display: none !important; }
-}
+/* Allow dashboard hero on all screen sizes */
 
 h1 {
   color: #2c3e50;

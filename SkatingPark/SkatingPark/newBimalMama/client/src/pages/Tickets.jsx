@@ -93,7 +93,8 @@ function formatTime(timeStr, englishDate = null) {
   // Fallback to stored time string if no englishDate
   if (!timeStr) return '—';
   if (typeof timeStr === 'string') {
-    return timeStr.substring(0, 5); // Get HH:mm part
+    const sanitized = timeStr.replace(/[^0-9:]/g, '');
+    return sanitized.substring(0, 5); // Get HH:mm part
   }
   return timeStr;
 }
@@ -2502,7 +2503,18 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
                       <td style={{ padding: '4px 3px', textAlign: 'center' }}>{ticket.numberOfPeople || ticket.playerStatus?.totalPlayers || 1}</td>
                       <td style={{ padding: '4px 3px', textAlign: 'center', whiteSpace: 'nowrap' }}>{ticket.totalExtraMinutes || 0} min</td>
                       <td style={{ padding: '4px 3px' }}><small><strong>{formatNepaliDate(ticket.date?.nepaliDate)}</strong><br /><span style={{ color: '#666', fontSize: '0.85em' }}>{formatDate(ticket.date?.englishDate || ticket.createdAt)}</span></small></td>
-                      <td style={{ padding: '4px 3px', whiteSpace: 'nowrap' }}><small><strong>{formatTime(ticket.time, ticket.date?.englishDate || ticket.createdAt)}</strong>${(() => {if (!ticket.time) return '';const dateObj = ticket.date?.englishDate ? new Date(ticket.date.englishDate) : null;if (!dateObj) return '';const endTime = getEndTime(ticket.time, dateObj, ticket.totalExtraMinutes || 0, ticket.isRefunded);return endTime ? ` - ${endTime}` : '';})()}</small></td>
+                      <td style={{ padding: '4px 3px', whiteSpace: 'nowrap' }}>
+                        <small>
+                          <strong>{formatTime(ticket.time, ticket.date?.englishDate || ticket.createdAt)} </strong>
+                          {(() => {
+                            if (!ticket.time) return '';
+                            const dateObj = ticket.date?.englishDate ? new Date(ticket.date.englishDate) : null;
+                            if (!dateObj) return '';
+                            const endTime = getEndTime(ticket.time, dateObj, ticket.totalExtraMinutes || 0, ticket.isRefunded);
+                            return endTime ? `- ${endTime}` : '';
+                          })()}
+                        </small>
+                      </td>
                       <td style={{ padding: '4px 3px' }}>{(() => {const created = ticket.date?.englishDate ? new Date(ticket.date.englishDate) : new Date(ticket.createdAt);const now = new Date();const oneHourPassed = ((now - created) / 36e5) > 1;if (oneHourPassed && !ticket.isRefunded) {return <span className="badge badge-secondary">Deactivated</span>;}if (ticket.isRefunded) {return <span className="badge badge-danger">Refunded</span>;}return <span className="badge badge-warning">Playing</span>;})()}</td>
                       <td style={{ padding: '4px 3px' }}>{(() => {const refundAmt = ticket.refundAmount || (ticket.isRefunded ? (ticket.fee || 0) : 0);if (refundAmt > 0) {return (<div style={{ fontSize: '0.85em' }}><div className="text-danger"><strong>रु {refundAmt.toLocaleString()}</strong></div>{ticket.refundReason && (<div className="text-muted" style={{ fontSize: '0.75em' }}>{ticket.refundReason}</div>)}{ticket.refundDetails?.refundMethod && (<div className="text-muted" style={{ fontSize: '0.75em' }}>({ticket.refundDetails.refundMethod})</div>)}</div>);}return <span>रु 0</span>;})()}</td>
                       <td style={{ padding: '4px 3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}><small>{ticket.remarks || '—'}</small></td>

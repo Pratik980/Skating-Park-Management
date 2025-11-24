@@ -81,7 +81,8 @@ function formatTime(timeStr, englishDate = null) {
   // Fallback to stored time string if no englishDate
   if (!timeStr) return '—';
   if (typeof timeStr === 'string') {
-    return timeStr.substring(0, 5); // Get HH:mm part
+    const sanitized = timeStr.replace(/[^0-9:]/g, '');
+    return sanitized.substring(0, 5); // Get HH:mm part
   }
   return timeStr;
 }
