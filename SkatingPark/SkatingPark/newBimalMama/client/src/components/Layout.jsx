@@ -1,25 +1,21 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
 
 const Layout = () => {
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
-
-  const handleToggleSidebar = () => {
-    setIsSidebarCollapsed(prev => !prev);
-  };
-
   return (
     <div className="main-layout">
-      <Sidebar collapsed={isSidebarCollapsed} />
-      <div className={`main-content ${isSidebarCollapsed ? 'collapsed' : ''}`}>
+      <Sidebar />
+      <div className={`main-content`}>
         <Navbar 
-          onToggleSidebar={handleToggleSidebar} 
-          isSidebarCollapsed={isSidebarCollapsed} 
+          onToggleSidebar={() => {}} 
+          isSidebarCollapsed={false} 
         />
         <div className="content-area">
-          <Outlet />
+          <div className="page-offset">
+            <Outlet />
+          </div>
         </div>
       </div>
     </div>

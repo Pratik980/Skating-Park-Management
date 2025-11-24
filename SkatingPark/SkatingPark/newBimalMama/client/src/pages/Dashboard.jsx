@@ -146,13 +146,37 @@ const Dashboard = () => {
   };
 
   return (
-    <div style={{ 
-      minHeight: '100vh', 
-      display: 'flex', 
-      flexDirection: 'column', 
-      background: theme.bg,
-      transition: 'background 0.3s ease'
-    }}>
+    <div
+      className="dashboard-page-wrapper"
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        background: theme.bg,
+        transition: 'background 0.3s ease',
+        width: '100%',
+        maxWidth: '100%',
+        margin: 0
+      }}
+    >
+      <style>{`
+        .dashboard-page-wrapper {
+          width: 100% !important;
+          max-width: 100% !important;
+        }
+        .main-content {
+          margin-left: 250px !important;
+          width: calc(100% - 250px) !important;
+        }
+        .main-content .content-area {
+          max-width: 100% !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          background-color: transparent !important;
+          border-radius: 0 !important;
+          box-shadow: none !important;
+        }
+      `}</style>
       <NotificationContainer />
       <div style={{ flex: 1, padding: '20px' }}>
         {/* Modern Header with Dark Mode Toggle */}
@@ -603,48 +627,47 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Branch Info - Enhanced */}
+        {/* Branch Info - Compact Green */}
         {currentBranch && (
           <div style={{
-            background: theme.headerGradient,
-            borderRadius: '24px',
-            padding: '35px',
-            boxShadow: theme.shadow,
+            background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+            borderRadius: '12px',
+            padding: '12px',
+            boxShadow: '0 6px 18px rgba(5,150,105,0.12)',
             color: 'white',
             position: 'relative',
             overflow: 'hidden'
           }}>
-            <h3 style={{ marginTop: 0, marginBottom: '25px', fontSize: '1.6rem', fontWeight: 700 }}>
+            <h3 style={{ marginTop: 0, marginBottom: '10px', fontSize: '1.05rem', fontWeight: 700 }}>
               🏢 Current Branch
             </h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '25px', position: 'relative', zIndex: 1 }}>
-              <div style={{ padding: '15px', background: 'rgba(255, 255, 255, 0.1)', borderRadius: '15px', backdropFilter: 'blur(10px)' }}>
-                <div style={{ fontSize: '0.9rem', opacity: 0.9, marginBottom: '8px', fontWeight: 500 }}>Branch Name</div>
-                <div style={{ fontSize: '1.3rem', fontWeight: 700 }}>{currentBranch.branchName}</div>
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', position: 'relative', zIndex: 1 }}>
+              <div style={{ padding: '8px 10px', background: 'rgba(255,255,255,0.08)', borderRadius: '10px', minWidth: '160px' }}>
+                <div style={{ fontSize: '0.78rem', opacity: 0.95, marginBottom: '4px', fontWeight: 600 }}>Branch</div>
+                <div style={{ fontSize: '0.95rem', fontWeight: 700 }}>{currentBranch.branchName}</div>
               </div>
-              <div style={{ padding: '15px', background: 'rgba(255, 255, 255, 0.1)', borderRadius: '15px', backdropFilter: 'blur(10px)' }}>
-                <div style={{ fontSize: '0.9rem', opacity: 0.9, marginBottom: '8px', fontWeight: 500 }}>Location</div>
-                <div style={{ fontSize: '1.3rem', fontWeight: 700 }}>{currentBranch.location}</div>
+              <div style={{ padding: '8px 10px', background: 'rgba(255,255,255,0.06)', borderRadius: '10px', minWidth: '120px' }}>
+                <div style={{ fontSize: '0.78rem', opacity: 0.95, marginBottom: '4px', fontWeight: 600 }}>Location</div>
+                <div style={{ fontSize: '0.95rem', fontWeight: 700 }}>{currentBranch.location}</div>
               </div>
-              <div style={{ padding: '15px', background: 'rgba(255, 255, 255, 0.1)', borderRadius: '15px', backdropFilter: 'blur(10px)' }}>
-                <div style={{ fontSize: '0.9rem', opacity: 0.9, marginBottom: '8px', fontWeight: 500 }}>Contact</div>
-                <div style={{ fontSize: '1.3rem', fontWeight: 700 }}>{currentBranch.contactNumber}</div>
+              <div style={{ padding: '8px 10px', background: 'rgba(255,255,255,0.06)', borderRadius: '10px', minWidth: '120px' }}>
+                <div style={{ fontSize: '0.78rem', opacity: 0.95, marginBottom: '4px', fontWeight: 600 }}>Contact</div>
+                <div style={{ fontSize: '0.95rem', fontWeight: 700 }}>{currentBranch.contactNumber}</div>
               </div>
-              <div style={{ padding: '15px', background: 'rgba(255, 255, 255, 0.1)', borderRadius: '15px', backdropFilter: 'blur(10px)' }}>
-                <div style={{ fontSize: '0.9rem', opacity: 0.9, marginBottom: '8px', fontWeight: 500 }}>Operating Hours</div>
-                <div style={{ fontSize: '1.3rem', fontWeight: 700 }}>{currentBranch.openingTime} - {currentBranch.closingTime}</div>
+              <div style={{ padding: '8px 10px', background: 'rgba(255,255,255,0.06)', borderRadius: '10px', minWidth: '150px' }}>
+                <div style={{ fontSize: '0.78rem', opacity: 0.95, marginBottom: '4px', fontWeight: 600 }}>Hours</div>
+                <div style={{ fontSize: '0.95rem', fontWeight: 700 }}>{currentBranch.openingTime} - {currentBranch.closingTime}</div>
               </div>
             </div>
             <div style={{
               position: 'absolute',
-              bottom: '-60px',
-              right: '-60px',
-              width: '250px',
-              height: '250px',
-              background: 'rgba(255, 255, 255, 0.1)',
+              bottom: '-30px',
+              right: '-30px',
+              width: '140px',
+              height: '140px',
+              background: 'rgba(255, 255, 255, 0.06)',
               borderRadius: '50%',
-              filter: 'blur(50px)',
-              animation: 'float 10s ease-in-out infinite'
+              filter: 'blur(30px)'
             }}></div>
           </div>
         )}

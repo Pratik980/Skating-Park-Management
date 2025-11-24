@@ -58,7 +58,6 @@ import './App.css';
 const Login = lazy(() => import('./pages/Login'));
 const Signup = lazy(() => import('./pages/Signup'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
-const StaffDashboard = lazy(() => import('./pages/StaffDashboard'));
 const Users = lazy(() => import('./pages/Users'));
 const Branches = lazy(() => import('./pages/Branches'));
 const Tickets = lazy(() => import('./pages/Tickets'));
@@ -86,8 +85,8 @@ function App() {
                 <Route path="tickets" element={<Tickets />} />
                 <Route path="sales" element={<Sales />} />
                 <Route path="expenses" element={<Expenses />} />
-                <Route path="summary" element={<Summary />} />
-                <Route path="customers" element={<CustomerDetails />} />
+                <Route path="summary" element={<AdminOnly><Summary /></AdminOnly>} />
+                <Route path="customers" element={<AdminOnly><CustomerDetails /></AdminOnly>} />
                 <Route path="ticket-history" element={<TicketHistory />} />
                 <Route path="settings" element={<AdminOnly><Settings /></AdminOnly>} />
                 <Route path="backup" element={<AdminOnly><BackupRestore /></AdminOnly>} />
@@ -100,14 +99,22 @@ function App() {
   );
 }
 
+const getSessionToken = () => {
+  if (typeof window === 'undefined') return null;
+  return window.sessionStorage.getItem('token');
+};
+
 const ProtectedRoute = ({ children }) => {
-  const token = localStorage.getItem('token');
+  const token = getSessionToken();
   return token ? children : <Navigate to="/login" />;
 };
 
 const RoleBasedDashboard = () => {
   const { user } = useApp();
-  return user?.role === 'admin' ? <Dashboard /> : <StaffDashboard />;
+  if (user?.role === 'admin') {
+    return <Dashboard />;
+  }
+  return <Navigate to="/tickets" replace />;
 };
 
 const AdminOnly = ({ children }) => {

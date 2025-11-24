@@ -6,7 +6,6 @@ import Loader from '../components/Loader';
 import NotificationContainer from '../components/NotificationContainer';
 import TicketPrint from '../components/TicketPrint';
 import logo from '/valyntix-logo.png.jpg';
-import ModernHeader from '../components/ModernHeader';
 import SectionCard from '../components/SectionCard';
 import ModernStat from '../components/ModernStat';
 import GradientButton from '../components/GradientButton';
@@ -162,6 +161,7 @@ const Tickets = () => {
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [autoPrint, setAutoPrint] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [showControlMenu, setShowControlMenu] = useState(false);
   const [historyTickets, setHistoryTickets] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyPage, setHistoryPage] = useState(1);
@@ -663,6 +663,27 @@ const Tickets = () => {
     }
   }, [showRefundModal, fetchRecentRefunds]);
 
+  // Refs for quick-add input fields so Enter can move focus
+  const quickAddRefs = useRef([]);
+
+  const setQuickAddRef = (el, idx) => {
+    quickAddRefs.current = quickAddRefs.current || [];
+    quickAddRefs.current[idx] = el;
+  };
+
+  const handleQuickAddEnter = (e, idx) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      const next = quickAddRefs.current && quickAddRefs.current[idx + 1];
+      if (next && typeof next.focus === 'function') {
+        next.focus();
+      } else {
+        // If no next field, submit the quick add form
+        handleQuickAddSubmit();
+      }
+    }
+  };
+
   const closeHistoryModal = () => {
     setShowHistory(false);
     setHistoryTickets([]);
@@ -946,10 +967,7 @@ const Tickets = () => {
   };
 
   const ticketTypes = {
-    'Adult': { price: 100, label: 'Adult' },
-    'Child': { price: 100, label: 'Child' },
-    'Group': { price: 100, label: 'Group' },
-    'Custom': { price: 0, label: 'Custom' }
+    'Adult': { price: 100, label: 'Adult' }
   };
 
   const getPerPersonAmount = (ticket) => {
@@ -1177,59 +1195,219 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
 
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #f5f7ff 0%, #eef2ff 55%, #ffffff 100%)', padding: '20px' }}>
+    <div className="tickets-page-wrapper" style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #ffffff 0%, #f0f9f4 55%, #ffffff 100%)', padding: '15px 20px', width: '100%', maxWidth: '100%', margin: 0 }}>
+      <style>{`
+        /* Override content-area for Tickets page to be full width - scoped to this page only */
+        .tickets-page-wrapper {
+          width: 100% !important;
+          max-width: 100% !important;
+        }
+        /* Ensure main-content positioning is preserved */
+        .main-content {
+          margin-left: 250px !important;
+          width: calc(100% - 250px) !important;
+        }
+        /* Override content-area constraints for Tickets page */
+        .main-content .content-area {
+          max-width: 100% !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          background-color: transparent !important;
+          border-radius: 0 !important;
+          box-shadow: none !important;
+        }
+      `}</style>
       <NotificationContainer />
 
-      <ModernHeader
-        title="Ticket Management"
-        subtitle="Create new tickets, extend play time, and process refunds from a single command center"
-        icon="🎟️"
-      />
-
-      <SectionCard title="Control Center" icon="🛠️" accentColor="#f97316">
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px' }}>
-          {canManageTickets && (
-            <GradientButton color="#5b21b6" onClick={() => navigate('/sales')}>
-              💰 Go to Sales
+      {/* Control Center Menu at top-right above stats */}
+      <style>{`
+        .control-center-trigger-row {
+          display: flex;
+          justify-content: flex-end;
+          align-items: flex-start;
+          margin-bottom: 6px;
+        }
+        .control-center-menu {
+          position: absolute;
+          right: 0; top: 100%;
+          min-width: 145px;
+          background: white;
+          box-shadow: 0 6px 22px 0 rgba(0,0,0,0.11);
+          border-radius: 8px;
+          padding: 6px 0 4px 0;
+          z-index: 3;
+          opacity: 0;
+          pointer-events: none;
+          transform: translateY(-14px) scale(0.98);
+          transition: opacity 0.23s, transform 0.23s;
+        }
+        .control-center-menu.open {
+          opacity: 1;
+          pointer-events: auto;
+          transform: translateY(0) scale(1);
+        }
+        .hamburger-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          padding: 5px 12px 5px 7px;
+          background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+          color: white;
+          border: none;
+          border-radius: 18px 8px 8px 18px;
+          font-size: 0.7rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.21s cubic-bezier(0.4,0,0.2,1);
+          box-shadow: 0 1px 5px rgba(39,174,96,0.14);
+          min-height: 26px;
+          position: relative;
+        }
+        .hamburger-btn:hover {
+          background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+          transform: translateY(-1px);
+        }
+        .hamburger-btn .hamburger-icon {
+          display: flex;
+          flex-direction: column;
+          gap: 3px;
+          width: 15px; height: 12px;
+        }
+        .hamburger-btn .hamburger-icon span {
+          display: block;
+          width: 100%; height: 2px;
+          background: white;
+          border-radius: 2px;
+          transition: all 0.3s;
+        }
+        .hamburger-btn.open .hamburger-icon span:nth-child(1) {
+          transform: rotate(45deg) translate(3px, 4px);
+        }
+        .hamburger-btn.open .hamburger-icon span:nth-child(2) {
+          opacity: 0;
+        }
+        .hamburger-btn.open .hamburger-icon span:nth-child(3) {
+          transform: rotate(-45deg) translate(4px, -3px);
+        }
+        .quick-menu-btn-list {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+          padding-right: 10px;
+        }
+      `}</style>
+      <div className="control-center-trigger-row" style={{ position: 'relative' }}>
+        <button
+          className={`hamburger-btn${showControlMenu ? ' open' : ''}`}
+          onClick={() => setShowControlMenu(v => !v)}
+        >
+          <div className="hamburger-icon">
+            <span></span><span></span><span></span>
+          </div>
+          <span style={{ fontSize: '0.7rem', marginLeft: '4px' }}>Menu</span>
+        </button>
+        <div className={`control-center-menu${showControlMenu ? ' open' : ''}`}>
+          <div className="quick-menu-btn-list">
+            {canManageTickets && (
+              <GradientButton
+                color="#5b21b6"
+                onClick={() => { setShowControlMenu(false); navigate('/sales'); }}
+                style={{ fontSize: '0.7rem', padding: '4.5px 10px', borderRadius: '6px', fontWeight: 600, minHeight: '26px', justifyContent: 'flex-start' }}
+              >
+                💰 Sales
+              </GradientButton>
+            )}
+            <GradientButton
+              color="#f97316"
+              onClick={() => { setShowControlMenu(false); setShowRefundModal(true); }}
+              style={{ fontSize: '0.7rem', padding: '4.5px 10px', borderRadius: '6px', fontWeight: 600, minHeight: '26px', justifyContent: 'flex-start' }}
+            >
+              🔁 Refund
             </GradientButton>
-          )}
-          <GradientButton color="#f97316" onClick={() => setShowRefundModal(true)}>
-            🔁 Ticket Refund
-          </GradientButton>
-          <GradientButton color="#1d4ed8" onClick={() => setShowExtraTimeModal(true)}>
-            ⏳ Extra Time
-          </GradientButton>
-          {isAdmin && (
-            <GradientButton color="#0ea5e9" onClick={() => setShowHistory(true)}>
-              📜 Ticket History
+            <GradientButton
+              color="#1d4ed8"
+              onClick={() => { setShowControlMenu(false); setShowExtraTimeModal(true); }}
+              style={{ fontSize: '0.7rem', padding: '4.5px 10px', borderRadius: '6px', fontWeight: 600, minHeight: '26px', justifyContent: 'flex-start' }}
+            >
+              ⏳ Extra Time
             </GradientButton>
-          )}
-          <GradientButton color="#475569" onClick={fetchTickets} disabled={loading}>
-            {loading ? 'Refreshing...' : '🔄 Refresh'}
-          </GradientButton>
+            {isAdmin && (
+              <GradientButton
+                color="#0ea5e9"
+                onClick={() => { setShowControlMenu(false); setShowHistory(true); }}
+                style={{ fontSize: '0.7rem', padding: '4.5px 10px', borderRadius: '6px', fontWeight: 600, minHeight: '26px', justifyContent: 'flex-start' }}
+              >
+                📜 History
+              </GradientButton>
+            )}
+            <GradientButton
+              color="#475569"
+              onClick={() => { setShowControlMenu(false); fetchTickets(); }}
+              disabled={loading}
+              style={{ fontSize: '0.7rem', padding: '4.5px 10px', borderRadius: '6px', fontWeight: 600, minHeight: '26px', justifyContent: 'flex-start' }}
+            >
+              {loading ? '⏳' : '🔄'} {loading ? 'Loading' : 'Refresh'}
+            </GradientButton>
+          </div>
         </div>
-      </SectionCard>
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '18px', marginBottom: '26px' }}>
-        <ModernStat value={tickets.length} label="Today's Tickets" color="#8b5cf6" icon="🎟️" />
-        <ModernStat value={playingTickets} label="Active / Playing" color="#10b981" icon="⚡" />
-        <ModernStat value={refundedToday} label="Refunded Today" color="#f43f5e" icon="↺" />
-        <ModernStat value={todaysRevenue} label="Revenue (रु)" color="#f59e0b" icon="₨" />
-        <ModernStat value={totalExtraMinutes} label="Extra Minutes" color="#0ea5e9" icon="⏱️" />
       </div>
 
+      {/* Right Side - ModernStat Components (Admin only) */}
+      {user?.role === 'admin' && (
+        <div style={{ animation: 'slideInFromRight 0.8s cubic-bezier(.19,.94,.62,1.17)', marginBottom: '18px', minHeight: '1px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px' }}>
+            <ModernStat value={tickets.length} label="Today's Tickets" color="#8b5cf6" icon="🎟️" animationDirection="right" />
+            <ModernStat value={playingTickets} label="Active / Playing" color="#10b981" icon="⚡" animationDirection="right" />
+            <ModernStat value={refundedToday} label="Refunded Today" color="#f43f5e" icon="↺" animationDirection="right" />
+            <ModernStat value={todaysRevenue} label="Revenue (रु)" color="#f59e0b" icon="₨" animationDirection="right" />
+            <ModernStat value={totalExtraMinutes} label="Extra Minutes" color="#0ea5e9" icon="⏱️" animationDirection="right" />
+          </div>
+        </div>
+      )}
+
       {(user?.role === 'admin' || user?.role === 'staff') && (
-        <SectionCard title="Quick Ticket Entry" icon="⚡" accentColor="#6366f1">
-          <div className="grid grid-5 gap-2">
+        <SectionCard title="Quick Ticket Entry" icon="⚡" accentColor="#27ae60">
+          <style>{`
+            .quick-ticket-grid {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 10px 18px;
+            }
+            @media (max-width: 700px) {
+              .quick-ticket-grid {
+                grid-template-columns: 1fr;
+                gap: 8px;
+              }
+            }
+            .quick-ticket-extra-grid {
+              display: grid;
+              grid-template-columns: 1fr 1fr 1fr;
+              gap: 10px 18px;
+              margin-top: 6px;
+            }
+            @media (max-width: 800px) {
+              .quick-ticket-extra-grid {
+                grid-template-columns: 1fr;
+              }
+            }
+            .quick-ticket-compact-actions {
+              display: flex;
+              gap: 10px;
+              margin-top: 14px;
+              margin-bottom: 0;
+            }
+          `}</style>
+          <div className="quick-ticket-grid">
               <div>
                 <label className="form-label">Customer Name *</label>
                 <input
-                  ref={nameInputRef}
+                  ref={el => setQuickAddRef(el, 0)}
                   type="text"
                   className="form-control"
                   value={quickAddData.name}
-                  onChange={(e) => setQuickAddData({ ...quickAddData, name: e.target.value })}
-                  onKeyPress={handleKeyPress}
+                  onChange={e => setQuickAddData({...quickAddData, name: e.target.value })}
+                  onKeyDown={e => handleQuickAddEnter(e, 0)}
                   placeholder="Enter customer name"
                   required
                 />
@@ -1237,11 +1415,12 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
               <div>
                 <label className="form-label">Player Names</label>
                 <input
+                  ref={el => setQuickAddRef(el, 1)}
                   type="text"
                   className="form-control"
                   value={quickAddData.playerNames}
-                  onChange={(e) => setQuickAddData({ ...quickAddData, playerNames: e.target.value })}
-                  onKeyPress={handleKeyPress}
+                  onChange={e => setQuickAddData({...quickAddData, playerNames: e.target.value })}
+                  onKeyDown={e => handleQuickAddEnter(e, 1)}
                   placeholder="Rahul, Ritesh, Suresh"
                 />
                 <small className="text-muted">Separate with commas</small>
@@ -1249,11 +1428,12 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
               <div>
                 <label className="form-label">Contact Number</label>
                 <input
+                  ref={el => setQuickAddRef(el, 2)}
                   type="text"
                   className="form-control"
                   value={quickAddData.contactNumber}
-                  onChange={(e) => setQuickAddData({ ...quickAddData, contactNumber: e.target.value })}
-                  onKeyPress={handleKeyPress}
+                  onChange={e => setQuickAddData({...quickAddData, contactNumber: e.target.value })}
+                  onKeyDown={e => handleQuickAddEnter(e, 2)}
                   placeholder="Enter contact number(s) for players"
                 />
                 <small className="text-muted">Enter contact numbers manually (can be multiple)</small>
@@ -1261,9 +1441,10 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
               <div>
                 <label className="form-label">Ticket Type</label>
                 <select
+                  ref={el => setQuickAddRef(el, 3)}
                   className="form-control"
                   value={quickAddData.ticketType}
-                  onChange={(e) => {
+                  onChange={e => {
                     const type = e.target.value;
                     setQuickAddData({
                       ...quickAddData,
@@ -1271,7 +1452,7 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
                       fee: ticketTypes[type].price.toString()
                     });
                   }}
-                  onKeyPress={handleKeyPress}
+                  onKeyDown={e => handleQuickAddEnter(e, 3)}
                 >
                   {Object.entries(ticketTypes).map(([key, value]) => (
                     <option key={key} value={key}>
@@ -1283,11 +1464,12 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
               <div>
                 <label className="form-label">Fee per Person (NPR) *</label>
                 <input
+                  ref={el => setQuickAddRef(el, 4)}
                   type="number"
                   className="form-control"
                   value={quickAddData.fee}
-                  onChange={(e) => setQuickAddData({ ...quickAddData, fee: e.target.value })}
-                  onKeyPress={handleKeyPress}
+                  onChange={e => setQuickAddData({...quickAddData, fee: e.target.value })}
+                  onKeyDown={e => handleQuickAddEnter(e, 4)}
                   min="0"
                   step="1"
                   required
@@ -1299,11 +1481,12 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
               <div>
                 <label className="form-label">Number of People</label>
                 <input
+                  ref={el => setQuickAddRef(el, 5)}
                   type="number"
                   className="form-control"
                   value={quickAddData.numberOfPeople}
-                  onChange={(e) => setQuickAddData({ ...quickAddData, numberOfPeople: e.target.value })}
-                  onKeyPress={handleKeyPress}
+                  onChange={e => setQuickAddData({...quickAddData, numberOfPeople: e.target.value })}
+                  onKeyDown={e => handleQuickAddEnter(e, 5)}
                   min="1"
                   step="1"
                 />
@@ -1312,11 +1495,12 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
               <div>
                 <label className="form-label">Discount (Optional)</label>
                 <input
+                  ref={el => setQuickAddRef(el, 6)}
                   type="number"
                   className="form-control"
                   value={quickAddData.discount}
-                  onChange={(e) => setQuickAddData({ ...quickAddData, discount: e.target.value })}
-                  onKeyPress={handleKeyPress}
+                  onChange={e => setQuickAddData({...quickAddData, discount: e.target.value })}
+                  onKeyDown={e => handleQuickAddEnter(e, 6)}
                   min="0"
                   step="1"
                   placeholder="0"
@@ -1326,83 +1510,65 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
               <div>
                 <label className="form-label">Remarks</label>
                 <input
+                  ref={el => setQuickAddRef(el, 7)}
                   type="text"
                   className="form-control"
                   value={quickAddData.remarks}
-                  onChange={(e) => setQuickAddData({ ...quickAddData, remarks: e.target.value })}
-                  onKeyPress={handleKeyPress}
+                  onChange={e => setQuickAddData({...quickAddData, remarks: e.target.value })}
+                  onKeyDown={e => handleQuickAddEnter(e, 7)}
                   placeholder="Any remarks"
                 />
               </div>
-            </div>
-          <div className="grid grid-3 gap-2 mt-3">
+          </div>
+          <div className="quick-ticket-extra-grid">
               <div>
                 <label className="form-label">Group Name (optional)</label>
                 <input
+                  ref={el => setQuickAddRef(el, 8)}
                   type="text"
                   className="form-control"
                   value={quickAddData.groupName}
-                  onChange={(e) => setQuickAddData({ ...quickAddData, groupName: e.target.value })}
-                  onKeyPress={handleKeyPress}
+                  onChange={e => setQuickAddData({...quickAddData, groupName: e.target.value })}
+                  onKeyDown={e => handleQuickAddEnter(e, 8)}
                   placeholder="E.g., School Tour"
                 />
               </div>
               <div>
                 <label className="form-label">Group Number</label>
                 <input
+                  ref={el => setQuickAddRef(el, 9)}
                   type="text"
                   className="form-control"
                   value={quickAddData.groupNumber}
-                  onChange={(e) => setQuickAddData({ ...quickAddData, groupNumber: e.target.value })}
-                  onKeyPress={handleKeyPress}
+                  onChange={e => setQuickAddData({...quickAddData, groupNumber: e.target.value })}
+                  onKeyDown={e => handleQuickAddEnter(e, 9)}
                   placeholder="ID / Reference"
                 />
               </div>
               <div>
                 <label className="form-label">Group Price (NPR)</label>
                 <input
+                  ref={el => setQuickAddRef(el, 10)}
                   type="number"
                   className="form-control"
                   value={quickAddData.groupPrice}
-                  onChange={(e) => setQuickAddData({ ...quickAddData, groupPrice: e.target.value })}
-                  onKeyPress={handleKeyPress}
+                  onChange={e => setQuickAddData({...quickAddData, groupPrice: e.target.value })}
+                  onKeyDown={e => handleQuickAddEnter(e, 10)}
                   min="0"
                   step="1"
                   placeholder="Total group price"
                 />
               </div>
-            </div>
-          <div className="d-flex gap-2 mt-3">
+          </div>
+          <div className="quick-ticket-compact-actions">
             <GradientButton 
               color="#10b981"
               onClick={handleQuickAddSubmit}
               disabled={loading}
+              style={{ fontSize: '0.78rem', padding: '6px 16px', minHeight: '32px', borderRadius: '8px' }}
             >
               {loading ? 'Creating...' : 'Add & Auto-Print (Enter)'}
             </GradientButton>
-            <GradientButton 
-              color="#94a3b8"
-              onClick={() => setQuickAddData({
-                name: '',
-                contactNumber: '',
-                playerNames: '',
-                ticketType: 'Adult',
-                fee: '100',
-                  discount: '',
-                numberOfPeople: '1',
-                remarks: '',
-                groupName: '',
-                groupNumber: '',
-                groupPrice: ''
-              })}
-            >
-              Clear
-            </GradientButton>
-          </div>
-          <div className="mt-2">
-            <small className="text-muted">
-              Press Enter to save and auto-print | Prints exactly as shown
-            </small>
           </div>
         </SectionCard>
       )}
@@ -1455,7 +1621,7 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
             <SectionCard
               title="Ticket Refund"
               icon="🔁"
-              accentColor="#f97316"
+              accentColor="#27ae60"
               style={{ padding: '28px 28px 24px' }}
               headerActions={
                 <>
@@ -1478,7 +1644,7 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
               }
             >
               {/* Ticket Search & Details Card */}
-              <SectionCard title="Search & Refund Ticket" icon="🔎" accentColor="#18a6ff" style={{ marginBottom: 18 }}>
+              <SectionCard title="Search & Refund Ticket" icon="🔎" accentColor="#27ae60" style={{ marginBottom: 18 }}>
                 <div className="form-group">
                   <label className="form-label">Ticket ID / Number</label>
                   <div className="d-flex gap-2">
@@ -1495,7 +1661,7 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
                 </div>
                 {/* Ticket Details */}
                 {!!refundTicket && (
-                  <SectionCard title="Ticket Details" icon="🎟️" accentColor="#f59e0b" style={{ marginTop: 16 }}>
+                  <SectionCard title="Ticket Details" icon="🎟️" accentColor="#27ae60" style={{ marginTop: 16 }}>
                     {(() => {
                       const discount = refundTicket.discount || 0;
                       const amountPaid = refundTicket.fee || 0;
@@ -1554,7 +1720,7 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
               </SectionCard>
               {/* Refund Form Card */}
               {!!refundTicket && (
-                <SectionCard title="Refund Details" icon="💸" accentColor="#d97706" style={{ marginBottom: 18 }}>
+                <SectionCard title="Refund Details" icon="💸" accentColor="#27ae60" style={{ marginBottom: 18 }}>
                   <div className="grid grid-2 gap-3">
                     <div className="form-group">
                       <label className="form-label">Refund Name</label>
@@ -1676,7 +1842,7 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
                 </SectionCard>
               )}
               {/* ---- Recent Refunds ---- */}
-              <SectionCard title="Recent Refunds" icon="📋" accentColor="#6366f1">
+              <SectionCard title="Recent Refunds" icon="📋" accentColor="#27ae60">
                 {recentRefunds.length === 0 ? (
                   <p className="text-muted">No refund records yet.</p>
                 ) : (
@@ -1774,7 +1940,7 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
             <SectionCard
               title="Extra Time Ticket"
               icon="⏳"
-              accentColor="#1d4ed8"
+              accentColor="#27ae60"
               style={{ padding: '28px 28px 24px' }}
               headerActions={
                 <>
@@ -1815,7 +1981,7 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
               }
             > 
               {/* Ticket Search & Entry */}
-              <SectionCard title="Search Ticket" icon="🔍" accentColor="#6366f1" style={{ marginBottom: 18 }}>
+              <SectionCard title="Search Ticket" icon="🔍" accentColor="#27ae60" style={{ marginBottom: 18 }}>
                 <div className="form-group">
                   <label className="form-label">Ticket ID / Contact Number</label>
                   <div className="d-flex gap-2">
@@ -1831,7 +1997,7 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
                   <small className="text-muted">Search by ticket ID or contact number. If multiple tickets found with same contact number, the most recent one will be selected.</small>
                 </div>
                 {extraTimeTicket && (
-                  <SectionCard title="Current Ticket" icon="🎟️" accentColor="#4f8cff" style={{ marginTop: 16 }}>
+                  <SectionCard title="Current Ticket" icon="🎟️" accentColor="#27ae60" style={{ marginTop: 16 }}>
                     <div className="grid grid-2">
                       <div>
                         <p><strong>Name:</strong> {extraTimeTicket.name}</p>
@@ -1855,7 +2021,7 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
                 )}
               </SectionCard>
               {/* ---- Add Extra Time ---- */}
-              <SectionCard title="Add Extra Time" icon="⏲️" accentColor="#16a34a" style={{ marginBottom: 18 }}>
+              <SectionCard title="Add Extra Time" icon="⏲️" accentColor="#27ae60" style={{ marginBottom: 18 }}>
                 <div className="grid grid-2 gap-3">
                   <div>
                     <label className="form-label">Extra Time (Minutes) *</label>
@@ -1953,7 +2119,7 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
                 <GradientButton color="#16a34a" style={{ marginTop: 12 }} onClick={handleAddExtraTime} disabled={!extraTimeTicket}>Save Extra Time</GradientButton>
               </SectionCard>
               {/* ---- Extra Time History ---- */}
-              <SectionCard title="Extra Time History" icon="📋" accentColor="#6366f1" style={{ marginBottom: 18 }}>
+              <SectionCard title="Extra Time History" icon="📋" accentColor="#27ae60" style={{ marginBottom: 18 }}>
                 {extraTimeEntries.length === 0 ? (
                   <p className="text-muted">No extra time records for this ticket yet.</p>
                 ) : (
@@ -1982,7 +2148,7 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
                 )}
               </SectionCard>
               {/* ---- Extra Time Report ---- */}
-              <SectionCard title="Extra Time Report" icon="📅" accentColor="#3498db">
+              <SectionCard title="Extra Time Report" icon="📅" accentColor="#27ae60">
                 {extraTimeReport.length === 0 ? (
                   <p className="text-muted">No extra time records yet.</p>
                 ) : (
@@ -2243,7 +2409,7 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
         <SectionCard
           title={`Recent Tickets (${tickets.length})`}
           icon="🕒"
-          accentColor="#0f172a"
+          accentColor="#14532d"
           headerActions={
             tickets.length > 0 && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -2330,7 +2496,7 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
                       <td style={{ padding: '4px 3px', textAlign: 'center' }}>{ticket.numberOfPeople || ticket.playerStatus?.totalPlayers || 1}</td>
                       <td style={{ padding: '4px 3px', textAlign: 'center', whiteSpace: 'nowrap' }}>{ticket.totalExtraMinutes || 0} min</td>
                       <td style={{ padding: '4px 3px' }}><small><strong>{formatNepaliDate(ticket.date?.nepaliDate)}</strong><br /><span style={{ color: '#666', fontSize: '0.85em' }}>{formatDate(ticket.date?.englishDate || ticket.createdAt)}</span></small></td>
-                      <td style={{ padding: '4px 3px', whiteSpace: 'nowrap' }}><small><strong>{formatTime(ticket.time, ticket.date?.englishDate || ticket.createdAt)}</strong>{(() => {if (!ticket.time) return '';const dateObj = ticket.date?.englishDate ? new Date(ticket.date.englishDate) : null;if (!dateObj) return '';const endTime = getEndTime(ticket.time, dateObj, ticket.totalExtraMinutes || 0, ticket.isRefunded);return endTime ? ` - ${endTime}` : '';})()}</small></td>
+                      <td style={{ padding: '4px 3px', whiteSpace: 'nowrap' }}><small><strong>{formatTime(ticket.time, ticket.date?.englishDate || ticket.createdAt)}</strong>${(() => {if (!ticket.time) return '';const dateObj = ticket.date?.englishDate ? new Date(ticket.date.englishDate) : null;if (!dateObj) return '';const endTime = getEndTime(ticket.time, dateObj, ticket.totalExtraMinutes || 0, ticket.isRefunded);return endTime ? ` - ${endTime}` : '';})()}</small></td>
                       <td style={{ padding: '4px 3px' }}>{(() => {const created = ticket.date?.englishDate ? new Date(ticket.date.englishDate) : new Date(ticket.createdAt);const now = new Date();const oneHourPassed = ((now - created) / 36e5) > 1;if (oneHourPassed && !ticket.isRefunded) {return <span className="badge badge-secondary">Deactivated</span>;}if (ticket.isRefunded) {return <span className="badge badge-danger">Refunded</span>;}return <span className="badge badge-warning">Playing</span>;})()}</td>
                       <td style={{ padding: '4px 3px' }}>{(() => {const refundAmt = ticket.refundAmount || (ticket.isRefunded ? (ticket.fee || 0) : 0);if (refundAmt > 0) {return (<div style={{ fontSize: '0.85em' }}><div className="text-danger"><strong>रु {refundAmt.toLocaleString()}</strong></div>{ticket.refundReason && (<div className="text-muted" style={{ fontSize: '0.75em' }}>{ticket.refundReason}</div>)}{ticket.refundDetails?.refundMethod && (<div className="text-muted" style={{ fontSize: '0.75em' }}>({ticket.refundDetails.refundMethod})</div>)}</div>);}return <span>रु 0</span>;})()}</td>
                       <td style={{ padding: '4px 3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}><small>{ticket.remarks || '—'}</small></td>
@@ -2351,7 +2517,7 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
             <SectionCard
               title="Ticket History"
               icon="📜"
-              accentColor="#6366f1"
+              accentColor="#27ae60"
               style={{ padding: '28px 28px 24px' }}
               headerActions={
                 <>
@@ -2381,9 +2547,9 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
               }
             >
               <div style={{ display: 'flex', gap: '18px', justifyContent: 'flex-start', flexWrap: 'wrap', marginBottom: '10px', marginTop: 0 }}>
-                <ModernStat value={historyTickets.length} label="Tickets" color="#6366f1" icon="🎟️" />
-                <ModernStat value={historyTickets.filter(t => t.isRefunded).length} label="Refunded" color="#ef4444" icon="↩️" />
-                <ModernStat value={historyTotalCount} label="Total Records" color="#14b8a6" icon="📚" />
+                <ModernStat value={historyTickets.length} label="Tickets" color="#6366f1" icon="🎟️" animationDirection="right" />
+                <ModernStat value={historyTickets.filter(t => t.isRefunded).length} label="Refunded" color="#ef4444" icon="↩️" animationDirection="right" />
+                <ModernStat value={historyTotalCount} label="Total Records" color="#14b8a6" icon="📚" animationDirection="right" />
               </div>
 
               {historyLoading && historyTickets.length === 0 ? (

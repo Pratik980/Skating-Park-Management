@@ -4,7 +4,6 @@ import { branchesAPI } from '../api/api';
 import Loader from '../components/Loader';
 import NotificationContainer from '../components/NotificationContainer';
 import logo from '/valyntix-logo.png.jpg';
-import ModernHeader from '../components/ModernHeader';
 import SectionCard from '../components/SectionCard';
 import ModernStat from '../components/ModernStat';
 import GradientButton from '../components/GradientButton';
@@ -173,14 +172,26 @@ const Branches = () => {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)', padding: '20px' }}>
+    <div className="branches-page-wrapper" style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #ffffff 0%, #f0f9f4 100%)', padding: '15px 20px', width: '100%', maxWidth: '100%', margin: 0 }}>
+      <style>{`
+        .branches-page-wrapper {
+          width: 100% !important;
+          max-width: 100% !important;
+        }
+        .main-content {
+          margin-left: 250px !important;
+          width: calc(100% - 250px) !important;
+        }
+        .main-content .content-area {
+          max-width: 100% !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          background-color: transparent !important;
+          border-radius: 0 !important;
+          box-shadow: none !important;
+        }
+      `}</style>
       <NotificationContainer />
-      
-      <ModernHeader 
-        title="Branch Management" 
-        subtitle="Manage branches and locations"
-        icon="🏢"
-      />
 
       {/* Branch Form Modal */}
       {showForm && user?.role === 'admin' && (
@@ -307,7 +318,7 @@ const Branches = () => {
       <SectionCard 
         title="Branches" 
         icon="📋"
-        accentColor="#3498db"
+        accentColor="#27ae60"
         headerActions={
           <div style={{ display: 'flex', gap: '8px' }}>
             <GradientButton 
@@ -431,7 +442,7 @@ const Branches = () => {
 
       {/* Summary Stats */}
       {branches.length > 0 && (
-        <SectionCard title="Branch Summary" icon="📊" accentColor="#9b59b6">
+        <SectionCard title="Branch Summary" icon="📊" accentColor="#27ae60">
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
             <ModernStat 
               value={branches.length} 

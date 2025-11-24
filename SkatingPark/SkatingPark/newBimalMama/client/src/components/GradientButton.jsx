@@ -1,17 +1,28 @@
 import React from 'react';
 
-const GradientButton = ({ children, color = '#7a63fa', style = {}, ...props }) => (
+const GradientButton = ({ children, color = '#27ae60', style = {}, ...props }) => {
+  // Convert color to green shades if it's a non-green color
+  const isGreen = color === '#27ae60' || color === '#2ecc71' || color === '#1e8449' || color === '#14532d' || color === '#1eaa52';
+  const greenColor = isGreen ? color : '#27ae60';
+  const lightGreen = '#2ecc71';
+  const darkGreen = '#1e8449';
+  
+  return (
   <button
     {...props}
     className={['gradient-btn', props.className].filter(Boolean).join(' ')}
     style={{
-      background: `linear-gradient(93deg,${color} 4%,#8fd3fb 100%)`,
+      background: greenColor === '#222' || greenColor === '#000' || greenColor === '#000000' 
+        ? '#222' 
+        : `linear-gradient(93deg,${greenColor} 4%,${lightGreen} 100%)`,
       color: '#fff',
       border: 'none',
       fontWeight: 700,
       fontSize: '1.09rem',
       borderRadius: '12px',
-      boxShadow: `0 2px 21px ${color}22`,
+      boxShadow: greenColor === '#222' || greenColor === '#000' || greenColor === '#000000'
+        ? '0 2px 21px rgba(0,0,0,0.15)'
+        : `0 2px 21px ${greenColor}22`,
       padding: '11px 27px',
       transition: 'all 0.23s cubic-bezier(0.43,1.13,0.66,1.05)',
       position: 'relative',
@@ -33,11 +44,11 @@ const GradientButton = ({ children, color = '#7a63fa', style = {}, ...props }) =
     {children}
     <style>{`
       .gradient-btn:hover {
-        transform: scale(1.047); box-shadow: 0 6px 32px ${color}41;
+        transform: scale(1.047); box-shadow: 0 6px 32px ${greenColor === '#222' || greenColor === '#000' || greenColor === '#000000' ? 'rgba(0,0,0,0.25)' : greenColor + '41'};
         filter: brightness(1.09);
       }
       .gradient-btn:focus {
-        outline: 2px solid ${color};
+        outline: 2px solid ${greenColor};
       }
       .g-btn-ripple {
         pointer-events: none;
@@ -57,6 +68,7 @@ const GradientButton = ({ children, color = '#7a63fa', style = {}, ...props }) =
       }
     `}</style>
   </button>
-);
+  );
+};
 
 export default GradientButton;

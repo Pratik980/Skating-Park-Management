@@ -7,7 +7,6 @@ import { formatCurrency } from '../utils/currencyConverter';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import logo from '/valyntix-logo.png.jpg';
-import ModernHeader from '../components/ModernHeader';
 import SectionCard from '../components/SectionCard';
 import ModernStat from '../components/ModernStat';
 import GradientButton from '../components/GradientButton';
@@ -418,16 +417,29 @@ const Summary = () => {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)', padding: '20px' }}>
+    <div className="summary-page-wrapper" style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #ffffff 0%, #f0f9f4 100%)', padding: '15px 20px', width: '100%', maxWidth: '100%', margin: 0 }}>
+      <style>{`
+        .summary-page-wrapper {
+          width: 100% !important;
+          max-width: 100% !important;
+        }
+        .main-content {
+          margin-left: 250px !important;
+          width: calc(100% - 250px) !important;
+        }
+        .main-content .content-area {
+          max-width: 100% !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          background-color: transparent !important;
+          border-radius: 0 !important;
+          box-shadow: none !important;
+        }
+      `}</style>
       <NotificationContainer />
-      <ModernHeader 
-        title="Reports & Summary" 
-        subtitle="View daily and date range reports"
-        icon="📊"
-      />
 
         {/* Date Range Selector */}
-        <SectionCard title="Report Type" icon="📅" accentColor="#9b59b6">
+        <SectionCard title="Report Type" icon="📅" accentColor="#27ae60">
           <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
             <GradientButton
               onClick={() => setActiveTab('daily')}
@@ -507,7 +519,7 @@ const Summary = () => {
           {activeTab === 'daily' && summary && (
             <>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
-                <SectionCard title="Daily Financial Summary" icon="💰" accentColor="#2ecc71">
+                <SectionCard title="Daily Financial Summary" icon="💰" accentColor="#27ae60">
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px' }}>
                     <ModernStat 
                       value={summary.totalTickets} 
@@ -542,7 +554,7 @@ const Summary = () => {
                   </div>
                 </SectionCard>
 
-                <SectionCard title="Transaction Details" icon="📋" accentColor="#9b59b6">
+                <SectionCard title="Transaction Details" icon="📋" accentColor="#27ae60">
                   <div className="d-flex justify-between mb-2">
                     <span>Total Revenue:</span>
                     <strong className="text-success">
@@ -583,7 +595,7 @@ const Summary = () => {
                 <SectionCard 
                   title="Daily Tickets" 
                   icon="🎟️"
-                  accentColor="#3498db"
+                  accentColor="#27ae60"
                   headerActions={
                     <span style={{ color: '#2ecc71', fontWeight: 700, fontSize: '1.1rem' }}>
                       {formatCurrency(totalTicketRevenue)}
@@ -628,7 +640,7 @@ const Summary = () => {
                 <SectionCard 
                   title="Daily Sales" 
                   icon="🛒"
-                  accentColor="#2ecc71"
+                  accentColor="#27ae60"
                   headerActions={
                     <span style={{ color: '#3498db', fontWeight: 700, fontSize: '1.1rem' }}>
                       {formatCurrency(totalSalesAmount)}
@@ -671,7 +683,7 @@ const Summary = () => {
                 <SectionCard 
                   title="Daily Expenses" 
                   icon="📉"
-                  accentColor="#e74c3c"
+                  accentColor="#27ae60"
                   headerActions={
                     <span style={{ color: '#e74c3c', fontWeight: 700, fontSize: '1.1rem' }}>
                       {formatCurrency(totalExpenseAmount)}
@@ -720,7 +732,7 @@ const Summary = () => {
               <SectionCard 
                 title={`Date Range Summary: ${dateRange.startDate} to ${dateRange.endDate}`}
                 icon="📊"
-                accentColor="#9b59b6"
+                accentColor="#27ae60"
               >
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
                   <ModernStat 
@@ -751,7 +763,7 @@ const Summary = () => {
               </SectionCard>
 
               {/* Daily Breakdown */}
-              <SectionCard title="Daily Breakdown" icon="📅" accentColor="#34495e">
+              <SectionCard title="Daily Breakdown" icon="📅" accentColor="#14532d">
                 <table className="table">
                   <thead>
                     <tr>
@@ -790,7 +802,7 @@ const Summary = () => {
 
           {/* Quick Stats */}
           {summary && (
-            <SectionCard title="Quick Stats" icon="⚡" accentColor="#f39c12">
+            <SectionCard title="Quick Stats" icon="⚡" accentColor="#27ae60">
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
                 <ModernStat 
                   value={summary.tickets?.length || 0} 
@@ -816,7 +828,7 @@ const Summary = () => {
         </div>
 
         {!summary && activeTab === 'daily' && (
-          <SectionCard title="No Data" icon="📭" accentColor="#95a5a6">
+          <SectionCard title="No Data" icon="📭" accentColor="#14532d">
             <div style={{ textAlign: 'center', padding: '40px' }}>
               <p style={{ fontSize: '1.1rem', color: '#7f8c8d', marginBottom: '20px' }}>No summary data available</p>
               <GradientButton 
@@ -830,7 +842,7 @@ const Summary = () => {
         )}
 
         {activeTab === 'range' && !rangeSummary && (
-          <SectionCard title="No Data" icon="📭" accentColor="#95a5a6">
+          <SectionCard title="No Data" icon="📭" accentColor="#14532d">
             <div style={{ textAlign: 'center', padding: '40px' }}>
               <p style={{ fontSize: '1.1rem', color: '#7f8c8d' }}>Select a date range and generate report</p>
             </div>

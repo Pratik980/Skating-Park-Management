@@ -1,10 +1,30 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 
 const Navbar = ({ onToggleSidebar, isSidebarCollapsed }) => {
   const { user, logout, darkMode, toggleDarkMode } = useApp();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Map routes to page titles
+  const getPageTitle = () => {
+    const path = location.pathname;
+    const titleMap = {
+      '/': 'Dashboard',
+      '/users': 'Staff Management',
+      '/branches': 'Branch Management',
+      '/tickets': 'Ticket Management',
+      '/sales': 'Sales Management',
+      '/expenses': 'Expense Management',
+      '/summary': 'Reports & Summary',
+      '/customers': 'Customer Management',
+      '/ticket-history': 'Ticket History',
+      '/settings': 'System Settings',
+      '/backup': 'Backup & Restore'
+    };
+    return titleMap[path] || 'Ticket Management';
+  };
 
   const handleLogout = () => {
     logout();
@@ -14,15 +34,8 @@ const Navbar = ({ onToggleSidebar, isSidebarCollapsed }) => {
   return (
     <nav className="navbar">
       <div className="navbar-content">
-        <div className="navbar-left">
-          <button 
-            type="button" 
-            className="sidebar-toggle-btn" 
-            onClick={onToggleSidebar}
-            aria-label={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            >
-            {isSidebarCollapsed ? '☰' : '⮜'}
-          </button>
+        <div className="navbar-left" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span className="navbar-title" style={{ fontWeight: 900, fontSize: '1.35rem', color: '#14532d', letterSpacing: '1px' }}>{getPageTitle()}</span>
         </div> 
         
         <div className="user-info">

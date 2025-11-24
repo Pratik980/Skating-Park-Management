@@ -210,10 +210,7 @@ const StaffDashboard = () => {
   };
 
   const ticketTypes = {
-    'Adult': { price: 100, label: 'Adult' },
-    'Child': { price: 100, label: 'Child' },
-    'Group': { price: 100, label: 'Group' },
-    'Custom': { price: 0, label: 'Custom' }
+    'Adult': { price: 100, label: 'Adult' }
   };
 
   // Sales handlers
@@ -342,7 +339,25 @@ const StaffDashboard = () => {
   }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div className="staff-dashboard-page-wrapper" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', width: '100%', maxWidth: '100%', margin: 0 }}>
+      <style>{`
+        .staff-dashboard-page-wrapper {
+          width: 100% !important;
+          max-width: 100% !important;
+        }
+        .main-content {
+          margin-left: 250px !important;
+          width: calc(100% - 250px) !important;
+        }
+        .main-content .content-area {
+          max-width: 100% !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          background-color: transparent !important;
+          border-radius: 0 !important;
+          box-shadow: none !important;
+        }
+      `}</style>
       <NotificationContainer />
       <header style={{ textAlign: 'center', margin: '24px 0 8px 0' }}>
         <img src={logo} alt="Valyntix Logo" style={{ maxWidth: 120, height: 'auto', marginBottom: 8 }} />
@@ -351,7 +366,6 @@ const StaffDashboard = () => {
       <div style={{ flex: 1 }}>
         <div className="d-flex justify-between align-center mb-3">
           <div>
-            <h1>Staff Dashboard</h1>
             <p className="text-muted mb-0">Welcome, {user?.name}! - {currentBranch?.branchName}</p>
           </div>
           <button 
@@ -387,7 +401,7 @@ const StaffDashboard = () => {
             </div>
             <div className="stat-card profit">
               <div className="stat-label">Net Profit</div>
-              <div className="stat-number" style={{ color: stats.totals.netProfit >= 0 ? '#27ae60' : '#e74c3c' }}>
+              <div className="stat-number" style={{ color: stats.totals.netProfit >= 0 ? '#27ae60' : '#14532d' }}>
                 रु {stats.totals.netProfit?.toLocaleString()}
               </div>
               <small>Overall profit/loss</small>
@@ -409,7 +423,7 @@ const StaffDashboard = () => {
           </div>
           <div className="card-body">
             {/* Quick Add Ticket Form */}
-            <div className="card mb-3" style={{ backgroundColor: '#f0f8ff', border: '2px solid #007bff' }}>
+            <div className="card mb-3" style={{ backgroundColor: '#f0f9f4', border: '2px solid #27ae60' }}>
               <div className="card-body">
                 <h5 className="card-title">Quick Ticket Entry</h5>
                 <div className="grid grid-5 gap-2">
@@ -590,17 +604,17 @@ const StaffDashboard = () => {
           </div>
           <div className="card-body">
             {/* Sales Form */}
-            <div className="card mb-3" style={{ backgroundColor: '#f8fbff', border: '1px solid #e1ecff' }}>
-              <div className="card-body">
-                <h5 className="card-title">Record New Sale</h5>
+            <div className="card mb-3" style={{ backgroundColor: '#f8f9fa', border: '1px solid #d1f2e8' }}>
+              <div className="card-body" style={{ padding: '12px' }}>
+                <h5 className="card-title" style={{ fontSize: '1rem', marginBottom: '8px' }}>Record New Sale</h5>
                 <form onSubmit={handleSalesSubmit}>
-                  <div className="grid grid-2 gap-3">
+                  <div className="grid grid-2 gap-2">
                     <div>
                       <div className="form-group">
                         <label className="form-label">Customer Name</label>
                         <input
                           type="text"
-                          className="form-control"
+                          className="form-control form-control-sm"
                           value={formData.customerName}
                           onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
                           required
@@ -613,18 +627,18 @@ const StaffDashboard = () => {
                           + Add item
                         </button>
                       </div>
-                      <div className="d-flex flex-column gap-2">
+                      <div className="d-flex flex-column gap-1">
                         {formData.items.map((item, index) => (
-                          <div key={index} className="p-2 rounded" style={{ background: '#ffffff', border: '1px solid #e9ecef' }}>
-                            <div className="d-flex justify-between align-center mb-2">
-                              <strong>Item {index + 1}</strong>
+                          <div key={index} className="p-1 rounded" style={{ background: '#ffffff', border: '1px solid #e9ecef' }}>
+                            <div className="d-flex justify-between align-center mb-1">
+                              <strong style={{ fontSize: '0.9rem' }}>Item {index + 1}</strong>
                               {formData.items.length > 1 && (
                                 <button type="button" className="btn btn-sm btn-light text-danger" onClick={() => removeItem(index)}>
                                   ✕
                                 </button>
                               )}
                             </div>
-                            <div className="grid grid-4 gap-2">
+                            <div className="grid grid-4 gap-1">
                               <div className="form-group mb-0">
                                 <label className="form-label text-muted small">Item Name</label>
                                 <input
@@ -675,7 +689,7 @@ const StaffDashboard = () => {
                       <div className="form-group">
                         <label className="form-label">Payment Method</label>
                         <select
-                          className="form-control"
+                          className="form-control form-control-sm"
                           value={formData.paymentMethod}
                           onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}
                         >
@@ -685,24 +699,24 @@ const StaffDashboard = () => {
                           <option value="Bank Transfer">Bank Transfer</option>
                         </select>
                       </div>
-                      <div className="p-3 rounded mb-3" style={{ background: '#1e90ff', color: 'white' }}>
+                      <div className="p-2 rounded mb-3" style={{ background: '#1e90ff', color: 'white' }}>
                         <div className="d-flex justify-between align-center">
-                          <span>Total Due</span>
-                          <strong style={{ fontSize: '1.5rem' }}>{formattedTotalAmount}</strong>
+                          <span style={{ fontSize: '0.95rem' }}>Total Due</span>
+                          <strong style={{ fontSize: '1.2rem' }}>{formattedTotalAmount}</strong>
                         </div>
                       </div>
                       <div className="form-group">
                         <label className="form-label">Remarks</label>
                         <textarea
-                          className="form-control"
+                          className="form-control form-control-sm"
                           value={formData.remarks}
                           onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
-                          rows="3"
+                          rows="2"
                           placeholder="Notes or special instructions"
                         />
                       </div>
-                      <div className="form-actions mt-3">
-                        <button type="button" className="btn btn-light" onClick={() => setFormData({
+                      <div className="form-actions mt-2">
+                        <button type="button" className="btn btn-sm btn-light" onClick={() => setFormData({
                           customerName: '',
                           items: [{ itemName: '', quantity: 1, price: 0, total: 0 }],
                           paymentMethod: 'Cash',
@@ -710,7 +724,7 @@ const StaffDashboard = () => {
                         })}>
                           Clear
                         </button>
-                        <button type="submit" className="btn btn-primary" disabled={salesLoading || !isFormValid}>
+                        <button type="submit" className="btn btn-sm btn-primary" disabled={salesLoading || !isFormValid}>
                           {salesLoading ? 'Saving...' : 'Record Sale'}
                         </button>
                       </div>
@@ -779,7 +793,7 @@ const StaffDashboard = () => {
           </div>
           <div className="card-body">
             {/* Expense Form */}
-            <div className="card mb-3" style={{ backgroundColor: '#fff8e1', border: '1px solid #ffc107' }}>
+            <div className="card mb-3" style={{ backgroundColor: '#f0f9f4', border: '1px solid #27ae60' }}>
               <div className="card-body">
                 <h5 className="card-title">Add New Expense</h5>
                 <form onSubmit={handleExpenseSubmit}>

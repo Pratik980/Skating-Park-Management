@@ -11,9 +11,25 @@ if (import.meta.env.DEV) {
 
 const AppContext = createContext();
 
+const getInitialToken = () => {
+  if (typeof window === 'undefined') return null;
+
+  const sessionToken = window.sessionStorage.getItem('token');
+  if (sessionToken) return sessionToken;
+
+  const legacyToken = window.localStorage.getItem('token');
+  if (legacyToken) {
+    window.sessionStorage.setItem('token', legacyToken);
+    window.localStorage.removeItem('token');
+    return legacyToken;
+  }
+
+  return null;
+};
+
 const initialState = {
   user: null,
-  token: localStorage.getItem('token'),
+  token: getInitialToken(),
   loading: false,
   error: null,
   currentBranch: null,
@@ -30,7 +46,10 @@ const appReducer = (state, action) => {
     case 'CLEAR_ERROR':
       return { ...state, error: null };
     case 'LOGIN_SUCCESS':
-      localStorage.setItem('token', action.payload.token);
+      if (typeof window !== 'undefined') {
+        window.sessionStorage.setItem('token', action.payload.token);
+        window.localStorage.removeItem('token'); // ensure legacy storage cleared
+      }
       return {
         ...state,
         user: action.payload.user,
@@ -39,7 +58,10 @@ const appReducer = (state, action) => {
         loading: false
       };
     case 'LOGOUT':
-      localStorage.removeItem('token');
+      if (typeof window !== 'undefined') {
+        window.sessionStorage.removeItem('token');
+        window.localStorage.removeItem('token');
+      }
       return {
         ...state,
         user: null,

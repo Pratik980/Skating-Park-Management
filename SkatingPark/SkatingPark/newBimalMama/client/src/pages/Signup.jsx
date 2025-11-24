@@ -200,7 +200,6 @@ const Signup = () => {
       
       <div className="form-container">
         <div className="text-center mb-4">
-          <h1>🏒 Skating Park</h1>
           <p className="text-muted">
             {isFirstUser ? 'Initial Admin Registration' : 'Admin Registration'}
           </p>

@@ -5,7 +5,6 @@ import Loader from '../components/Loader';
 import NotificationContainer from '../components/NotificationContainer';
 import logo from '/valyntix-logo.png.jpg';
 import Modal from 'react-modal';
-import ModernHeader from '../components/ModernHeader';
 import SectionCard from '../components/SectionCard';
 import ModernStat from '../components/ModernStat';
 import GradientButton from '../components/GradientButton';
@@ -203,18 +202,30 @@ const fetchCategories = async () => {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)', padding: '20px' }}>
+    <div className="expenses-page-wrapper" style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #ffffff 0%, #f0f9f4 100%)', padding: '15px 20px', width: '100%', maxWidth: '100%', margin: 0 }}>
+      <style>{`
+        .expenses-page-wrapper {
+          width: 100% !important;
+          max-width: 100% !important;
+        }
+        .main-content {
+          margin-left: 250px !important;
+          width: calc(100% - 250px) !important;
+        }
+        .main-content .content-area {
+          max-width: 100% !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          background-color: transparent !important;
+          border-radius: 0 !important;
+          box-shadow: none !important;
+        }
+      `}</style>
       <NotificationContainer />
-      
-      <ModernHeader 
-        title="Expense Management" 
-        subtitle="Track and manage branch expenses"
-        icon="🧾"
-      />
 
       {/* Expense Form - Always Visible */}
       {(user?.role === 'admin' || user?.role === 'staff') && (
-        <SectionCard title="Add New Expense" icon="➕" accentColor="#f39c12">
+        <SectionCard title="Add New Expense" icon="➕" accentColor="#27ae60">
             <form onSubmit={handleSubmit}>
               <div className="form-grid">
                 <div className="form-group">
@@ -316,7 +327,7 @@ const fetchCategories = async () => {
                 <GradientButton 
                   type="submit" 
                   disabled={loading || !formData.category || !formData.amount}
-                  color="#f39c12"
+                  color="#27ae60"
                 >
                   {loading ? 'Processing...' : 'Add Expense'}
                 </GradientButton>
@@ -329,13 +340,13 @@ const fetchCategories = async () => {
       <SectionCard 
         title="Expense Records" 
         icon="📋"
-        accentColor="#e74c3c"
+        accentColor="#27ae60"
         headerActions={
           <div style={{ display: 'flex', gap: '8px' }}>
             {expenses.length > 0 && (
               <GradientButton
                 onClick={() => printAllExpenses(expenses)}
-                color="#3498db"
+                color="#27ae60"
                 style={{ fontSize: '0.9rem', padding: '8px 16px' }}
                 title="Print All Expense Receipts"
               >
@@ -345,7 +356,7 @@ const fetchCategories = async () => {
             <GradientButton 
               onClick={fetchExpenses}
               disabled={loading}
-              color="#95a5a6"
+              color="#14532d"
               style={{ fontSize: '0.9rem', padding: '8px 16px' }}
             >
               {loading ? 'Refreshing...' : '🔄 Refresh'}
@@ -443,13 +454,13 @@ const fetchCategories = async () => {
             <ModernStat 
               value={expenses.length} 
               label="Total Expenses" 
-              color="#e74c3c"
+              color="#27ae60"
               icon="📝"
             />
             <ModernStat 
               value={expenses.reduce((sum, expense) => sum + expense.amount, 0)} 
               label="Total Amount" 
-              color="#c0392b"
+              color="#14532d"
               icon="💰"
             />
             <ModernStat 

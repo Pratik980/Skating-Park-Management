@@ -78,15 +78,36 @@ const Login = () => {
   }
 
   return (
-    <div className="container" style={{ maxWidth: '400px', marginTop: '100px' }}>
+    <div className="container" style={{ maxWidth: '420px', marginTop: '60px', textAlign: 'center' }}>
       <NotificationContainer />
       {validationError && (
         <div className="alert alert-error" style={{ marginBottom: '12px' }}>{validationError}</div>
       )}
       
-      <div className="form-container">
-        <h1 className="form-title">🏒 Skating Park</h1>
-        <p className="text-center mb-3">Management System Login</p>
+      <div className="form-container" style={{ textAlign: 'left' }}>
+        <div style={{ textAlign: 'center', marginBottom: '18px' }}>
+          <div
+            style={{
+              width: 90,
+              height: 90,
+              borderRadius: '20px',
+              background: 'linear-gradient(135deg, #1f2937 0%, #0f172a 100%)',
+              color: '#22c55e',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '2.8rem',
+              margin: '0 auto 12px auto',
+              boxShadow: '0 8px 20px rgba(0,0,0,0.2)'
+            }}
+          >
+            🏒
+          </div>
+          <h2 style={{ marginTop: 0, marginBottom: '4px', color: '#14532d' }}>
+            Skating Management System
+          </h2>
+  
+        </div>
         
         <form onSubmit={handleSubmit}>
           <div className="form-group">

@@ -39,7 +39,7 @@
 }
 
 .stat-card {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #27ae60 0%, #1e8449 100%);
   color: white;
   padding: 20px;
   border-radius: 12px;
@@ -86,7 +86,7 @@
   background: white;
   padding: 8px 12px;
   border-radius: 6px;
-  border-left: 4px solid #f39c12;
+  border-left: 4px solid #27ae60;
   display: flex;
   gap: 12px;
   align-items: center;
@@ -114,7 +114,7 @@
 }
 
 .tab-button.active {
-  background: #007bff;
+  background: #27ae60;
   color: white;
 }
 
@@ -199,13 +199,13 @@
 }
 
 .stock-badge.low-stock {
-  background: #fff3cd;
-  color: #856404;
+  background: #e8f5e9;
+  color: #14532d;
 }
 
 .stock-badge.out-of-stock {
-  background: #f8d7da;
-  color: #721c24;
+  background: #f0f0f0;
+  color: #222;
 }
 
 .modern-table-container {
@@ -251,8 +251,8 @@
 }
 
 .payment-badge.card {
-  background: #cce7ff;
-  color: #004085;
+  background: #e8f5e9;
+  color: #14532d;
 }
 
 .type-badge {
@@ -263,13 +263,13 @@
 }
 
 .type-badge.retail {
-  background: #e7f3ff;
-  color: #0066cc;
+  background: #e8f5e9;
+  color: #14532d;
 }
 
 .type-badge.wholesale {
-  background: #fff0e6;
-  color: #cc5500;
+  background: #d5f4e6;
+  color: #14532d;
 }
 
 /* Responsive Design */

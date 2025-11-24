@@ -4,7 +4,6 @@ import { backupAPI } from '../api/api';
 import Loader from '../components/Loader';
 import NotificationContainer from '../components/NotificationContainer';
 import logo from '/valyntix-logo.png.jpg';
-import ModernHeader from '../components/ModernHeader';
 import SectionCard from '../components/SectionCard';
 import ModernStat from '../components/ModernStat';
 import GradientButton from '../components/GradientButton';
@@ -149,17 +148,29 @@ const BackupRestore = () => {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)', padding: '20px' }}>
+    <div className="backup-restore-page-wrapper" style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #ffffff 0%, #f0f9f4 100%)', padding: '15px 20px', width: '100%', maxWidth: '100%', margin: 0 }}>
+      <style>{`
+        .backup-restore-page-wrapper {
+          width: 100% !important;
+          max-width: 100% !important;
+        }
+        .main-content {
+          margin-left: 250px !important;
+          width: calc(100% - 250px) !important;
+        }
+        .main-content .content-area {
+          max-width: 100% !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          background-color: transparent !important;
+          border-radius: 0 !important;
+          box-shadow: none !important;
+        }
+      `}</style>
       <NotificationContainer />
-      
-      <ModernHeader 
-        title="Backup & Restore" 
-        subtitle="Manage data backups and restoration"
-        icon="💾"
-      />
 
       {/* Backup Instructions */}
-      <SectionCard title="Backup Instructions" icon="📋" accentColor="#3498db">
+      <SectionCard title="Backup Instructions" icon="📋" accentColor="#27ae60">
         <div className="grid grid-2">
           <div>
             <h4>Create Backup</h4>
@@ -184,12 +195,12 @@ const BackupRestore = () => {
       <SectionCard 
         title="Available Backups" 
         icon="📦"
-        accentColor="#9b59b6"
+        accentColor="#27ae60"
         headerActions={
           <div style={{ display: 'flex', gap: '8px' }}>
             <GradientButton 
               onClick={fetchBackups}
-              color="#95a5a6"
+              color="#14532d"
               style={{ fontSize: '0.9rem', padding: '8px 16px' }}
             >
               🔄 Refresh
@@ -197,7 +208,7 @@ const BackupRestore = () => {
             <GradientButton 
               onClick={createBackup}
               disabled={creatingBackup || !currentBranch}
-              color="#2ecc71"
+              color="#27ae60"
               style={{ fontSize: '0.9rem', padding: '8px 16px' }}
             >
               {creatingBackup ? 'Creating...' : '💾 Create Backup'}
@@ -212,7 +223,7 @@ const BackupRestore = () => {
             <GradientButton 
               onClick={createBackup}
               disabled={!currentBranch}
-              color="#2ecc71"
+              color="#27ae60"
             >
               Create First Backup
             </GradientButton>
@@ -291,25 +302,25 @@ const BackupRestore = () => {
 
       {/* Backup Stats */}
       {backups.length > 0 && (
-        <SectionCard title="Backup Statistics" icon="📊" accentColor="#e74c3c">
+        <SectionCard title="Backup Statistics" icon="📊" accentColor="#27ae60">
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
             <ModernStat 
               value={backups.length} 
               label="Total Backups" 
-              color="#3498db"
+              color="#27ae60"
               icon="💾"
             />
             <div style={{
               padding: '25px 24px 18px 24px',
               borderRadius: '17px',
-              background: 'linear-gradient(98deg,#9b59b611 0%,#fff 88%)',
+              background: 'linear-gradient(98deg,#27ae6011 0%,#fff 88%)',
               boxShadow: '0 4px 22px #9b59b612',
               minWidth: 132,
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
             }}>
-              <div style={{ fontSize: '2.22rem', fontWeight: 900, color: '#9b59b6', letterSpacing: '-1px', lineHeight: 1.1 }}>
+              <div style={{ fontSize: '2.22rem', fontWeight: 900, color: '#27ae60', letterSpacing: '-1px', lineHeight: 1.1 }}>
                 {formatFileSize(backups.reduce((sum, backup) => sum + backup.size, 0))}
               </div>
               <div style={{ fontSize: '0.96rem', color: '#555', fontWeight: 500, opacity: 0.89, marginTop: 5 }}>Total Size</div>
@@ -317,13 +328,13 @@ const BackupRestore = () => {
             <ModernStat 
               value={backups.reduce((sum, backup) => sum + backup.dataCount.tickets, 0)} 
               label="Total Tickets" 
-              color="#2ecc71"
+              color="#27ae60"
               icon="🎟️"
             />
             <ModernStat 
               value={backups.reduce((sum, backup) => sum + backup.dataCount.sales, 0)} 
               label="Total Sales" 
-              color="#f39c12"
+              color="#27ae60"
               icon="🛒"
             />
           </div>
@@ -331,7 +342,7 @@ const BackupRestore = () => {
       )}
 
       {/* MongoDB Connection Info */}
-      <SectionCard title="Database Information" icon="🗄️" accentColor="#34495e">
+      <SectionCard title="Database Information" icon="🗄️" accentColor="#14532d">
         <div className="grid grid-2">
           <div>
             <h4>MongoDB Connection</h4>
@@ -352,8 +363,8 @@ const BackupRestore = () => {
         <SectionCard 
           title="Erase Branch Data" 
           icon="⚠️"
-          accentColor="#e74c3c"
-          style={{ border: '2px solid #e74c3c', background: '#fff5f5' }}
+          accentColor="#27ae60"
+          style={{ border: '2px solid #14532d', background: '#f0f9f4' }}
         >
           <div style={{ marginBottom: 12 }}>
             <label>
@@ -369,7 +380,7 @@ const BackupRestore = () => {
           <GradientButton
             disabled={deleting || eraseTypes.length === 0}
             onClick={startErase}
-            color="#e74c3c"
+            color="#14532d"
             style={{ fontWeight: 'bold', fontSize: '1.1rem', padding: '12px 32px' }}
           >
             🗑️ Delete Selected Data
@@ -378,10 +389,10 @@ const BackupRestore = () => {
           {showErase && (
             <div className="modal-overlay">
               <div className="modal-content" style={{ maxWidth: 410 }}>
-                <h3 style={{ color: '#e74c3c' }}>Are you absolutely sure?</h3>
+                <h3 style={{ color: '#14532d' }}>Are you absolutely sure?</h3>
                 <div style={{ margin: '18px 0' }}>
                   <b>Deleted data cannot be restored.</b>
-                  <div style={{ margin: '14px 0', color: '#c0392b' }}>
+                  <div style={{ margin: '14px 0', color: '#14532d' }}>
                     To confirm, type <b>DELETE</b> below:
                   </div>
                   <input value={deleteConfirm} onChange={e => setDeleteConfirm(e.target.value)} type="text" className="form-control" />
@@ -401,7 +412,7 @@ const BackupRestore = () => {
           )}
           {eraseResult && eraseResult.message && (
             <div
-              style={{ color: eraseResult.success ? 'green' : '#c0392b', marginTop: 12, fontWeight: 'bold' }}>
+              style={{ color: eraseResult.success ? '#27ae60' : '#14532d', marginTop: 12, fontWeight: 'bold' }}>
               {eraseResult.message}
             </div>
           )}

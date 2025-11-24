@@ -204,8 +204,26 @@ export default function TicketHistory() {
   };
 
   return (
-    <div className="ticket-history-search-container" style={{ maxWidth: '1200px', margin: '30px auto', padding: '0 20px' }}>
-      <h1>Ticket History Lookup</h1>
+    <>
+      <style>{`
+        .ticket-history-page-wrapper {
+          width: 100% !important;
+          max-width: 100% !important;
+        }
+        .main-content {
+          margin-left: 250px !important;
+          width: calc(100% - 250px) !important;
+        }
+        .main-content .content-area {
+          max-width: 100% !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          background-color: transparent !important;
+          border-radius: 0 !important;
+          box-shadow: none !important;
+        }
+      `}</style>
+      <div className="ticket-history-page-wrapper ticket-history-search-container" style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #ffffff 0%, #f0f9f4 100%)', padding: '15px 20px', width: '100%', maxWidth: '100%', margin: 0 }}>
       <form onSubmit={handleSearch} style={{ marginBottom: 24 }}>
         <label htmlFor="ticket-lookup-input" style={{ fontWeight: 'bold' }}>Ticket Number or Ticket ID</label>
         <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
@@ -341,6 +359,7 @@ export default function TicketHistory() {
         </div>
       )}
       {searching && <Loader text="Searching ticket..." />}
-    </div>
+      </div>
+    </>
   );
 }

@@ -4,7 +4,6 @@ import { settingsAPI } from '../api/api';
 import Loader from '../components/Loader';
 import NotificationContainer from '../components/NotificationContainer';
 import logo from '/valyntix-logo.png.jpg';
-import ModernHeader from '../components/ModernHeader';
 import SectionCard from '../components/SectionCard';
 import GradientButton from '../components/GradientButton';
 
@@ -183,19 +182,31 @@ const Settings = () => {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)', padding: '20px' }}>
+    <div className="settings-page-wrapper" style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #ffffff 0%, #f0f9f4 100%)', padding: '15px 20px', width: '100%', maxWidth: '100%', margin: 0 }}>
+      <style>{`
+        .settings-page-wrapper {
+          width: 100% !important;
+          max-width: 100% !important;
+        }
+        .main-content {
+          margin-left: 250px !important;
+          width: calc(100% - 250px) !important;
+        }
+        .main-content .content-area {
+          max-width: 100% !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          background-color: transparent !important;
+          border-radius: 0 !important;
+          box-shadow: none !important;
+        }
+      `}</style>
       <NotificationContainer />
-      
-      <ModernHeader 
-        title="System Settings" 
-        subtitle="Configure system preferences and company information"
-        icon="⚙️"
-      />
 
       <form onSubmit={handleSubmit}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
           {/* Company Information */}
-          <SectionCard title="Company Information" icon="🏢" accentColor="#3498db">
+          <SectionCard title="Company Information" icon="🏢" accentColor="#27ae60">
             
             {/* Logo Upload Section */}
             <div className="form-group">
@@ -355,7 +366,7 @@ const Settings = () => {
           </SectionCard>
 
           {/* System Settings */}
-          <SectionCard title="System Configuration" icon="🔧" accentColor="#9b59b6">
+          <SectionCard title="System Configuration" icon="🔧" accentColor="#27ae60">
             
             <div className="form-group">
               <label className="form-label">Default Currency</label>
@@ -417,7 +428,7 @@ const Settings = () => {
         </div>
 
         {/* Ticket Rules */}
-        <SectionCard title="Ticket Rules & Terms" icon="📋" accentColor="#e74c3c">
+        <SectionCard title="Ticket Rules & Terms" icon="📋" accentColor="#27ae60">
           <div className="form-group">
             <label className="form-label">Ticket Rules (will appear on printed tickets)</label>
             {formData.ticketRules.map((rule, index) => (
@@ -452,7 +463,7 @@ const Settings = () => {
 
         {/* Current Settings Preview */}
         {settings && (
-          <SectionCard title="Current Settings Preview" icon="👁️" accentColor="#f39c12">
+          <SectionCard title="Current Settings Preview" icon="👁️" accentColor="#27ae60">
             <div className="grid grid-2">
               <div>
                 <h4>Company Info</h4>

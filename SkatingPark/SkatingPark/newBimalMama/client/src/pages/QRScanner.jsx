@@ -96,9 +96,26 @@ function QRScanner() {
   };
 
   return (
-    <div>
+    <div className="qr-scanner-page-wrapper" style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #ffffff 0%, #f0f9f4 100%)', padding: '15px 20px', width: '100%', maxWidth: '100%', margin: 0 }}>
+      <style>{`
+        .qr-scanner-page-wrapper {
+          width: 100% !important;
+          max-width: 100% !important;
+        }
+        .main-content {
+          margin-left: 250px !important;
+          width: calc(100% - 250px) !important;
+        }
+        .main-content .content-area {
+          max-width: 100% !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          background-color: transparent !important;
+          border-radius: 0 !important;
+          box-shadow: none !important;
+        }
+      `}</style>
       <div className="page-header">
-        <h1>QR स्क्यानर</h1>
         <p>टिकटहरू स्क्यान गर्नुहोस् र समय जाँच गर्नुहोस्</p>
       </div>
 
@@ -172,13 +189,13 @@ function QRScanner() {
                   textAlign: 'center'
                 }}>
                   {scanResult.isExpired ? (
-                    <AlertTriangle size={48} style={{ color: '#f39c12', marginBottom: '10px' }} />
+                    <AlertTriangle size={48} style={{ color: '#27ae60', marginBottom: '10px' }} />
                   ) : (
                     <CheckCircle size={48} style={{ color: '#27ae60', marginBottom: '10px' }} />
                   )}
                   
                   <h3 style={{ 
-                    color: scanResult.isExpired ? '#f39c12' : '#27ae60',
+                    color: scanResult.isExpired ? '#27ae60' : '#27ae60',
                     marginBottom: '10px'
                   }}>
                     {scanResult.isExpired ? 'समय सकियो' : 'सक्रिय टिकट'}
@@ -310,7 +327,7 @@ function QRScanner() {
                       <td>{scan.scannedBy}</td>
                       <td className="text-right">
                         <span style={{
-                          color: scan.remainingTime <= 0 ? '#e74c3c' : 
+                          color: scan.remainingTime <= 0 ? '#14532d' : 
                                  scan.remainingTime <= 10 ? '#f39c12' : '#27ae60',
                           fontWeight: '600'
                         }}>

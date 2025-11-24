@@ -7,7 +7,6 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import Modal from 'react-modal';
 import logo from '/valyntix-logo.png.jpg';
-import ModernHeader from '../components/ModernHeader';
 import SectionCard from '../components/SectionCard';
 import ModernStat from '../components/ModernStat';
 import GradientButton from '../components/GradientButton';
@@ -311,23 +310,35 @@ const Sales = () => {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)', padding: '20px' }}>
+    <div className="sales-page-wrapper" style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #ffffff 0%, #f0f9f4 100%)', padding: '15px 20px', width: '100%', maxWidth: '100%', margin: 0 }}>
+      <style>{`
+        .sales-page-wrapper {
+          width: 100% !important;
+          max-width: 100% !important;
+        }
+        .main-content {
+          margin-left: 250px !important;
+          width: calc(100% - 250px) !important;
+        }
+        .main-content .content-area {
+          max-width: 100% !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          background-color: transparent !important;
+          border-radius: 0 !important;
+          box-shadow: none !important;
+        }
+      `}</style>
       <NotificationContainer />
-      
-      <ModernHeader 
-        title="Sales Management" 
-        subtitle="Record and review sales for this branch"
-        icon="💰"
-      />
 
       {(user?.role === 'admin' || user?.role === 'staff') && (
         <SectionCard 
           title="Record New Sale" 
           icon="🛒"
-          accentColor="#2ecc71"
+          accentColor="#27ae60"
           headerActions={
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '1.8rem', fontWeight: 700, color: '#2ecc71', marginBottom: '4px' }}>
+              <div style={{ fontSize: '1.8rem', fontWeight: 700, color: '#27ae60', marginBottom: '4px' }}>
                 {formattedTotalAmount}
               </div>
               <div style={{ fontSize: '0.9rem', color: '#7f8c8d' }}>Current Total</div>
@@ -337,12 +348,12 @@ const Sales = () => {
           <form onSubmit={handleSubmit}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
               <div style={{
-                background: 'rgba(46, 204, 113, 0.05)',
-                border: '1px solid rgba(46, 204, 113, 0.2)',
+                background: 'rgba(39, 174, 96, 0.05)',
+                border: '1px solid rgba(39, 174, 96, 0.2)',
                 borderRadius: '16px',
                 padding: '24px'
               }}>
-                <h4 style={{ marginTop: 0, marginBottom: '20px', color: '#2ecc71', fontWeight: 700 }}>Customer & Items</h4>
+                <h4 style={{ marginTop: 0, marginBottom: '20px', color: '#27ae60', fontWeight: 700 }}>Customer & Items</h4>
 
                   <div className="form-group">
                     <label className="form-label">Customer Name (optional)</label>
@@ -412,7 +423,7 @@ const Sales = () => {
                             className="form-control"
                             value={formatCurrency(item.total)}
                             readOnly
-                            style={{ background: '#f2f6fa', border: '1px solid #e1e5ed', fontWeight: 600, color: '#2872cd', borderRadius: 5, fontSize: 14, padding: '5px 10px' }}
+                            style={{ background: '#f0f9f4', border: '1px solid #d1f2e8', fontWeight: 600, color: '#27ae60', borderRadius: 5, fontSize: 14, padding: '5px 10px' }}
                           />
                         </div>
                         <div style={{ textAlign: 'center' }}>
@@ -420,7 +431,7 @@ const Sales = () => {
                             <button
                               type="button"
                               className="btn btn-sm btn-outline-danger"
-                              style={{ border: 'none', background: 'none', color: '#e74c3c', fontSize: '1.15rem', fontWeight: 600, padding: 0 }}
+                              style={{ border: 'none', background: 'none', color: '#14532d', fontSize: '1.15rem', fontWeight: 600, padding: 0 }}
                               onClick={() => removeItem(index)}
                               title="Remove item"
                             >
@@ -433,7 +444,7 @@ const Sales = () => {
                     <GradientButton
                       type="button"
                       onClick={addItem}
-                      color="#2ecc71"
+                      color="#27ae60"
                       style={{ marginTop: '12px' }}
                     >
                       + Add Item
@@ -458,7 +469,7 @@ const Sales = () => {
                 borderRadius: '16px',
                 padding: '24px'
               }}>
-                <h4 style={{ marginTop: 0, marginBottom: '20px', color: '#667eea', fontWeight: 700 }}>Billing Summary</h4>
+                <h4 style={{ marginTop: 0, marginBottom: '20px', color: '#27ae60', fontWeight: 700 }}>Billing Summary</h4>
                   <div className="d-flex justify-between align-center mb-2">
                     <span className="text-muted">Customer</span>
                     <strong>{formData.customerName || '—'}</strong>
@@ -503,7 +514,7 @@ const Sales = () => {
                   </div>
 
                   <div style={{ 
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', 
+                    background: 'linear-gradient(135deg, #27ae60 0%, #1e8449 100%)', 
                     color: 'white', 
                     borderRadius: '12px',
                     padding: '20px',
@@ -534,14 +545,14 @@ const Sales = () => {
                       type="button"
                       onClick={resetForm}
                       disabled={loading}
-                      color="#95a5a6"
+                      color="#14532d"
                     >
                       Clear
                     </GradientButton>
                     <GradientButton 
                       type="submit" 
                       disabled={loading || !isFormValid}
-                      color="#2ecc71"
+                      color="#27ae60"
                     >
                       {loading ? 'Saving...' : 'Record Sale'}
                     </GradientButton>
@@ -549,7 +560,7 @@ const Sales = () => {
                       type="button" 
                       disabled={!isFormValid} 
                       onClick={() => printSaleReceipt({...formData, date:{}, totalAmount:finalAmount, discount:discountAmount, staff:user, items:formData.items})}
-                      color="#3498db"
+                      color="#27ae60"
                     >
                       🖨️ Print
                     </GradientButton>
@@ -565,7 +576,7 @@ const Sales = () => {
         <SectionCard 
           title="Sales Records" 
           icon="📋"
-          accentColor="#3498db"
+          accentColor="#27ae60"
           headerActions={
             <div style={{ display: 'flex', gap: '8px' }}>
               {sales.length > 0 && (
@@ -587,7 +598,7 @@ const Sales = () => {
               </GradientButton>
               <GradientButton
                 onClick={exportSalesToPDF}
-                color="#9b59b6"
+                color="#27ae60"
                 style={{ fontSize: '0.9rem', padding: '8px 16px' }}
               >
                 📄 Export PDF
@@ -683,7 +694,7 @@ const Sales = () => {
 
       {/* Summary Stats */}
       {sales.length > 0 && (
-        <SectionCard title="Sales Summary" icon="📊" accentColor="#e74c3c">
+        <SectionCard title="Sales Summary" icon="📊" accentColor="#27ae60">
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
             <ModernStat 
               value={sales.length} 
@@ -700,7 +711,7 @@ const Sales = () => {
             <ModernStat 
               value={sales.filter(s => s && s.paymentMethod === 'Cash').length} 
               label="Cash Payments" 
-              color="#f39c12"
+              color="#27ae60"
               icon="💵"
             />
           </div>

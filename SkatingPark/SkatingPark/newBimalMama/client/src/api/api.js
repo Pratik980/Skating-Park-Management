@@ -3,6 +3,11 @@ import axios from 'axios';
 // Use environment variable for API URL, fallback to localhost for development
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 
+const getSessionToken = () => {
+  if (typeof window === 'undefined') return null;
+  return window.sessionStorage.getItem('token');
+};
+
 // Auth API
 export const authAPI = {
   login: (credentials) => axios.post(`${API_BASE_URL}/auth/login`, credentials),
@@ -127,7 +132,7 @@ export const backupAPI = {
 // PDF API
 export const pdfAPI = {
   getDashboard: async (branchId) => {
-    const token = localStorage.getItem('token');
+    const token = getSessionToken();
     try {
       const response = await axios.get(`${API_BASE_URL}/pdf/dashboard`, {
         params: { branchId },

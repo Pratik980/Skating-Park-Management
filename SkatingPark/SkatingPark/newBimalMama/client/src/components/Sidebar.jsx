@@ -3,7 +3,7 @@ import { NavLink } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { settingsAPI } from '../api/api';
 
-const Sidebar = ({ collapsed = false }) => {
+const Sidebar = () => {
   const { user, currentBranch } = useApp();
   const [settings, setSettings] = useState(null);
 
@@ -62,51 +62,41 @@ const Sidebar = ({ collapsed = false }) => {
   const logoUrl = settings?.logo;
 
   return (
-    <div className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
+    <div className={`sidebar`}>
       <div className="sidebar-header">
-        {collapsed ? (
-          <div className="sidebar-logo-collapsed">
+        <div className="sidebar-logo-section">
+          <div className="sidebar-logo-container">
             {logoUrl ? (
-              <img src={logoUrl} alt="Logo" style={{ width: '40px', height: '40px', objectFit: 'contain', borderRadius: '4px' }} />
+              <img 
+                src={logoUrl} 
+                alt="Company Logo" 
+                style={{ 
+                  width: '100%', 
+                  maxWidth: '120px', 
+                  height: 'auto', 
+                  maxHeight: '80px', 
+                  objectFit: 'contain',
+                  borderRadius: '4px',
+                  marginBottom: '10px'
+                }} 
+              />
             ) : (
-              <span style={{ fontSize: '2rem' }}>🏒</span>
+              <div style={{ 
+                fontSize: '3rem', 
+                marginBottom: '10px',
+                textAlign: 'center'
+              }}>
+                🏒
+              </div>
             )}
           </div>
-        ) : (
-          <div className="sidebar-logo-section">
-            <div className="sidebar-logo-container">
-              {logoUrl ? (
-                <img 
-                  src={logoUrl} 
-                  alt="Company Logo" 
-                  style={{ 
-                    width: '100%', 
-                    maxWidth: '120px', 
-                    height: 'auto', 
-                    maxHeight: '80px', 
-                    objectFit: 'contain',
-                    borderRadius: '4px',
-                    marginBottom: '10px'
-                  }} 
-                />
-              ) : (
-                <div style={{ 
-                  fontSize: '3rem', 
-                  marginBottom: '10px',
-                  textAlign: 'center'
-                }}>
-                  🏒
-                </div>
-              )}
-            </div>
-            <h2 style={{ margin: '0', fontSize: '1.2rem', fontWeight: 'bold', textAlign: 'center' }}>
-              {displayName}
-            </h2>
-            <small style={{ display: 'block', textAlign: 'center', marginTop: '4px', opacity: 0.7 }}>
-              Management System
-            </small>
-          </div>
-        )}
+          <h2 style={{ margin: '0', fontSize: '1.2rem', fontWeight: 'bold', textAlign: 'center' }}>
+            {displayName}
+          </h2>
+          <small style={{ display: 'block', textAlign: 'center', marginTop: '4px', opacity: 0.7 }}>
+            Management System
+          </small>
+        </div>
       </div>
       <ul className="sidebar-menu">
         {filteredMenuItems.map(item => (
