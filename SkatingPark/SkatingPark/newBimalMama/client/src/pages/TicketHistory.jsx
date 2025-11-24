@@ -122,25 +122,9 @@ export default function TicketHistory() {
         <head>
           <title>Ticket Print</title>
           <style>
-            @page {
-              size: 80mm auto;
-              margin: 0;
-            }
-            body {
-              margin: 0;
-              padding: 0;
-              font-family: "Courier New", monospace;
-              background: white;
-              width: 80mm;
-              font-size: 10px;
-              -webkit-print-color-adjust: exact;
-              print-color-adjust: exact;
-            }
-            .ticket-print {
-              width: 76mm;
-              padding: 2mm;
-              box-sizing: border-box;
-            }
+            @page { size: 80mm auto; margin: 0; }
+            body { margin: 0; padding: 0; font-family: 'Courier New', monospace; background: white; width: 80mm; font-size: 10px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .ticket-print { width: 76mm; padding: 2mm; box-sizing: border-box; }
           </style>
         </head>
         <body>
@@ -156,34 +140,13 @@ export default function TicketHistory() {
             };
           </script>
         </body>
-      <style>{`
-        .ticket-history-wrapper {
-          width: 100% !important;
-          max-width: 100% !important;
-        }
-        .main-content {
-          margin-left: 250px !important;
-          width: calc(100% - 250px) !important;
-        }
-        .main-content .content-area {
-          max-width: 100% !important;
-          margin: 0 !important;
-          padding: 0 !important;
-          background-color: transparent !important;
-          border-radius: 0 !important;
-          box-shadow: none !important;
-        }
+      </html>
+    `;
 
-        /* Mobile override */
-        @media (max-width: 900px) {
-          .main-content { margin-left: 0 !important; width: 100% !important; }
-          .main-content .content-area { max-width: 720px !important; margin: 12px auto !important; padding: 18px !important; background-color: white !important; border-radius: 10px !important; box-shadow: 0 2px 10px rgba(0,0,0,0.08) !important; }
-        }
-      `}</style>
-        console.error('Error deleting ticket:', error);
-        alert(error.response?.data?.message || 'Error deleting ticket');
-      }
-    }
+    const printWindow = window.open('', '_blank', 'width=400,height=600');
+    printWindow.document.open();
+    printWindow.document.write(printHtml);
+    printWindow.document.close();
   };
 
   const handleSearch = async (e) => {
