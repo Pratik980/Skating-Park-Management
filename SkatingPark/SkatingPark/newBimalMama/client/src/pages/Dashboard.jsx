@@ -184,8 +184,9 @@ const Dashboard = () => {
             width: 100% !important;
           }
           .main-content .content-area {
-            max-width: 100% !important;
-            margin: 12px !important;
+            max-width: 720px !important;
+            width: auto !important;
+            margin: 12px auto !important;
             padding: 18px !important;
             background-color: white !important;
             border-radius: 10px !important;
