@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import NotificationContainer from '../components/NotificationContainer';
 import Loader from '../components/Loader';
@@ -161,7 +161,6 @@ const Login = () => {
               </button>
             </div>
           </div>
-          
           <button 
             type="submit" 
             className="btn btn-primary btn-lg"

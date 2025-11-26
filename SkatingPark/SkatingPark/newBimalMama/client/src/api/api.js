@@ -1,11 +1,12 @@
 import axios from 'axios';
+import { TOKEN_STORAGE_KEY } from '../context/AppContext';
 
 // Use environment variable for API URL, fallback to localhost for development
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 
 const getSessionToken = () => {
   if (typeof window === 'undefined') return null;
-  return window.sessionStorage.getItem('token');
+  return window.sessionStorage.getItem(TOKEN_STORAGE_KEY);
 };
 
 // Auth API
@@ -16,6 +17,10 @@ export const authAPI = {
   updateProfile: (data) => axios.put(`${API_BASE_URL}/auth/update-profile`, data),
   changePassword: (data) => axios.put(`${API_BASE_URL}/auth/change-password`, data),
   checkSetup: () => axios.get(`${API_BASE_URL}/auth/check-setup`),
+  changePasswordPublic: (data) => axios.post(`${API_BASE_URL}/auth/change-password-public`, data),
+  requestPasswordReset: (data) => axios.post(`${API_BASE_URL}/auth/forgot-password`, data),
+  verifyResetCode: (data) => axios.post(`${API_BASE_URL}/auth/verify-reset-code`, data),
+  resetPasswordWithCode: (data) => axios.post(`${API_BASE_URL}/auth/reset-password`, data),
 };
 
 // Users API

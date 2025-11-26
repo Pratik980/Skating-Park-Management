@@ -2,9 +2,11 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { settingsAPI } from '../api/api';
+import { useLanguage } from '../context/LanguageContext';
 
 const Sidebar = ({ mobileOpen, onClose }) => {
   const { user, currentBranch } = useApp();
+  const { t } = useLanguage();
   const [settings, setSettings] = useState(null);
 
   const fetchSettings = useCallback(async () => {
@@ -33,17 +35,17 @@ const Sidebar = ({ mobileOpen, onClose }) => {
   }, [fetchSettings]);
 
   const menuItems = [
-    { path: '/', label: 'Dashboard', icon: '📊', roles: ['admin'] },
-    { path: '/tickets', label: 'Tickets', icon: '🎫', roles: ['admin', 'staff'] },
-    { path: '/sales', label: 'Sales', icon: '💰', roles: ['admin', 'staff'] },
-    { path: '/expenses', label: 'Expenses', icon: '📋', roles: ['admin', 'staff'] },
-    { path: '/ticket-history', label: 'Ticket History', icon: '📜', roles: ['staff'] },
-    { path: '/summary', label: 'Reports', icon: '📈', roles: ['admin'] },
-    { path: '/customers', label: 'Customer Details', icon: '👤', roles: ['admin'] },
-    { path: '/users', label: 'Staff', icon: '👥', roles: ['admin'] },
-    { path: '/branches', label: 'Branches', icon: '🏢', roles: ['admin'] },
-    { path: '/settings', label: 'Settings', icon: '⚙️', roles: ['admin'] },
-    { path: '/backup', label: 'Backup', icon: '💾', roles: ['admin'] },
+    { path: '/', key: 'dashboard', icon: '📊', roles: ['admin'] },
+    { path: '/tickets', key: 'tickets', icon: '🎫', roles: ['admin', 'staff'] },
+    { path: '/sales', key: 'sales', icon: '💰', roles: ['admin', 'staff'] },
+    { path: '/expenses', key: 'expenses', icon: '📋', roles: ['admin', 'staff'] },
+    { path: '/ticket-history', key: 'ticketHistory', icon: '📜', roles: ['staff'] },
+    { path: '/summary', key: 'summary', icon: '📈', roles: ['admin'] },
+    { path: '/customers', key: 'customers', icon: '👤', roles: ['admin'] },
+    { path: '/users', key: 'users', icon: '👥', roles: ['admin'] },
+    { path: '/branches', key: 'branches', icon: '🏢', roles: ['admin'] },
+    { path: '/settings', key: 'settings', icon: '⚙️', roles: ['admin'] },
+    { path: '/backup', key: 'backup', icon: '💾', roles: ['admin'] },
   ];
 
   const filteredMenuItems = menuItems.filter(item => 
@@ -110,10 +112,10 @@ const Sidebar = ({ mobileOpen, onClose }) => {
             <NavLink 
               to={item.path} 
               className={({ isActive }) => isActive ? 'active' : ''}
-              title={item.label}
+              title={t(`nav.${item.key}`)}
             >
               <span className="icon">{item.icon}</span>
-              <span className="label">{item.label}</span>
+              <span className="label">{t(`nav.${item.key}`)}</span>
             </NavLink>
           </li>
         ))}

@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import Branch from '../models/Branch.js';
 import { protect } from '../middleware/auth.js';
+import { sendPasswordResetCode } from '../utils/emailService.js';
 
 const router = express.Router();
 
@@ -13,12 +14,70 @@ const generateToken = (id) => {
   });
 };
 
+const sanitizeUsername = (value = '') => {
+  return value
+    .toString()
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]/g, '');
+};
+
+const buildUsernameSuggestions = (payload = {}) => {
+  const { username, email, name } = payload;
+  const suggestions = [];
+
+  if (username) suggestions.push(username);
+  if (email) {
+    const handle = email.split('@')[0];
+    suggestions.push(handle);
+  }
+  if (name) {
+    suggestions.push(name.replace(/\s+/g, ''));
+  }
+
+  suggestions.push(`user${Date.now()}`);
+  return suggestions.map(sanitizeUsername).filter(Boolean);
+};
+
+const assignUniqueUsername = async (payload) => {
+  const candidates = buildUsernameSuggestions(payload);
+  for (const base of candidates) {
+    let candidate = base;
+    let suffix = 1;
+    while (await User.findOne({ username: candidate })) {
+      candidate = `${base}${suffix}`;
+      suffix += 1;
+    }
+    return candidate;
+  }
+  return `user${Date.now()}`;
+};
+
+const generateResetCode = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
+
+const findUserByIdentifier = async (identifier) => {
+  if (!identifier) return null;
+  const normalized = identifier.toString().trim().toLowerCase();
+  const conditions = [];
+
+  if (normalized.includes('@')) {
+    conditions.push({ email: normalized });
+  } else {
+    conditions.push({ username: normalized });
+    conditions.push({ email: normalized });
+  }
+
+  return User.findOne({ $or: conditions }).select('+password').populate('branch');
+};
+
 // @desc    Register admin/user
 // @route   POST /api/auth/register
 // @access  Public
 router.post('/register', async (req, res) => {
   try {
-    const { name, email, password, phone, role, branch, branchData } = req.body;
+    const { name, email, password, phone, role, branch, branchData, username } = req.body;
 
     // Check if user exists
     const userExists = await User.findOne({ email });
@@ -84,9 +143,12 @@ router.post('/register', async (req, res) => {
     }
 
     // Create user
+    const normalizedUsername = await assignUniqueUsername({ username, email, name });
+
     const user = await User.create({
       name,
-      email,
+      email: email.toLowerCase(),
+      username: normalizedUsername,
       password,
       phone,
       role: role || 'admin',
@@ -112,6 +174,7 @@ router.post('/register', async (req, res) => {
           id: userWithBranch._id,
           name: userWithBranch.name,
           email: userWithBranch.email,
+          username: userWithBranch.username,
           role: userWithBranch.role,
           branch: userWithBranch.branch,
           phone: userWithBranch.phone
@@ -136,27 +199,25 @@ router.post('/register', async (req, res) => {
 // @access  Public
 router.post('/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, username, identifier, password } = req.body;
+    const loginIdentifier = identifier || email || username;
 
-    // Check if email and password provided
-    if (!email || !password) {
+    if (!loginIdentifier || !password) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide email and password'
+        message: 'Please provide email/username and password'
       });
     }
 
-    // Check if user exists and password is correct
-    const user = await User.findOne({ email }).select('+password').populate('branch');
-    
+    const user = await findUserByIdentifier(loginIdentifier);
+
     if (!user || !(await user.matchPassword(password))) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid email or password'
+        message: 'Invalid credentials'
       });
     }
 
-    // Check if user is active
     if (!user.isActive) {
       return res.status(401).json({
         success: false,
@@ -164,7 +225,6 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    // Update last login
     await user.updateLastLogin();
 
     const token = generateToken(user._id);
@@ -177,6 +237,7 @@ router.post('/login', async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
+        username: user.username,
         role: user.role,
         branch: user.branch,
         phone: user.phone
@@ -205,6 +266,7 @@ router.get('/me', protect, async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
+        username: user.username,
         role: user.role,
         branch: user.branch,
         phone: user.phone,
@@ -226,11 +288,30 @@ router.get('/me', protect, async (req, res) => {
 // @access  Private
 router.put('/update-profile', protect, async (req, res) => {
   try {
-    const { name, phone, email } = req.body;
+    const { name, phone, email, username } = req.body;
+    let usernameToSet = username;
+
+    if (usernameToSet) {
+      usernameToSet = sanitizeUsername(usernameToSet);
+      if (!usernameToSet) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid username'
+        });
+      }
+
+      const existing = await User.findOne({ username: usernameToSet, _id: { $ne: req.user.id } });
+      if (existing) {
+        return res.status(400).json({
+          success: false,
+          message: 'Username already taken'
+        });
+      }
+    }
     
     const user = await User.findByIdAndUpdate(
       req.user.id,
-      { name, phone, email },
+      { name, phone, email, username: usernameToSet },
       { new: true, runValidators: true }
     ).select('-password').populate('branch');
 
@@ -278,6 +359,203 @@ router.put('/change-password', protect, async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error changing password',
+      error: error.message
+    });
+  }
+});
+
+// @desc    Change password without active session (login screen)
+// @route   POST /api/auth/change-password-public
+// @access  Public (requires current password)
+router.post('/change-password-public', async (req, res) => {
+  try {
+    const { identifier, email, username, currentPassword, newPassword } = req.body;
+    const loginIdentifier = identifier || email || username;
+
+    if (!loginIdentifier || !currentPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Identifier, current password, and new password are required'
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password must be at least 6 characters'
+      });
+    }
+
+    const user = await findUserByIdentifier(loginIdentifier);
+
+    if (!user || !(await user.matchPassword(currentPassword))) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid credentials'
+      });
+    }
+
+    user.password = newPassword;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Password updated successfully. Please login with your new password.'
+    });
+  } catch (error) {
+    console.error('Public change password error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error updating password',
+      error: error.message
+    });
+  }
+});
+
+// @desc    Send password reset code via email
+// @route   POST /api/auth/forgot-password
+// @access  Public
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email is required'
+      });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const user = await User.findOne({ email: normalizedEmail });
+
+    if (!user) {
+      return res.json({
+        success: true,
+        message: 'If an account exists for this email, a verification code has been sent.'
+      });
+    }
+
+    const code = generateResetCode();
+    user.resetPasswordCode = code;
+    user.resetPasswordCodeExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+    await user.save();
+
+    await sendPasswordResetCode({
+      to: user.email,
+      name: user.name,
+      code
+    });
+
+    res.json({
+      success: true,
+      message: 'Verification code sent to your email.'
+    });
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Unable to send verification code. Please try again later.',
+      error: error.message
+    });
+  }
+});
+
+// @desc    Verify password reset code
+// @route   POST /api/auth/verify-reset-code
+// @access  Public
+router.post('/verify-reset-code', async (req, res) => {
+  try {
+    const { email, code } = req.body;
+
+    if (!email || !code) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email and verification code are required'
+      });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const user = await User.findOne({ email: normalizedEmail });
+
+    if (
+      !user ||
+      !user.resetPasswordCode ||
+      user.resetPasswordCode !== code ||
+      !user.resetPasswordCodeExpires ||
+      user.resetPasswordCodeExpires < new Date()
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid or expired verification code'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Verification code is valid.'
+    });
+  } catch (error) {
+    console.error('Verify reset code error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Unable to verify code. Please try again later.',
+      error: error.message
+    });
+  }
+});
+
+// @desc    Reset password using verification code
+// @route   POST /api/auth/reset-password
+// @access  Public
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { email, code, newPassword } = req.body;
+
+    if (!email || !code || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email, verification code, and new password are required'
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password must be at least 6 characters long'
+      });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const user = await User.findOne({ email: normalizedEmail }).select('+password');
+
+    if (
+      !user ||
+      !user.resetPasswordCode ||
+      user.resetPasswordCode !== code ||
+      !user.resetPasswordCodeExpires ||
+      user.resetPasswordCodeExpires < new Date()
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid or expired verification code'
+      });
+    }
+
+    user.password = newPassword;
+    user.resetPasswordCode = undefined;
+    user.resetPasswordCodeExpires = undefined;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Password updated successfully. Please log in with your new password.'
+    });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Unable to reset password. Please try again later.',
       error: error.message
     });
   }

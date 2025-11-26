@@ -18,6 +18,32 @@ const BackupRestore = () => {
   const [eraseTypes, setEraseTypes] = useState([]);
   const [deleteConfirm, setDeleteConfirm] = useState('');
   const [eraseResult, setEraseResult] = useState(null);
+  const optionLabels = {
+    all: 'All Data',
+    tickets: 'Tickets',
+    sales: 'Sales',
+    expenses: 'Expenses'
+  };
+  const granularEraseOptions = [
+    {
+      id: 'tickets',
+      label: 'Tickets',
+      description: 'Delete all tickets, sessions and extra time logs for this branch.',
+      icon: '🎟️'
+    },
+    {
+      id: 'sales',
+      label: 'Sales',
+      description: 'Remove product records, customer purchases and stock entries.',
+      icon: '🛒'
+    },
+    {
+      id: 'expenses',
+      label: 'Expenses',
+      description: 'Clear every expense entry and staff reimbursement record.',
+      icon: '📉'
+    }
+  ];
 
   useEffect(() => {
     fetchBackups();
@@ -115,10 +141,16 @@ const BackupRestore = () => {
   };
 
   const handleEraseChange = (type) => {
-    setEraseTypes((prev) => prev.includes(type)
-      ? prev.filter((t) => t !== type)
-      : [...prev, type]
-    );
+    if (type === 'all') {
+      setEraseTypes((prev) => prev.includes('all') ? [] : ['all']);
+    } else {
+      setEraseTypes((prev) => {
+        const newTypes = prev.includes(type)
+          ? prev.filter((t) => t !== type)
+          : [...prev.filter(t => t !== 'all'), type];
+        return newTypes;
+      });
+    }
   };
   const startErase = () => setShowErase(true);
   const cancelErase = () => {
@@ -142,6 +174,12 @@ const BackupRestore = () => {
       setDeleting(false);
     }
   };
+
+  const selectedLabels = eraseTypes.includes('all')
+    ? [optionLabels.all]
+    : eraseTypes.map(type => optionLabels[type] || type);
+  const pendingDeletionLabel = selectedLabels.length ? selectedLabels.join(', ') : 'Nothing selected';
+  const canErase = !!currentBranch && eraseTypes.length > 0;
 
   if (loading && backups.length === 0) {
     return <Loader text="Loading backups..." />;
@@ -369,41 +407,94 @@ const BackupRestore = () => {
         <SectionCard 
           title="Erase Branch Data" 
           icon="⚠️"
-          accentColor="#27ae60"
-          style={{ border: '2px solid #14532d', background: '#f0f9f4' }}
+          accentColor="#dc2626"
+          style={{ border: '2px solid #dc2626', background: '#fff7f7' }}
         >
-          <div style={{ marginBottom: 12 }}>
-            <label>
-              <input type="checkbox" checked={eraseTypes.includes('tickets')} onChange={() => handleEraseChange('tickets')} /> Tickets
-            </label>
-            <label style={{ marginLeft: 14 }}>
-              <input type="checkbox" checked={eraseTypes.includes('sales')} onChange={() => handleEraseChange('sales')} /> Sales
-            </label>
-            <label style={{ marginLeft: 14 }}>
-              <input type="checkbox" checked={eraseTypes.includes('expenses')} onChange={() => handleEraseChange('expenses')} /> Expenses
-            </label>
+          <div className="erase-warning-card">
+            <div style={{ fontSize: '1.5rem' }}>🛑</div>
+            <div>
+              <strong>Danger Zone</strong>
+              <p style={{ margin: '6px 0 0', color: '#7f1d1d' }}>
+                Deleting data is permanent. Create a backup first and double-check the branch you are erasing.
+              </p>
+            </div>
           </div>
-          <GradientButton
-            disabled={deleting || eraseTypes.length === 0}
-            onClick={startErase}
-            color="#14532d"
-            style={{ fontWeight: 'bold', fontSize: '1.1rem', padding: '12px 32px' }}
-          >
-            🗑️ Delete Selected Data
-          </GradientButton>
-          {/* Confirm Modal Inline */}
+
+          <div className="erase-grid">
+            <div
+              className={`erase-option-card delete-all ${eraseTypes.includes('all') ? 'selected' : ''}`}
+              onClick={() => handleEraseChange('all')}
+            >
+              <span className="erase-icon">🧨</span>
+              <div className="erase-label">Delete All Data</div>
+              <div className="erase-description">
+                Removes tickets, sales, expenses and related stats for this branch in a single action.
+              </div>
+            </div>
+
+            {granularEraseOptions.map((option) => {
+              const isSelected = eraseTypes.includes(option.id);
+              const disabled = eraseTypes.includes('all');
+              return (
+                <div
+                  key={option.id}
+                  className={`erase-option-card ${isSelected ? 'selected' : ''} ${disabled ? 'disabled' : ''}`}
+                  onClick={() => !disabled && handleEraseChange(option.id)}
+                >
+                  <span className="erase-icon">{option.icon}</span>
+                  <div className="erase-label">{option.label}</div>
+                  <div className="erase-description">{option.description}</div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="erase-selected-chips">
+            {selectedLabels.length > 0 ? (
+              selectedLabels.map((label) => (
+                <span key={label} className="erase-chip">
+                  {label}
+                </span>
+              ))
+            ) : (
+              <span style={{ color: '#6b7280' }}>No data type selected</span>
+            )}
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 10 }}>
+            <GradientButton
+              type="button"
+              disabled={!canErase || deleting}
+              onClick={startErase}
+              color="#dc2626"
+              style={{ fontWeight: 'bold', fontSize: '1.05rem', padding: '12px 32px' }}
+            >
+              🗑️ Delete {eraseTypes.includes('all') ? 'All Data' : 'Selected Data'}
+            </GradientButton>
+            <small style={{ color: '#7f1d1d' }}>
+              Selected scope: <strong>{pendingDeletionLabel}</strong>
+            </small>
+          </div>
+
           {showErase && (
             <div className="modal-overlay">
-              <div className="modal-content" style={{ maxWidth: 410 }}>
-                <h3 style={{ color: '#14532d' }}>Are you absolutely sure?</h3>
-                <div style={{ margin: '18px 0' }}>
-                  <b>Deleted data cannot be restored.</b>
-                  <div style={{ margin: '14px 0', color: '#14532d' }}>
-                    To confirm, type <b>DELETE</b> below:
-                  </div>
-                  <input value={deleteConfirm} onChange={e => setDeleteConfirm(e.target.value)} type="text" className="form-control" />
+              <div className="modal-content" style={{ maxWidth: 440 }}>
+                <h3 style={{ color: '#dc2626', marginBottom: 6 }}>Confirm Permanent Deletion</h3>
+                <p style={{ color: '#4b5563', marginBottom: 16 }}>
+                  You are about to delete: <strong>{pendingDeletionLabel}</strong>
+                </p>
+                <p style={{ color: '#374151' }}><strong>Deleted data cannot be restored.</strong></p>
+                <div style={{ margin: '14px 0', color: '#111827' }}>
+                  Type <b>DELETE</b> to continue:
                 </div>
-                <div className="form-actions">
+                <input
+                  value={deleteConfirm}
+                  onChange={e => setDeleteConfirm(e.target.value)}
+                  type="text"
+                  className="form-control"
+                  placeholder="DELETE"
+                />
+                <div className="form-actions" style={{ marginTop: 18 }}>
                   <button onClick={cancelErase} className="btn btn-secondary">Cancel</button>
                   <button
                     onClick={submitErase}
@@ -416,9 +507,10 @@ const BackupRestore = () => {
               </div>
             </div>
           )}
+
           {eraseResult && eraseResult.message && (
             <div
-              style={{ color: eraseResult.success ? '#27ae60' : '#14532d', marginTop: 12, fontWeight: 'bold' }}>
+              style={{ color: eraseResult.success ? '#15803d' : '#b91c1c', marginTop: 12, fontWeight: 'bold' }}>
               {eraseResult.message}
             </div>
           )}

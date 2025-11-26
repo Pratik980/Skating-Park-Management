@@ -48,6 +48,10 @@ const settingsSchema = new mongoose.Schema({
   ticketRules: [{
     type: String
   }],
+  country: {
+    type: String,
+    default: 'Nepal'
+  },
   branch: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Branch',

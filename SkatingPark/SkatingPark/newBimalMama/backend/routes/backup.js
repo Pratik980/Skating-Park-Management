@@ -34,15 +34,18 @@ router.delete('/erase-data', protect, authorize('admin'), async (req, res) => {
 
   const results = {};
   try {
-    if (types.includes('tickets')) {
+    const shouldDeleteAll = types.includes('all');
+    const typesToDelete = shouldDeleteAll ? ['tickets', 'sales', 'expenses'] : types;
+
+    if (typesToDelete.includes('tickets')) {
       const { deletedCount } = await Ticket.deleteMany({ branch: branchId });
       results.tickets = deletedCount;
     }
-    if (types.includes('sales')) {
+    if (typesToDelete.includes('sales')) {
       const { deletedCount } = await Sales.deleteMany({ branch: branchId, isSale: true });
       results.sales = deletedCount;
     }
-    if (types.includes('expenses')) {
+    if (typesToDelete.includes('expenses')) {
       const { deletedCount } = await Expense.deleteMany({ branch: branchId });
       results.expenses = deletedCount;
     }

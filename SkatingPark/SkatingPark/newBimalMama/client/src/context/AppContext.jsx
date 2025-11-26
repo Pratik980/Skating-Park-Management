@@ -11,16 +11,38 @@ if (import.meta.env.DEV) {
 
 const AppContext = createContext();
 
+const getStorageKey = () => {
+  if (typeof window === 'undefined') return 'token';
+  const origin = window.location.origin || 'default';
+  return `token:${origin}`;
+};
+
+const TOKEN_KEY = getStorageKey();
+const USER_KEY = `${TOKEN_KEY}:user`;
+export const TOKEN_STORAGE_KEY = TOKEN_KEY;
+
+const getStoredUser = () => {
+  if (typeof window === 'undefined') return null;
+  const cached = window.sessionStorage.getItem(USER_KEY);
+  if (!cached) return null;
+  try {
+    return JSON.parse(cached);
+  } catch (error) {
+    window.sessionStorage.removeItem(USER_KEY);
+    return null;
+  }
+};
+
 const getInitialToken = () => {
   if (typeof window === 'undefined') return null;
 
-  const sessionToken = window.sessionStorage.getItem('token');
+  const sessionToken = window.sessionStorage.getItem(TOKEN_KEY);
   if (sessionToken) return sessionToken;
 
-  const legacyToken = window.localStorage.getItem('token');
+  const legacyToken = window.localStorage.getItem(TOKEN_KEY);
   if (legacyToken) {
-    window.sessionStorage.setItem('token', legacyToken);
-    window.localStorage.removeItem('token');
+    window.sessionStorage.setItem(TOKEN_KEY, legacyToken);
+    window.localStorage.removeItem(TOKEN_KEY);
     return legacyToken;
   }
 
@@ -28,7 +50,7 @@ const getInitialToken = () => {
 };
 
 const initialState = {
-  user: null,
+  user: getStoredUser(),
   token: getInitialToken(),
   loading: false,
   error: null,
@@ -47,8 +69,9 @@ const appReducer = (state, action) => {
       return { ...state, error: null };
     case 'LOGIN_SUCCESS':
       if (typeof window !== 'undefined') {
-        window.sessionStorage.setItem('token', action.payload.token);
-        window.localStorage.removeItem('token'); // ensure legacy storage cleared
+        window.sessionStorage.setItem(TOKEN_KEY, action.payload.token);
+        window.localStorage.removeItem(TOKEN_KEY); // ensure legacy storage cleared
+        window.sessionStorage.setItem(USER_KEY, JSON.stringify(action.payload.user));
       }
       return {
         ...state,
@@ -59,8 +82,9 @@ const appReducer = (state, action) => {
       };
     case 'LOGOUT':
       if (typeof window !== 'undefined') {
-        window.sessionStorage.removeItem('token');
-        window.localStorage.removeItem('token');
+        window.sessionStorage.removeItem(TOKEN_KEY);
+        window.localStorage.removeItem(TOKEN_KEY);
+        window.sessionStorage.removeItem(USER_KEY);
       }
       return {
         ...state,
@@ -70,6 +94,13 @@ const appReducer = (state, action) => {
         branches: []
       };
     case 'SET_USER':
+      if (typeof window !== 'undefined') {
+        if (action.payload) {
+          window.sessionStorage.setItem(USER_KEY, JSON.stringify(action.payload));
+        } else {
+          window.sessionStorage.removeItem(USER_KEY);
+        }
+      }
       return { ...state, user: action.payload };
     case 'SET_BRANCHES':
       return { ...state, branches: action.payload };
@@ -159,7 +190,7 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  const login = async (email, password) => {
+  const login = async (identifier, password) => {
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
       
@@ -171,7 +202,7 @@ export const AppProvider = ({ children }) => {
       console.log('   Environment:', import.meta.env.MODE);
       console.log('   VITE_API_BASE_URL from env:', import.meta.env.VITE_API_BASE_URL);
       
-      const response = await axios.post(loginUrl, { email, password });
+      const response = await axios.post(loginUrl, { identifier, password });
       
       dispatch({
         type: 'LOGIN_SUCCESS',
@@ -197,7 +228,7 @@ export const AppProvider = ({ children }) => {
       } else if (error.message === 'Network Error' || error.code === 'ERR_NETWORK') {
         message = 'Cannot connect to server. Please check if the backend is running and VITE_API_BASE_URL is set correctly.';
       } else if (error.response?.status === 401) {
-        message = 'Invalid email or password';
+        message = 'Invalid email/username or password';
       } else if (error.response?.status === 404) {
         const attemptedUrl = error.config?.url || loginUrl;
         message = `Route not found (404). Attempted URL: ${attemptedUrl}. Please verify VITE_API_BASE_URL is set to: https://skating-park-management.onrender.com/api`;

@@ -126,11 +126,16 @@ export default function TicketHistory() {
             @page { size: 80mm auto; margin: 0; }
             body { margin: 0; padding: 0; font-family: 'Courier New', monospace; background: white; width: 80mm; font-size: 10px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             .ticket-print { width: 76mm; padding: 2mm; box-sizing: border-box; }
+            .ticket-footer-vtx { text-align: center; font-size:8px; margin-top:10px; border-top:1px dashed #333; padding-top:2px; color:#666;}
           </style>
         </head>
         <body>
           <div class="ticket-print">
             ${document.getElementById(`ticket-print-${ticket._id}`)?.innerHTML || ''}
+            <div class="ticket-footer-vtx">
+              <img src="/public/fonts/valyntix-logo.png.jpg" alt="Valyntix Logo" style="height:14px;vertical-align:middle;margin-right:4px;opacity:0.68;" onerror="this.style.display='none'" />
+              © Copyright 2025 Valyntix AI TECH SYSTEM. All rights reserved.
+            </div>
           </div>
           <script>
             window.onload = function() {
@@ -306,6 +311,10 @@ export default function TicketHistory() {
                 </div>
                 <div className="modal-body">
                   <TicketPrint ticket={ticket} />
+                  <div className="ticket-footer-vtx">
+                    <img src="/public/fonts/valyntix-logo.png.jpg" alt="Valyntix Logo" style="height:14px;vertical-align:middle;margin-right:4px;opacity:0.68;" onerror="this.style.display='none'" />
+                    © Copyright 2025 Valyntix AI TECH SYSTEM. All rights reserved.
+                  </div>
                 </div>
                 <div className="modal-footer">
                   <button 

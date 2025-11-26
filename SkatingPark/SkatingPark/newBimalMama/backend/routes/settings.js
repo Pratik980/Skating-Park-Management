@@ -29,6 +29,7 @@ router.get('/:branchId', protect, async (req, res) => {
           'नियम उल्लङ्घन गरेमा टिकट रद्द हुनेछ।',
           'खेल्ने बेलामा सुरक्षा नियम पालना गर्नुहोस्।'
         ],
+        country: 'Nepal',
         branch: req.params.branchId,
         createdBy: req.user.id
       });
@@ -70,7 +71,8 @@ router.put('/:branchId', protect, authorize('admin'), async (req, res) => {
       defaultLanguage,
       conversionRate,
       nepaliDateFormat,
-      ticketRules
+      ticketRules,
+      country
     } = req.body;
 
     let settings = await Settings.findOne({ branch: req.params.branchId });
@@ -89,6 +91,7 @@ router.put('/:branchId', protect, authorize('admin'), async (req, res) => {
         conversionRate,
         nepaliDateFormat,
         ticketRules,
+        country,
         branch: req.params.branchId,
         createdBy: req.user.id
       });
@@ -107,7 +110,8 @@ router.put('/:branchId', protect, authorize('admin'), async (req, res) => {
           defaultLanguage,
           conversionRate,
           nepaliDateFormat,
-          ticketRules
+          ticketRules,
+          country
         },
         { new: true, runValidators: true }
       ).populate('branch', 'branchName location');

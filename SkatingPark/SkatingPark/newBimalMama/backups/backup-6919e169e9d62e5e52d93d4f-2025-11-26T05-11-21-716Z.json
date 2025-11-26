@@ -1,0 +1,467 @@
+{
+  "timestamp": "2025-11-26T05:11:21.716Z",
+  "branch": "6919e169e9d62e5e52d93d4f",
+  "data": {
+    "tickets": [
+      {
+        "date": {
+          "englishDate": "2025-11-25T07:32:07.654Z",
+          "nepaliDate": "2082-08-09"
+        },
+        "playerStatus": {
+          "totalPlayers": 1,
+          "playedPlayers": 0,
+          "waitingPlayers": 0,
+          "refundedPlayersCount": 1
+        },
+        "groupInfo": {
+          "groupPrice": 0,
+          "totalMembers": 0
+        },
+        "refundDetails": {
+          "refundMethod": "cash"
+        },
+        "_id": "69255b77404e0092a73aea46",
+        "name": "Bimal",
+        "contactNumber": "9707514545",
+        "playerNames": [
+          "Bimal"
+        ],
+        "numberOfPeople": 1,
+        "ticketType": "Adult",
+        "fee": 100,
+        "discount": 0,
+        "perPersonFee": 100,
+        "currency": "NPR",
+        "time": "07:32:07",
+        "branch": "6919e169e9d62e5e52d93d4f",
+        "staff": "6919e169e9d62e5e52d93d51",
+        "remarks": "",
+        "isRefunded": true,
+        "refundAmount": 100,
+        "refundedPlayers": [
+          "Bimal"
+        ],
+        "status": "booked",
+        "printed": false,
+        "totalExtraMinutes": 0,
+        "extraTimeEntries": [],
+        "ticketNo": "187709",
+        "createdAt": "2025-11-25T07:32:07.653Z",
+        "updatedAt": "2025-11-25T07:46:22.232Z",
+        "__v": 1,
+        "qrCode": "data:image/png;base64,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",
+        "refundReason": "Player did not play"
+      },
+      {
+        "date": {
+          "englishDate": "2025-11-25T07:33:57.066Z",
+          "nepaliDate": "2082-08-09"
+        },
+        "playerStatus": {
+          "totalPlayers": 1,
+          "playedPlayers": 0,
+          "waitingPlayers": 0,
+          "refundedPlayersCount": 1
+        },
+        "groupInfo": {
+          "groupPrice": 0,
+          "totalMembers": 0
+        },
+        "refundDetails": {
+          "refundName": "dsffdg",
+          "refundMethod": "cash",
+          "refundedBy": "6919e169e9d62e5e52d93d51",
+          "paymentReference": ""
+        },
+        "_id": "69255be4404e0092a73aea7a",
+        "name": "dsffdg",
+        "contactNumber": "657485",
+        "playerNames": [
+          "dsffdg"
+        ],
+        "numberOfPeople": 1,
+        "ticketType": "Adult",
+        "fee": 100,
+        "discount": 0,
+        "perPersonFee": 100,
+        "currency": "NPR",
+        "time": "07:33:56",
+        "branch": "6919e169e9d62e5e52d93d4f",
+        "staff": "6919e169e9d62e5e52d93d51",
+        "remarks": "",
+        "isRefunded": true,
+        "refundAmount": 100,
+        "refundedPlayers": [],
+        "status": "booked",
+        "printed": false,
+        "totalExtraMinutes": 0,
+        "extraTimeEntries": [],
+        "ticketNo": "181480",
+        "createdAt": "2025-11-25T07:33:57.065Z",
+        "updatedAt": "2025-11-25T07:36:20.398Z",
+        "__v": 0,
+        "qrCode": "data:image/png;base64,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",
+        "refundReason": "HE is not playing\n"
+      },
+      {
+        "date": {
+          "englishDate": "2025-11-25T07:48:00.083Z",
+          "nepaliDate": "2082-08-09"
+        },
+        "playerStatus": {
+          "totalPlayers": 1,
+          "playedPlayers": 0,
+          "waitingPlayers": 1,
+          "refundedPlayersCount": 0
+        },
+        "groupInfo": {
+          "groupPrice": 0,
+          "totalMembers": 0
+        },
+        "refundDetails": {
+          "refundMethod": "cash"
+        },
+        "_id": "69255f2f404e0092a73aec3b",
+        "name": "rftguyhj",
+        "playerNames": [
+          "rftguyhj"
+        ],
+        "numberOfPeople": 1,
+        "ticketType": "Adult",
+        "fee": 100,
+        "discount": 0,
+        "perPersonFee": 100,
+        "currency": "NPR",
+        "time": "07:47:59",
+        "branch": "6919e169e9d62e5e52d93d4f",
+        "staff": "6919e169e9d62e5e52d93d51",
+        "remarks": "",
+        "isRefunded": false,
+        "refundAmount": 0,
+        "refundedPlayers": [],
+        "status": "booked",
+        "printed": false,
+        "totalExtraMinutes": 0,
+        "extraTimeEntries": [],
+        "ticketNo": "299736",
+        "createdAt": "2025-11-25T07:48:00.083Z",
+        "updatedAt": "2025-11-25T07:48:00.600Z",
+        "__v": 0,
+        "qrCode": "data:image/png;base64,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"
+      },
+      {
+        "date": {
+          "englishDate": "2025-11-25T07:48:00.088Z",
+          "nepaliDate": "2082-08-09"
+        },
+        "playerStatus": {
+          "totalPlayers": 1,
+          "playedPlayers": 0,
+          "waitingPlayers": 1,
+          "refundedPlayersCount": 0
+        },
+        "groupInfo": {
+          "groupPrice": 0,
+          "totalMembers": 0
+        },
+        "refundDetails": {
+          "refundMethod": "cash"
+        },
+        "_id": "69255f2f404e0092a73aec3d",
+        "name": "rftguyhj",
+        "playerNames": [
+          "rftguyhj"
+        ],
+        "numberOfPeople": 1,
+        "ticketType": "Adult",
+        "fee": 100,
+        "discount": 0,
+        "perPersonFee": 100,
+        "currency": "NPR",
+        "time": "07:47:59",
+        "branch": "6919e169e9d62e5e52d93d4f",
+        "staff": "6919e169e9d62e5e52d93d51",
+        "remarks": "",
+        "isRefunded": false,
+        "refundAmount": 0,
+        "refundedPlayers": [],
+        "status": "booked",
+        "printed": false,
+        "totalExtraMinutes": 0,
+        "extraTimeEntries": [],
+        "ticketNo": "978612",
+        "createdAt": "2025-11-25T07:48:00.088Z",
+        "updatedAt": "2025-11-25T07:48:00.601Z",
+        "__v": 0,
+        "qrCode": "data:image/png;base64,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"
+      },
+      {
+        "date": {
+          "englishDate": "2025-11-25T07:49:04.845Z",
+          "nepaliDate": "2082-08-09"
+        },
+        "playerStatus": {
+          "totalPlayers": 1,
+          "playedPlayers": 0,
+          "waitingPlayers": 1,
+          "refundedPlayersCount": 0
+        },
+        "groupInfo": {
+          "groupPrice": 0,
+          "totalMembers": 0
+        },
+        "refundDetails": {
+          "refundMethod": "cash"
+        },
+        "_id": "69255f70404e0092a73aec4a",
+        "name": "dftger`",
+        "playerNames": [
+          "dftger`"
+        ],
+        "numberOfPeople": 1,
+        "ticketType": "Adult",
+        "fee": 100,
+        "discount": 0,
+        "perPersonFee": 100,
+        "currency": "NPR",
+        "time": "07:49:04",
+        "branch": "6919e169e9d62e5e52d93d4f",
+        "staff": "6919e169e9d62e5e52d93d51",
+        "remarks": "",
+        "isRefunded": false,
+        "refundAmount": 0,
+        "refundedPlayers": [],
+        "status": "booked",
+        "printed": false,
+        "totalExtraMinutes": 0,
+        "extraTimeEntries": [],
+        "ticketNo": "188819",
+        "createdAt": "2025-11-25T07:49:04.845Z",
+        "updatedAt": "2025-11-25T07:49:05.097Z",
+        "__v": 0,
+        "qrCode": "data:image/png;base64,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"
+      },
+      {
+        "date": {
+          "englishDate": "2025-11-25T07:50:03.151Z",
+          "nepaliDate": "2082-08-09"
+        },
+        "playerStatus": {
+          "totalPlayers": 4,
+          "playedPlayers": 0,
+          "waitingPlayers": 0,
+          "refundedPlayersCount": 4
+        },
+        "groupInfo": {
+          "groupPrice": 0,
+          "totalMembers": 0
+        },
+        "refundDetails": {
+          "refundName": "HJJL",
+          "refundMethod": "cash",
+          "refundedBy": "6919e169e9d62e5e52d93d51",
+          "paymentReference": ""
+        },
+        "_id": "69255faa404e0092a73aec52",
+        "name": "HJJL",
+        "contactNumber": "856853698635",
+        "playerNames": [
+          "FVRDHJYJI",
+          "FGHF",
+          "GHYJ"
+        ],
+        "numberOfPeople": 4,
+        "ticketType": "Adult",
+        "fee": 350,
+        "discount": 50,
+        "perPersonFee": 100,
+        "currency": "NPR",
+        "time": "07:50:02",
+        "branch": "6919e169e9d62e5e52d93d4f",
+        "staff": "6919e169e9d62e5e52d93d51",
+        "remarks": "",
+        "isRefunded": true,
+        "refundAmount": 250,
+        "refundedPlayers": [],
+        "status": "booked",
+        "printed": false,
+        "totalExtraMinutes": 0,
+        "extraTimeEntries": [],
+        "ticketNo": "879329",
+        "createdAt": "2025-11-25T07:50:03.151Z",
+        "updatedAt": "2025-11-25T07:51:54.358Z",
+        "__v": 0,
+        "qrCode": "data:image/png;base64,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",
+        "refundReason": "HDFNGIUHDF\n"
+      },
+      {
+        "date": {
+          "englishDate": "2025-11-25T07:54:41.031Z",
+          "nepaliDate": "2082-08-09"
+        },
+        "playerStatus": {
+          "totalPlayers": 6,
+          "playedPlayers": 0,
+          "waitingPlayers": 0,
+          "refundedPlayersCount": 6
+        },
+        "groupInfo": {
+          "groupPrice": 0,
+          "totalMembers": 0
+        },
+        "refundDetails": {
+          "refundName": "Rahul",
+          "refundMethod": "cash",
+          "refundedBy": "6919e169e9d62e5e52d93d51",
+          "paymentReference": ""
+        },
+        "_id": "692560c0404e0092a73aec75",
+        "name": "Rahul",
+        "contactNumber": "9707224107",
+        "playerNames": [
+          "Suresh",
+          "Hari",
+          "Neha",
+          "subash",
+          "Pruysshgd"
+        ],
+        "numberOfPeople": 6,
+        "ticketType": "Adult",
+        "fee": 600,
+        "discount": 0,
+        "perPersonFee": 100,
+        "currency": "NPR",
+        "time": "07:54:40",
+        "branch": "6919e169e9d62e5e52d93d4f",
+        "staff": "6919e169e9d62e5e52d93d51",
+        "remarks": "hfyhdgfgdsgdsg",
+        "isRefunded": true,
+        "refundAmount": 500,
+        "refundedPlayers": [],
+        "status": "booked",
+        "printed": false,
+        "totalExtraMinutes": 0,
+        "extraTimeEntries": [],
+        "ticketNo": "812573",
+        "createdAt": "2025-11-25T07:54:41.031Z",
+        "updatedAt": "2025-11-25T07:58:55.553Z",
+        "__v": 0,
+        "qrCode": "data:image/png;base64,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",
+        "refundReason": "Jutta pugena"
+      }
+    ],
+    "sales": [
+      {
+        "date": {
+          "englishDate": "2025-11-25T07:37:13.961Z",
+          "nepaliDate": "2082-08-09"
+        },
+        "_id": "69255ca9404e0092a73aeac6",
+        "customerName": "",
+        "items": [
+          {
+            "itemName": "pani",
+            "quantity": 1,
+            "price": 20,
+            "total": 20,
+            "_id": "69255ca9404e0092a73aeac7"
+          }
+        ],
+        "discount": 0,
+        "currency": "NPR",
+        "paymentMethod": "Cash",
+        "stockQuantity": 0,
+        "minStockLevel": 5,
+        "customerType": "Retail",
+        "pendingAmount": 0,
+        "branch": "6919e169e9d62e5e52d93d4f",
+        "staff": "6919e169e9d62e5e52d93d51",
+        "remarks": "",
+        "isSale": true,
+        "isProduct": false,
+        "isCustomer": false,
+        "saleNo": "001",
+        "subtotal": 20,
+        "totalAmount": 20,
+        "createdAt": "2025-11-25T07:37:13.733Z",
+        "updatedAt": "2025-11-25T07:37:13.733Z",
+        "__v": 0
+      },
+      {
+        "date": {
+          "englishDate": "2025-11-25T07:38:03.173Z",
+          "nepaliDate": "2082-08-09"
+        },
+        "_id": "69255cda404e0092a73aead0",
+        "customerName": "Hari",
+        "items": [
+          {
+            "itemName": "Water",
+            "quantity": 1,
+            "price": 20,
+            "total": 20,
+            "_id": "69255cda404e0092a73aead1"
+          }
+        ],
+        "discount": 5,
+        "currency": "NPR",
+        "paymentMethod": "Cash",
+        "stockQuantity": 0,
+        "minStockLevel": 5,
+        "customerType": "Retail",
+        "pendingAmount": 0,
+        "branch": "6919e169e9d62e5e52d93d4f",
+        "staff": "6919e169e9d62e5e52d93d51",
+        "remarks": "",
+        "isSale": true,
+        "isProduct": false,
+        "isCustomer": false,
+        "saleNo": "002",
+        "subtotal": 20,
+        "totalAmount": 15,
+        "createdAt": "2025-11-25T07:38:02.942Z",
+        "updatedAt": "2025-11-25T07:38:02.942Z",
+        "__v": 0
+      }
+    ],
+    "expenses": [
+      {
+        "date": {
+          "englishDate": "2025-11-25T07:39:11.948Z",
+          "nepaliDate": "2082-08-09"
+        },
+        "_id": "69255d1f404e0092a73aeadf",
+        "category": "Electricity",
+        "description": "",
+        "amount": 200,
+        "currency": "NPR",
+        "branch": "6919e169e9d62e5e52d93d4f",
+        "staff": "6919e169e9d62e5e52d93d51",
+        "receiptNo": "",
+        "vendor": "",
+        "paymentMethod": "Cash",
+        "remarks": "",
+        "expenseNo": "EXP00001",
+        "createdAt": "2025-11-25T07:39:12.175Z",
+        "updatedAt": "2025-11-25T07:39:12.175Z",
+        "__v": 0
+      }
+    ],
+    "users": [
+      {
+        "_id": "6919e169e9d62e5e52d93d51",
+        "name": "Bimal Karki",
+        "email": "bimal.karki2045@gmail.com",
+        "phone": "9812345678",
+        "role": "admin",
+        "branch": "6919e169e9d62e5e52d93d4f",
+        "isActive": true,
+        "createdAt": "2025-11-16T14:36:25.554Z",
+        "updatedAt": "2025-11-26T04:56:39.756Z",
+        "__v": 0,
+        "lastLogin": "2025-11-26T04:56:39.753Z"
+      }
+    ]
+  }
+}

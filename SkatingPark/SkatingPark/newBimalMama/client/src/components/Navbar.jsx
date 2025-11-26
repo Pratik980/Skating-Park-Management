@@ -1,29 +1,31 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
+import { useLanguage } from '../context/LanguageContext';
 
 const Navbar = ({ onToggleSidebar, isSidebarCollapsed }) => {
-  const { user, logout, darkMode, toggleDarkMode } = useApp();
+  const { user, logout } = useApp();
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useLanguage();
 
   // Map routes to page titles
   const getPageTitle = () => {
     const path = location.pathname;
     const titleMap = {
-      '/': 'Dashboard',
-      '/users': 'Staff Management',
-      '/branches': 'Branch Management',
-      '/tickets': 'Ticket Management',
-      '/sales': 'Sales Management',
-      '/expenses': 'Expense Management',
-      '/summary': 'Reports & Summary',
-      '/customers': 'Customer Management',
-      '/ticket-history': 'Ticket History',
-      '/settings': 'System Settings',
-      '/backup': 'Backup & Restore'
+      '/': t('nav.dashboard'),
+      '/users': t('nav.users'),
+      '/branches': t('nav.branches'),
+      '/tickets': t('nav.tickets'),
+      '/sales': t('nav.sales'),
+      '/expenses': t('nav.expenses'),
+      '/summary': t('nav.summary'),
+      '/customers': t('nav.customers'),
+      '/ticket-history': t('nav.ticketHistory'),
+      '/settings': t('nav.settings'),
+      '/backup': t('nav.backup')
     };
-    return titleMap[path] || 'Ticket Management';
+    return titleMap[path] || t('nav.tickets');
   };
 
   const handleLogout = () => {
@@ -51,7 +53,7 @@ const Navbar = ({ onToggleSidebar, isSidebarCollapsed }) => {
             </div>
           </div>
           <button onClick={handleLogout} className="btn btn-sm btn-danger">
-            Logout
+            {t('nav.logout')}
           </button>
         </div>
       </div>

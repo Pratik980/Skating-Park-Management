@@ -208,6 +208,37 @@ const TicketPrint = ({ ticket }) => {
         <span>Total Fee:</span>
         <span>रु {finalFee.toLocaleString()}</span>
       </div>
+      {ticket.refundAmount > 0 && (
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            fontSize: "11px",
+            color: "#bc1b1b",
+            marginBottom: "2px",
+            fontWeight: 700,
+          }}
+        >
+          <span>Refunded:</span>
+          <span>- रु {ticket.refundAmount.toLocaleString()}</span>
+        </div>
+      )}
+      {ticket.refundAmount > 0 && (
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            fontSize: "12px",
+            fontWeight: "bold",
+            marginBottom: "4px",
+            borderTop: "1px dashed #000",
+            paddingTop: "2px",
+          }}
+        >
+          <span>Net Paid:</span>
+          <span>रु {(finalFee - ticket.refundAmount).toLocaleString()}</span>
+        </div>
+      )}
       <div
         style={{
           display: "flex",

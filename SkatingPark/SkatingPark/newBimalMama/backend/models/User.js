@@ -7,6 +7,13 @@ const userSchema = new mongoose.Schema({
     required: [true, 'Please add a name'],
     trim: true
   },
+  username: {
+    type: String,
+    unique: true,
+    sparse: true,
+    trim: true,
+    lowercase: true
+  },
   email: {
     type: String,
     required: [true, 'Please add an email'],
@@ -43,6 +50,12 @@ const userSchema = new mongoose.Schema({
   },
   lastLogin: {
     type: Date
+  },
+  resetPasswordCode: {
+    type: String
+  },
+  resetPasswordCodeExpires: {
+    type: Date
   }
 }, {
   timestamps: true
@@ -55,6 +68,14 @@ userSchema.pre('save', async function(next) {
   }
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
+});
+
+// Normalize username casing
+userSchema.pre('save', function(next) {
+  if (this.isModified('username') && this.username) {
+    this.username = this.username.toLowerCase();
+  }
+  next();
 });
 
 // Match user entered password

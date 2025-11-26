@@ -254,3 +254,7 @@ body {
     border: 1px solid #ddd;
   }
 }
+
+#google_translate_element {
+  display: none !important;
+}

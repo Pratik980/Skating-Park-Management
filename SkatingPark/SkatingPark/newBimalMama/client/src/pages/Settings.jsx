@@ -23,7 +23,8 @@ const Settings = () => {
     defaultLanguage: 'en',
     conversionRate: 1.6,
     nepaliDateFormat: '2082-07-24',
-    ticketRules: ['']
+    ticketRules: [''],
+    country: 'Nepal'
   });
   const [logoPreview, setLogoPreview] = useState(null);
   const { currentBranch } = useApp();
@@ -46,8 +47,8 @@ const Settings = () => {
         setFormData({
           companyName: response.data.settings.companyName,
           companyAddress: response.data.settings.companyAddress,
-          contactNumbers: response.data.settings.contactNumbers.length > 0 
-            ? response.data.settings.contactNumbers 
+          contactNumbers: response.data.settings.contactNumbers.length > 0
+            ? response.data.settings.contactNumbers
             : [''],
           email: response.data.settings.email || '',
           panNumber: response.data.settings.panNumber || '',
@@ -57,9 +58,10 @@ const Settings = () => {
           defaultLanguage: response.data.settings.defaultLanguage,
           conversionRate: response.data.settings.conversionRate,
           nepaliDateFormat: response.data.settings.nepaliDateFormat,
-          ticketRules: response.data.settings.ticketRules.length > 0 
-            ? response.data.settings.ticketRules 
-            : ['']
+          ticketRules: response.data.settings.ticketRules.length > 0
+            ? response.data.settings.ticketRules
+            : [''],
+          country: response.data.settings.country || 'Nepal'
         });
         if (response.data.settings.logo) {
           setLogoPreview(response.data.settings.logo);
@@ -87,6 +89,20 @@ const Settings = () => {
       fetchSettings(); // Reload settings
       // Trigger sidebar refresh by dispatching custom event
       window.dispatchEvent(new Event('settingsUpdated'));
+      window.dispatchEvent(
+        new CustomEvent('languageUpdated', { detail: { language: formData.defaultLanguage } })
+      );
+      // --- ADDED: set Google Translate language
+      if (typeof window !== 'undefined') {
+        const lang = googleLangCode(formData.defaultLanguage);
+        window.PREFERRED_GT_LANG = lang;
+        setTimeout(() => {
+          if (typeof window.setGoogleTranslateLanguage === 'function') {
+            window.setGoogleTranslateLanguage(lang);
+          }
+        }, 800); // Give widget time if needed
+      }
+      // ---
     } catch (error) {
       console.error('Error saving settings:', error);
       alert('Error saving settings');
@@ -165,6 +181,29 @@ const Settings = () => {
     setLogoPreview(null);
   };
 
+  const countryOptions = [
+    'Nepal',
+    'India',
+    'United States',
+    'United Kingdom',
+    'Canada',
+    'Australia',
+    'Germany',
+    'France',
+    'United Arab Emirates',
+    'Singapore',
+    'Japan',
+    'China',
+    'Bhutan',
+    'Bangladesh',
+    'Sri Lanka',
+    'South Korea',
+    'Spain',
+    'Italy',
+    'South Africa',
+    'Brazil'
+  ];
+
   const currencies = [
     { value: 'NPR', label: 'Nepalese Rupee (रु)' },
     { value: 'USD', label: 'US Dollar ($)' },
@@ -176,6 +215,14 @@ const Settings = () => {
     { value: 'np', label: 'Nepali' },
     { value: 'hi', label: 'Hindi' }
   ];
+
+  const googleLangCode = (val) => {
+    if (!val) return 'en';
+    if (val === 'en') return 'en';
+    if (val === 'hi') return 'hi';
+    if (val === 'np' || val === 'ne') return 'ne';
+    return val; // fallback
+  };
 
   if (loading) {
     return <Loader text="Loading settings..." />;
@@ -373,7 +420,25 @@ const Settings = () => {
 
           {/* System Settings */}
           <SectionCard title="System Configuration" icon="🔧" accentColor="#27ae60">
-            
+
+            <div className="form-group">
+              <label className="form-label">Country</label>
+              <select
+                className="form-control"
+                value={formData.country}
+                onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+              >
+                {countryOptions.map((country) => (
+                  <option key={country} value={country}>
+                    {country}
+                  </option>
+                ))}
+              </select>
+              <small className="text-muted d-block mt-1">
+                Select your country for regional settings and formatting
+              </small>
+            </div>
+
             <div className="form-group">
               <label className="form-label">Default Currency</label>
               <select
@@ -481,6 +546,7 @@ const Settings = () => {
               </div>
               <div>
                 <h4>System Config</h4>
+                <p><strong>Country:</strong> {settings.country}</p>
                 <p><strong>Currency:</strong> {settings.defaultCurrency}</p>
                 <p><strong>Language:</strong> {settings.defaultLanguage}</p>
                 <p><strong>Conversion Rate:</strong> 1 USD = {settings.conversionRate} NPR</p>

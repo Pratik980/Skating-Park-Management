@@ -597,17 +597,21 @@ const Summary = () => {
                 </SectionCard>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginTop: '24px' }}>
-                <SectionCard 
-                  title="Daily Tickets" 
-                  icon="🎟️"
-                  accentColor="#27ae60"
-                  headerActions={
-                    <span style={{ color: '#2ecc71', fontWeight: 700, fontSize: '1.1rem' }}>
-                      {formatCurrency(totalTicketRevenue)}
-                    </span>
-                  }
-                >
+              <div style={{ 
+                display: 'flex', 
+                flexDirection: 'column', 
+                gap: '24px',
+                alignItems: 'stretch',
+                marginTop: '24px',
+                width: '100%' 
+              }}>
+              {/* Daily Tickets */}
+              <SectionCard 
+                title={<div style={{textAlign:'center'}}><span style={{fontSize:'2rem',display:'block',lineHeight:1}}>🎟️</span>Daily Tickets</div>} 
+                accentColor="#27ae60"
+                style={{ width: '100%', maxWidth: '100%', flex: 'unset' }}
+                headerActions={<span style={{ color: '#2ecc71', fontWeight: 700, fontSize: '1.15rem' }}>{formatCurrency(totalTicketRevenue)}</span>}
+              >
                   {dailyDetailsLoading ? (
                     <p className="text-center text-muted">Loading tickets...</p>
                   ) : dailyTickets.length === 0 ? (
@@ -642,17 +646,13 @@ const Summary = () => {
                     </div>
                   )}
                 </SectionCard>
-
-                <SectionCard 
-                  title="Daily Sales" 
-                  icon="🛒"
-                  accentColor="#27ae60"
-                  headerActions={
-                    <span style={{ color: '#3498db', fontWeight: 700, fontSize: '1.1rem' }}>
-                      {formatCurrency(totalSalesAmount)}
-                    </span>
-                  }
-                >
+              {/* Daily Sales */}
+              <SectionCard 
+                title={<div style={{textAlign:'center'}}><span style={{fontSize:'2rem',display:'block',lineHeight:1}}>🛒</span>Daily Sales</div>} 
+                accentColor="#1976d2"
+                style={{ width: '100%', maxWidth: '100%', flex: 'unset' }}
+                headerActions={<span style={{ color: '#3498db', fontWeight: 700, fontSize: '1.15rem' }}>{formatCurrency(totalSalesAmount)}</span>}
+              >
                   {dailyDetailsLoading ? (
                     <p className="text-center text-muted">Loading sales...</p>
                   ) : dailySales.length === 0 ? (
@@ -685,17 +685,13 @@ const Summary = () => {
                     </div>
                   )}
                 </SectionCard>
-
-                <SectionCard 
-                  title="Daily Expenses" 
-                  icon="📉"
-                  accentColor="#27ae60"
-                  headerActions={
-                    <span style={{ color: '#e74c3c', fontWeight: 700, fontSize: '1.1rem' }}>
-                      {formatCurrency(totalExpenseAmount)}
-                    </span>
-                  }
-                >
+              {/* Daily Expenses */}
+              <SectionCard 
+                title={<div style={{textAlign:'center'}}><span style={{fontSize:'2rem',display:'block',lineHeight:1}}>📉</span>Daily Expenses</div>} 
+                accentColor="#e74c3c"
+                style={{ width: '100%', maxWidth: '100%', flex: 'unset' }}
+                headerActions={<span style={{ color: '#e74c3c', fontWeight: 700, fontSize: '1.15rem' }}>{formatCurrency(totalExpenseAmount)}</span>}
+              >
                   {dailyDetailsLoading ? (
                     <p className="text-center text-muted">Loading expenses...</p>
                   ) : dailyExpenses.length === 0 ? (
@@ -728,7 +724,7 @@ const Summary = () => {
                     </div>
                   )}
                 </SectionCard>
-              </div>
+            </div>
             </>
           )}
 

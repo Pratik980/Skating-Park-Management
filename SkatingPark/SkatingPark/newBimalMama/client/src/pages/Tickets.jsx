@@ -181,7 +181,8 @@ const Tickets = () => {
     groupName: '',
     groupNumber: '',
     groupPrice: '',
-    cancellationFee: ''
+    cancellationFee: '',
+    refundedPlayersCount: ''
   });
   const [quickAddData, setQuickAddData] = useState({
     name: '',
@@ -230,9 +231,17 @@ const Tickets = () => {
   const [historySearch, setHistorySearch] = useState('');
   const isAdmin = user?.role === 'admin';
   const canManageTickets = isAdmin || user?.role === 'staff';
-  const todaysRevenue = useMemo(
+  const grossRevenue = useMemo(
     () => tickets.reduce((sum, ticket) => sum + (ticket.fee || 0), 0),
     [tickets]
+  );
+  const todaysRefundedAmount = useMemo(
+    () => tickets.reduce((sum, ticket) => sum + (ticket.refundAmount || 0), 0),
+    [tickets]
+  );
+  const todaysRevenue = useMemo(
+    () => Math.max(0, grossRevenue - todaysRefundedAmount),
+    [grossRevenue, todaysRefundedAmount]
   );
   const playingTickets = useMemo(
     () => tickets.filter(ticket => !ticket.isRefunded).length,
@@ -246,6 +255,57 @@ const Tickets = () => {
     () => tickets.reduce((sum, ticket) => sum + (ticket.totalExtraMinutes || 0), 0),
     [tickets]
   );
+
+  // Helpers for refund calculations
+  const getTotalPlayers = (ticket) => {
+    if (!ticket) return 0;
+    return (
+      ticket.numberOfPeople ||
+      ticket.playerStatus?.totalPlayers ||
+      ticket.playerNames?.length ||
+      ticket.groupInfo?.totalMembers ||
+      1
+    );
+  };
+
+  const calculateRefundAmount = (ticket, refundedPeopleCount = null, cancellationFee = 0) => {
+    if (!ticket) return 0;
+    
+    const amountPaid = ticket.fee || 0;
+    const totalPeople = getTotalPlayers(ticket);
+
+    let refundAmount = amountPaid;
+
+    if (refundedPeopleCount !== null && refundedPeopleCount > 0 && totalPeople > 0) {
+      const safeCount = Math.min(refundedPeopleCount, totalPeople);
+      const perPersonAmountPaid = amountPaid / totalPeople;
+      refundAmount = perPersonAmountPaid * safeCount;
+    }
+
+    if (cancellationFee > 0) {
+      refundAmount = Math.max(0, refundAmount - cancellationFee);
+    }
+
+    return Math.round(refundAmount * 100) / 100;
+  };
+
+  const playersToRefundCount = (() => {
+    const parsed = parseInt(refundForm.refundedPlayersCount, 10);
+    return Number.isNaN(parsed) ? null : parsed;
+  })();
+  const totalPlayersForRefund = refundTicket ? getTotalPlayers(refundTicket) : 0;
+  const perPlayerRefundValue = refundTicket
+    ? (totalPlayersForRefund
+        ? Math.round(((refundTicket.fee || 0) / totalPlayersForRefund + Number.EPSILON) * 100) / 100
+        : refundTicket.fee || 0)
+    : 0;
+  const refundPreviewAmount = refundTicket
+    ? calculateRefundAmount(
+        refundTicket,
+        playersToRefundCount,
+        parseFloat(refundForm.cancellationFee) || 0
+      )
+    : 0;
 
   useEffect(() => {
     fetchTickets();
@@ -263,23 +323,30 @@ const Tickets = () => {
     }
   }, [showHistory, currentBranch]);
 
+  // Auto print functionality (browser only)
+  useEffect(() => {
+    if (
+      typeof window === 'undefined' ||
+      typeof document === 'undefined' ||
+      !autoPrint ||
+      !selectedTicket ||
+      !printContentRef.current
+    ) {
+      return;
+    }
 
-  // Auto print functionality
- useEffect(() => {
-  if (autoPrint && selectedTicket && printContentRef.current) {
     const printContent = printContentRef.current.innerHTML;
-
     const printWindow = window.open('', '_blank', 'width=400,height=600');
+
+    if (!printWindow) return;
+
     printWindow.document.write(`
       <!DOCTYPE html>
       <html>
         <head>
           <title>Print Ticket</title>
           <style>
-            @page {
-              size: 80mm auto;
-              margin: 0;
-            }
+            @page { size: 80mm auto; margin: 0; }
             body {
               margin: 0;
               padding: 0;
@@ -312,8 +379,7 @@ const Tickets = () => {
 
     setAutoPrint(false);
     setShowPrint(false);
-  }
-}, [autoPrint, selectedTicket]);
+  }, [autoPrint, selectedTicket]);
 
 
   const fetchTickets = async () => {
@@ -376,44 +442,9 @@ const Tickets = () => {
       groupName: '',
       groupNumber: '',
       groupPrice: '',
-      cancellationFee: ''
+      cancellationFee: '',
+      refundedPlayersCount: ''
     });
-  };
-
-  // Calculate refund amount based on actual amount paid
-  // Rule: Refund = Amount Actually Paid = Ticket Price - Discount
-  // For partial refunds: Refund = (Amount Actually Paid / Total People) * Refunded People
-  const calculateRefundAmount = (ticket, refundedPeopleCount = null, cancellationFee = 0) => {
-    if (!ticket) return 0;
-    
-    // Get the actual amount paid (after discount)
-    const amountPaid = ticket.fee || 0;
-    const discount = ticket.discount || 0;
-    
-    // Calculate original price before discount
-    const originalPrice = amountPaid + discount;
-    
-    // The refund should be the actual amount paid (after discount)
-    // This is the simple rule: refund = what they actually paid
-    let refundAmount = amountPaid;
-    
-    // For partial refunds, calculate per-person refund
-    if (refundedPeopleCount !== null && refundedPeopleCount > 0) {
-      const totalPeople = ticket.numberOfPeople || ticket.playerStatus?.totalPlayers || 1;
-      if (totalPeople > 0) {
-        // Calculate per-person amount paid
-        const perPersonAmountPaid = amountPaid / totalPeople;
-        // Refund for the specified number of people
-        refundAmount = perPersonAmountPaid * refundedPeopleCount;
-      }
-    }
-    
-    // Deduct cancellation fee if applicable
-    if (cancellationFee > 0) {
-      refundAmount = Math.max(0, refundAmount - cancellationFee);
-    }
-    
-    return Math.round(refundAmount * 100) / 100; // Round to 2 decimal places
   };
 
   const lookupRefundTicket = async () => {
@@ -426,9 +457,16 @@ const Tickets = () => {
       const response = await ticketsAPI.lookup(refundForm.ticketNo.trim());
       const ticket = response.data.ticket;
       setRefundTicket(ticket);
+      const totalPlayers = getTotalPlayers(ticket);
+      const cancellationFee = parseFloat(refundForm.cancellationFee) || 0;
+      const defaultPlayersToRefund = totalPlayers || null;
       
       // Calculate refund amount automatically based on actual amount paid
-      const calculatedRefund = calculateRefundAmount(ticket, null, parseFloat(refundForm.cancellationFee) || 0);
+      const calculatedRefund = calculateRefundAmount(
+        ticket,
+        defaultPlayersToRefund,
+        cancellationFee
+      );
       
       setRefundForm((prev) => ({
         ...prev,
@@ -439,7 +477,8 @@ const Tickets = () => {
         groupName: ticket.groupInfo?.groupName || '',
         groupNumber: ticket.groupInfo?.groupNumber || '',
         groupPrice: ticket.groupInfo?.groupPrice?.toString() || '',
-        cancellationFee: prev.cancellationFee || ''
+        cancellationFee: prev.cancellationFee || '',
+        refundedPlayersCount: defaultPlayersToRefund ? defaultPlayersToRefund.toString() : ''
       }));
     } catch (error) {
       console.error('Error fetching ticket for refund:', error);
@@ -448,6 +487,32 @@ const Tickets = () => {
     } finally {
       setRefundLoading(false);
     }
+  };
+
+  const handleRefundPlayersChange = (value) => {
+    if (!refundTicket) return;
+    const totalPlayers = getTotalPlayers(refundTicket);
+    let parsedValue = value === '' ? '' : parseInt(value, 10);
+
+    if (parsedValue !== '' && isNaN(parsedValue)) {
+      parsedValue = '';
+    } else if (parsedValue !== '') {
+      parsedValue = Math.max(0, Math.min(parsedValue, totalPlayers));
+    }
+
+    const cancellationFee = parseFloat(refundForm.cancellationFee) || 0;
+    const playersForCalc = parsedValue === '' ? null : parsedValue;
+    const recalculatedRefund = calculateRefundAmount(
+      refundTicket,
+      playersForCalc,
+      cancellationFee
+    );
+
+    setRefundForm((prev) => ({
+      ...prev,
+      refundedPlayersCount: parsedValue === '' ? '' : parsedValue.toString(),
+      refundAmount: recalculatedRefund.toString()
+    }));
   };
 
   const handleRefundSubmit = async () => {
@@ -460,11 +525,27 @@ const Tickets = () => {
       return;
     }
 
+    const totalPlayers = getTotalPlayers(refundTicket);
+    const playersToRefund = playersToRefundCount;
+    const cancellationFee = parseFloat(refundForm.cancellationFee) || 0;
+    const standardizedRefundAmount = calculateRefundAmount(
+      refundTicket,
+      typeof playersToRefund === 'number' ? playersToRefund : null,
+      cancellationFee
+    );
+
+    const refundedPlayersList =
+      typeof playersToRefund === 'number' && playersToRefund > 0
+        ? (refundTicket.playerNames && refundTicket.playerNames.length >= playersToRefund
+            ? refundTicket.playerNames.slice(0, playersToRefund)
+            : Array.from({ length: playersToRefund }, (_, idx) => `Player ${idx + 1}`))
+        : [];
+
     try {
       setRefundLoading(true);
       await ticketsAPI.refund(refundTicket._id, {
         refundReason: refundForm.refundReason,
-        refundAmount: parseFloat(refundForm.refundAmount) || refundTicket.fee,
+        refundAmount: standardizedRefundAmount || parseFloat(refundForm.refundAmount) || refundTicket.fee,
         refundName: refundForm.refundName || refundTicket.name,
         refundMethod: refundForm.refundMethod,
         paymentReference: refundForm.paymentReference,
@@ -472,7 +553,8 @@ const Tickets = () => {
           groupName: refundForm.groupName,
           groupNumber: refundForm.groupNumber,
           groupPrice: refundForm.groupPrice ? parseFloat(refundForm.groupPrice) : undefined
-        }
+        },
+        refundedPlayers: refundedPlayersList
       });
 
       setTickets(tickets.map(t => 
@@ -1367,7 +1449,7 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
             <ModernStat value={tickets.length} label="Today's Tickets" color="#8b5cf6" icon="🎟️" animationDirection="right" />
             <ModernStat value={playingTickets} label="Active / Playing" color="#10b981" icon="⚡" animationDirection="right" />
             <ModernStat value={refundedToday} label="Refunded Today" color="#f43f5e" icon="↺" animationDirection="right" />
-            <ModernStat value={todaysRevenue} label="Revenue (रु)" color="#f59e0b" icon="₨" animationDirection="right" />
+            <ModernStat value={todaysRevenue} label="Net Revenue (रु)" color="#f59e0b" icon="₨" animationDirection="right" />
             <ModernStat value={totalExtraMinutes} label="Extra Minutes" color="#0ea5e9" icon="⏱️" animationDirection="right" />
           </div>
         </div>
@@ -1674,14 +1756,16 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
                       const amountPaid = refundTicket.fee || 0;
                       const originalPrice = amountPaid + discount;
                       const cancellationFee = parseFloat(refundForm.cancellationFee) || 0;
-                      const calculatedRefund = calculateRefundAmount(refundTicket, null, cancellationFee);
+                      const totalPlayersForTicket = totalPlayersForRefund || 1;
+                      const calculatedRefund = refundPreviewAmount;
+                      const perPlayerAmount = perPlayerRefundValue || amountPaid;
 
                       return (
                         <>
                           <div className="grid grid-2">
                             <div>
                               <p><strong>Name:</strong> {refundTicket.name}</p>
-                              <p><strong>People:</strong> {refundTicket.numberOfPeople || refundTicket.playerStatus?.totalPlayers || 1}</p>
+                              <p><strong>Total Players:</strong> {totalPlayersForTicket}</p>
                               {discount > 0 ? (
                                 <>
                                   <p><strong>Original Price:</strong> रु {originalPrice.toLocaleString()}</p>
@@ -1711,13 +1795,18 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
                           <div style={{ marginTop: '15px', padding: '10px', backgroundColor: '#f0f8ff', borderRadius: '4px', border: '1px solid #007bff' }}>
                             <h5 style={{ marginBottom: '8px' }}>Refund Calculation:</h5>
                             <p style={{ margin: '4px 0' }}>Amount Paid: <strong>रु {amountPaid.toLocaleString()}</strong></p>
+                            <p style={{ margin: '4px 0' }}>
+                              Per Player Share: <strong>रु {perPlayerAmount.toLocaleString()}</strong> (after discount)
+                            </p>
                             {cancellationFee > 0 && (
                               <p style={{ margin: '4px 0', color: '#d32f2f' }}>Cancellation Fee: <strong>- रु {cancellationFee.toLocaleString()}</strong></p>
                             )}
                             <p style={{ margin: '4px 0', fontSize: '16px', fontWeight: 'bold', color: '#1a7e1a' }}>
                               Refund Amount: <strong>रु {calculatedRefund.toLocaleString()}</strong>
                             </p>
-                            <small className="text-muted">Rule: Refund = Amount Actually Paid {cancellationFee > 0 ? '- Cancellation Fee' : ''}</small>
+                            <small className="text-muted">
+                              Rule: (Amount Paid ÷ Players) × Players Refunded {cancellationFee > 0 ? ' - Cancellation Fee' : ''}
+                            </small>
                           </div>
                         </>
                       );
@@ -1728,7 +1817,7 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
               {/* Refund Form Card */}
               {!!refundTicket && (
                 <SectionCard title="Refund Details" icon="💸" accentColor="#27ae60" style={{ marginBottom: 18 }}>
-                  <div className="grid grid-2 gap-3">
+                  <div className="grid grid-3 gap-3">
                     <div className="form-group">
                       <label className="form-label">Refund Name</label>
                       <input
@@ -1747,7 +1836,11 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
                         value={refundForm.cancellationFee}
                         onChange={(e) => {
                           const fee = parseFloat(e.target.value) || 0;
-                          const newRefund = calculateRefundAmount(refundTicket, null, fee);
+                          const newRefund = calculateRefundAmount(
+                            refundTicket,
+                            typeof playersToRefundCount === 'number' ? playersToRefundCount : null,
+                            fee
+                          );
                           setRefundForm({ ...refundForm, cancellationFee: e.target.value, refundAmount: newRefund.toString() });
                         }}
                         min="0"
@@ -1755,6 +1848,25 @@ const printAllTicketsOneByOne = (ticketsToPrint) => {
                         placeholder="0"
                       />
                       <small className="text-muted">Deduct this amount from refund (if applicable)</small>
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Players To Refund</label>
+                      <input
+                        type="number"
+                        className="form-control"
+                        min="1"
+                        max={totalPlayersForRefund || 1}
+                        value={refundForm.refundedPlayersCount}
+                        onChange={(e) => handleRefundPlayersChange(e.target.value)}
+                        placeholder="e.g. 2"
+                      />
+                      <small className="text-muted">
+                        Auto splits रु {(perPlayerRefundValue || 0).toLocaleString()} per player (after discount)
+                      </small>
+                      <small className="text-muted">
+                        Example: Pay रु 300, discount रु 50 ⇒ रु 250 net. For 3 players, प्रति व्यक्ति रु 83.33.
+                        Refunding 2 players automatically returns रु 166.67.
+                      </small>
                     </div>
                   </div>
                   <div className="form-group">
