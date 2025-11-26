@@ -168,6 +168,10 @@ const BackupRestore = () => {
       setEraseTypes([]);
       setShowErase(false);
       setDeleteConfirm('');
+      // Force a reload on success
+      if (res.data && res.data.success) {
+        window.location.reload();
+      }
     } catch (err) {
       setEraseResult({ success: false, message: err?.response?.data?.message || err.message });
     } finally {
